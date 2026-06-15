@@ -1,0 +1,43 @@
+# product-spec.md
+
+## Product Name
+
+Root Access
+
+## MVP Focus
+
+Root Access is a workflow-guided platform focused only on helping students build startup proposals using AI.
+
+## Target Users
+
+FPT University students working on entrepreneurship assignments, startup projects, or pitch presentations.
+
+## Core Problem
+
+Students know how to use ChatGPT, but they do not know:
+
+* what to do first
+* how to structure startup ideas
+* what prompts to use
+* what AI tool to use next
+
+This causes repeated prompt trial-and-error and inconsistent results.
+
+## MVP Goal
+
+Validate if a structured workflow can reduce:
+
+* time spent
+* prompt retries
+* confusion
+
+## MVP Scope
+
+Only 1 workflow:
+Startup Proposal
+
+## Success Metrics
+
+* user completes 60%+ workflow
+* user copies prompt at least 3 times
+* user finishes first proposal draft faster than normal

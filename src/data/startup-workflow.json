@@ -1,0 +1,100 @@
+{
+  "id": "startup-proposal",
+  "title": "Startup Proposal Workflow",
+  "description": "A guided workflow for university students to turn [STARTUP IDEA] in [INDUSTRY] into a clear startup proposal draft.",
+  "category": "Startup Proposal",
+  "estimatedTime": "2-3 hours",
+  "steps": [
+    {
+      "id": 1,
+      "title": "Problem Discovery",
+      "goal": "Identify a real pain point behind [STARTUP IDEA] in [INDUSTRY].",
+      "tool": "ChatGPT",
+      "promptTemplate": "Act as a startup mentor for a university assignment. My startup idea is [STARTUP IDEA] in the [INDUSTRY] industry. Help me identify the main customer problem this idea solves. Explain the pain point, why it matters, who experiences it, and what evidence I should look for to validate it. Keep the output practical and suitable for a student startup proposal.",
+      "expectedOutput": "A clear pain point, why it matters, who experiences it, and validation evidence to collect.",
+      "commonMistakes": [
+        "Describing the solution before proving the problem",
+        "Choosing a problem that is too broad or vague",
+        "Ignoring who feels the problem most strongly"
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Target Customer",
+      "goal": "Define the exact target customer for [STARTUP IDEA] in [INDUSTRY].",
+      "tool": "ChatGPT",
+      "promptTemplate": "Act as a startup mentor for a university assignment. My startup idea is [STARTUP IDEA] in the [INDUSTRY] industry. Define the most suitable target customer segment. Include age range, behavior, needs, frustrations, current alternatives, and why this group is a good first market for a student startup proposal.",
+      "expectedOutput": "A focused customer profile with age, behavior, needs, frustrations, and first-market reasoning.",
+      "commonMistakes": [
+        "Saying the product is for everyone",
+        "Defining customers only by age without behavior",
+        "Choosing a segment that is hard to reach or interview"
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Existing Solutions",
+      "goal": "Research direct and indirect competitors for [STARTUP IDEA] in [INDUSTRY].",
+      "tool": "ChatGPT + Google",
+      "promptTemplate": "Act as a startup research assistant for a university assignment. My startup idea is [STARTUP IDEA] in the [INDUSTRY] industry. List possible direct competitors, indirect competitors, and substitute solutions. For each one, explain what they offer, their target users, their likely weaknesses, and what I should verify using Google before adding them to my proposal.",
+      "expectedOutput": "A competitor overview with direct competitors, indirect competitors, substitutes, weaknesses, and Google research checks.",
+      "commonMistakes": [
+        "Assuming there are no competitors",
+        "Listing competitors without explaining their weaknesses",
+        "Using AI results without checking real sources"
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Value Proposition",
+      "goal": "Define what makes [STARTUP IDEA] different and useful in [INDUSTRY].",
+      "tool": "ChatGPT",
+      "promptTemplate": "Act as a startup mentor for a university assignment. My startup idea is [STARTUP IDEA] in the [INDUSTRY] industry. Create a strong value proposition. Explain the unique selling point, why this problem matters now, why the idea is better than current alternatives, and how to say the value proposition in one clear sentence for a proposal.",
+      "expectedOutput": "A unique selling point, why-now reasoning, comparison against alternatives, and a one-sentence value proposition.",
+      "commonMistakes": [
+        "Using generic claims like faster, cheaper, or better without proof",
+        "Confusing features with benefits",
+        "Writing a value proposition that is too long or unclear"
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Business Model",
+      "goal": "Choose a realistic revenue model for [STARTUP IDEA] in [INDUSTRY].",
+      "tool": "ChatGPT",
+      "promptTemplate": "Act as a startup finance mentor for a university assignment. My startup idea is [STARTUP IDEA] in the [INDUSTRY] industry. Suggest realistic business model options. Include pricing approach, revenue sources, who pays, why they would pay, simple cost considerations, and which model is easiest to explain in a student startup proposal.",
+      "expectedOutput": "A practical business model with pricing, revenue source, payer, basic costs, and scalability notes.",
+      "commonMistakes": [
+        "Choosing a revenue model that does not match the target customer",
+        "Ignoring who actually pays",
+        "Making financial assumptions that are too complex for the proposal"
+      ]
+    },
+    {
+      "id": 6,
+      "title": "MVP Design",
+      "goal": "Define the smallest useful version of [STARTUP IDEA] for [INDUSTRY].",
+      "tool": "ChatGPT",
+      "promptTemplate": "Act as a product manager for a university startup assignment. My startup idea is [STARTUP IDEA] in the [INDUSTRY] industry. Define the MVP. List the smallest set of features needed to test the core value, features to exclude for now, a simple user flow, and what feedback I should collect from early users.",
+      "expectedOutput": "An MVP scope with key features, excluded features, simple user flow, and feedback questions.",
+      "commonMistakes": [
+        "Trying to build the full product first",
+        "Adding features that do not test the core value",
+        "Forgetting how users will give feedback"
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Pitch Structure",
+      "goal": "Create a clear pitch deck structure for [STARTUP IDEA] in [INDUSTRY].",
+      "tool": "Gamma",
+      "promptTemplate": "Create a university startup pitch deck for [STARTUP IDEA] in the [INDUSTRY] industry. Use a practical storytelling flow: problem, target customer, existing solutions, value proposition, business model, MVP, go-to-market idea, and closing summary. For each slide, provide a slide title, key message, and suggested bullet points.",
+      "expectedOutput": "A pitch deck outline with slide titles, key messages, bullet points, and a clear storytelling flow.",
+      "commonMistakes": [
+        "Starting with product features before explaining the problem",
+        "Putting too much text on each slide",
+        "Ending without a clear summary or next step"
+      ]
+    }
+  ]
+}
