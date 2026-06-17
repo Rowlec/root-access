@@ -1,4 +1,5 @@
 import { FileText, ListChecks, Rocket } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import {
   Card,
@@ -7,34 +8,35 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const steps = [
-  {
-    title: "Enter startup idea",
-    description: "Share your idea and industry so Root Access can shape the workflow around your assignment.",
-    icon: FileText,
-  },
-  {
-    title: "Get guided workflow",
-    description: "Move through clear steps with practical prompts for problem, customer, MVP, and pitch work.",
-    icon: ListChecks,
-  },
-  {
-    title: "Build proposal faster",
-    description: "Turn structured outputs into a cleaner startup proposal without repeated prompt guessing.",
-    icon: Rocket,
-  },
-];
-
 export function HowItWorks() {
+  const t = useTranslations("HowItWorks");
+  const steps = [
+    {
+      title: t("steps.idea.title"),
+      description: t("steps.idea.description"),
+      icon: FileText,
+    },
+    {
+      title: t("steps.workflow.title"),
+      description: t("steps.workflow.description"),
+      icon: ListChecks,
+    },
+    {
+      title: t("steps.proposal.title"),
+      description: t("steps.proposal.description"),
+      icon: Rocket,
+    },
+  ];
+
   return (
     <section className="w-full bg-background py-16 sm:py-24">
       <div className="mx-auto w-full max-w-6xl px-5 sm:px-8 lg:px-10">
         <div className="mb-10 max-w-2xl space-y-3">
           <p className="text-sm font-medium text-muted-foreground">
-            How it works
+            {t("eyebrow")}
           </p>
           <h2 className="text-3xl font-semibold leading-tight tracking-normal text-foreground sm:text-4xl sm:leading-[1.15]">
-            From idea to proposal in three focused moves
+            {t("title")}
           </h2>
         </div>
 
@@ -53,7 +55,7 @@ export function HowItWorks() {
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground">
-                      Step {index + 1}
+                      {t("stepLabel", { step: index + 1 })}
                     </p>
                     <CardTitle className="text-lg">{step.title}</CardTitle>
                     <CardDescription className="leading-6">

@@ -1,0 +1,150 @@
+{
+  "Metadata": {
+    "title": "Root Access",
+    "description": "Build startup proposals with structured AI workflows."
+  },
+  "LocaleSwitcher": {
+    "ariaLabel": "Language",
+    "options": {
+      "en": "EN",
+      "vi": "VI"
+    }
+  },
+  "Hero": {
+    "brand": "Root Access",
+    "title": "Build your startup proposal with structured AI workflows",
+    "subtitle": "Stop guessing prompts. Follow a proven workflow.",
+    "action": "Start Building",
+    "workflowName": "Startup Proposal",
+    "guidedSteps": "7 guided steps",
+    "badge": "Student-ready",
+    "stepLabel": "Step {step}",
+    "steps": {
+      "problemDiscovery": "Problem Discovery",
+      "targetCustomer": "Target Customer",
+      "valueProposition": "Value Proposition"
+    }
+  },
+  "HowItWorks": {
+    "eyebrow": "How it works",
+    "title": "From idea to proposal in three focused moves",
+    "stepLabel": "Step {step}",
+    "steps": {
+      "idea": {
+        "title": "Enter startup idea",
+        "description": "Share your idea and industry so Root Access can shape the workflow around your assignment."
+      },
+      "workflow": {
+        "title": "Get guided workflow",
+        "description": "Move through clear steps with practical prompts for problem, customer, MVP, and pitch work."
+      },
+      "proposal": {
+        "title": "Build proposal faster",
+        "description": "Turn structured outputs into a cleaner startup proposal without repeated prompt guessing."
+      }
+    }
+  },
+  "AcademicIntegrityNotice": {
+    "body": "This platform does not generate final assignments for students. It helps users structure their workflow, create outlines, and improve prompt quality. Users are responsible for reviewing, verifying, and editing all outputs."
+  },
+  "GoalForm": {
+    "eyebrow": "Start building",
+    "title": "Tell Root Access what you are working on",
+    "description": "Add your startup context, then follow a guided workflow built for a university proposal.",
+    "cardTitle": "Startup goal",
+    "cardDescription": "Use clear details so the workflow prompts fit your assignment.",
+    "fields": {
+      "currentStage": {
+        "label": "Current stage",
+        "placeholder": "Select your current stage",
+        "error": "Current stage is required.",
+        "options": {
+          "noClearIdeaYet": "No clear idea yet",
+          "haveIdeaButNotValidated": "Have idea but not validated",
+          "doingMarketResearch": "Doing market research",
+          "buildingBusinessModel": "Building business model",
+          "preparingPitchDeck": "Preparing pitch deck"
+        }
+      },
+      "startupIdea": {
+        "label": "Startup idea",
+        "placeholder": "AI study assistant for university students",
+        "error": "Startup idea must be at least 3 characters."
+      },
+      "industry": {
+        "label": "Industry",
+        "placeholder": "Education",
+        "error": "Industry is required."
+      },
+      "deadlineUrgency": {
+        "label": "Deadline urgency",
+        "placeholder": "Select urgency",
+        "error": "Deadline urgency is required.",
+        "options": {
+          "oneToThreeDays": "1-3 days",
+          "oneWeek": "1 week",
+          "twoWeeksPlus": "2 weeks+",
+          "noDeadline": "No deadline"
+        }
+      },
+      "availableTools": {
+        "label": "Available AI tools",
+        "other": "Other",
+        "error": "Select at least one AI tool."
+      }
+    },
+    "actions": {
+      "submit": "Start Building",
+      "submitting": "Preparing workflow"
+    }
+  },
+  "ResultPage": {
+    "missingContext": "Missing startup context. You can still review the workflow, or go back and enter your startup idea and industry for personalized prompts.",
+    "emptyState": {
+      "badge": "Root Access",
+      "title": "Add your startup context first",
+      "description": "Root Access needs your stage, idea, industry, deadline, and available tools before it can build a useful workflow.",
+      "action": "Go to startup form"
+    },
+    "completionCta": {
+      "title": "Finished your first proposal draft?",
+      "description": "Review your copied prompts and turn the outputs into your final submission.",
+      "action": "Build another workflow"
+    }
+  },
+  "ProgressTracker": {
+    "title": "Progress",
+    "description": "Keep track as you build.",
+    "completedSteps": "Completed {completedCount}/{totalSteps} steps",
+    "currentStep": "Current step: {stepId}",
+    "allComplete": "All steps completed",
+    "progressAria": "{completionPercentage}% complete"
+  },
+  "StepCard": {
+    "stepBadge": "Step {step}",
+    "original": "Original:",
+    "adapted": "Adapted:",
+    "adaptedBadge": "Adapted based on your available tools",
+    "complete": "Complete",
+    "copyPrompt": "Copy prompt",
+    "copied": "Copied",
+    "details": "Details",
+    "locked": "Complete the previous step to unlock this checkbox.",
+    "prompt": "Prompt",
+    "expectedOutput": "Expected output",
+    "commonMistakes": "Common mistakes"
+  },
+  "WorkflowCompletion": {
+    "title": "Workflow complete",
+    "description": "Congratulations. You completed {workflowTitle} and checked off all required steps.",
+    "summary": "Summary: {completedCount}/{totalSteps} steps completed. Review your copied prompts, verify the outputs, and edit everything before using it in your assignment.",
+    "submitFeedback": "Submit Feedback",
+    "restart": "Restart Workflow"
+  },
+  "FeedbackCard": {
+    "title": "Help us improve Root Access",
+    "description": "Your feedback helps us learn whether this workflow actually reduces confusion, prompt retries, and time spent on startup assignments.",
+    "body": "Share what worked, where you got stuck, and what would make the next version more useful for students.",
+    "action": "Submit Feedback"
+  }
+}

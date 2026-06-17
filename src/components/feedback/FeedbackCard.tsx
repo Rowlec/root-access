@@ -2,6 +2,7 @@
 
 import { track } from "@vercel/analytics";
 import { ExternalLink } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,21 +14,40 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { GOOGLE_FORM_URL } from "@/constants/links";
+import {
+  formatAnalyticsTools,
+  getUniqueAnalyticsTools,
+} from "@/lib/analytics-payload";
 
-export function FeedbackCard() {
+type FeedbackCardProps = {
+  adaptedToolCount?: number;
+  availableTools?: string[];
+  workflowId?: string;
+  workflowRunId?: string;
+  workflowTitle?: string;
+};
+
+export function FeedbackCard({
+  adaptedToolCount = 0,
+  availableTools = [],
+  workflowId = "",
+  workflowRunId = "",
+  workflowTitle = "",
+}: FeedbackCardProps) {
+  const t = useTranslations("FeedbackCard");
+  const selectedTools = getUniqueAnalyticsTools(availableTools);
+
   return (
     <Card className="rounded-lg py-5 shadow-sm transition-shadow hover:shadow-md">
       <CardHeader className="gap-2">
-        <CardTitle className="text-xl">Help us improve Root Access</CardTitle>
+        <CardTitle className="text-xl">{t("title")}</CardTitle>
         <CardDescription className="leading-6">
-          Your feedback helps us learn whether this workflow actually reduces
-          confusion, prompt retries, and time spent on startup assignments.
+          {t("description")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <p className="text-sm leading-6 text-muted-foreground">
-          Share what worked, where you got stuck, and what would make the next
-          version more useful for students.
+          {t("body")}
         </p>
       </CardContent>
       <CardFooter className="justify-start">
@@ -39,10 +59,16 @@ export function FeedbackCard() {
             onClick={() =>
               track("Feedback Click", {
                 source: "feedback_card",
+                workflowId,
+                workflowRunId,
+                workflowTitle,
+                selectedTools: formatAnalyticsTools(selectedTools),
+                selectedToolCount: selectedTools.length,
+                adaptedToolCount,
               })
             }
           >
-            Submit Feedback
+            {t("action")}
             <ExternalLink aria-hidden="true" />
           </a>
         </Button>

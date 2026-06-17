@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, ChevronUp, Copy } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ChevronUp, Copy } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,8 +28,14 @@ export function StepCard({
   isCompleted,
   onCompletedChange,
 }: StepCardProps) {
+  const t = useTranslations("StepCard");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const originalTool = step.originalTool ?? step.tool;
+  const adaptedTool = step.adaptedTool;
+  const hasToolAdaptation = Boolean(
+    adaptedTool && adaptedTool !== originalTool,
+  );
 
   async function copyPrompt() {
     await navigator.clipboard.writeText(step.promptTemplate);
@@ -41,10 +48,34 @@ export function StepCard({
       <CardHeader className="gap-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="flex min-w-0 flex-wrap items-center gap-3">
-            <Badge variant="outline">Step {step.id}</Badge>
-            <span className="text-sm font-medium text-muted-foreground">
-              {step.tool}
-            </span>
+            <Badge variant="outline">{t("stepBadge", { step: step.id })}</Badge>
+            {hasToolAdaptation ? (
+              <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
+                <span className="text-muted-foreground">
+                  {t("original")}{" "}
+                  <span className="font-medium text-foreground">
+                    {originalTool}
+                  </span>
+                </span>
+                <ArrowRight
+                  aria-hidden="true"
+                  className="size-3.5 text-muted-foreground"
+                />
+                <span className="text-muted-foreground">
+                  {t("adapted")}{" "}
+                  <span className="font-medium text-foreground">
+                    {adaptedTool}
+                  </span>
+                </span>
+                <Badge variant="secondary" className="h-6 rounded-lg px-2">
+                  {t("adaptedBadge")}
+                </Badge>
+              </div>
+            ) : (
+              <span className="text-sm font-medium text-muted-foreground">
+                {originalTool}
+              </span>
+            )}
           </div>
 
           <div className="flex shrink-0 flex-wrap gap-2">
@@ -56,7 +87,7 @@ export function StepCard({
                 onChange={(event) => onCompletedChange(event.target.checked)}
                 className="size-4 shrink-0 rounded border-input accent-primary"
               />
-              Complete
+              {t("complete")}
             </label>
             <Button
               type="button"
@@ -70,7 +101,7 @@ export function StepCard({
               ) : (
                 <Copy aria-hidden="true" />
               )}
-              {isCopied ? "Copied" : "Copy prompt"}
+              {isCopied ? t("copied") : t("copyPrompt")}
             </Button>
             <Button
               type="button"
@@ -85,7 +116,7 @@ export function StepCard({
               ) : (
                 <ChevronDown aria-hidden="true" />
               )}
-              Details
+              {t("details")}
             </Button>
           </div>
         </div>
@@ -97,7 +128,7 @@ export function StepCard({
           </CardDescription>
           {!canComplete ? (
             <p className="text-sm text-muted-foreground">
-              Complete the previous step to unlock this checkbox.
+              {t("locked")}
             </p>
           ) : null}
         </div>
@@ -105,7 +136,9 @@ export function StepCard({
 
       <CardContent className="grid gap-5">
         <div className="grid gap-2">
-          <h2 className="text-sm font-medium text-foreground">Prompt</h2>
+          <h2 className="text-sm font-medium text-foreground">
+            {t("prompt")}
+          </h2>
           <p className="whitespace-pre-wrap rounded-lg border border-border bg-muted/40 p-4 text-sm leading-6 text-foreground sm:p-5">
             {step.promptTemplate}
           </p>
@@ -115,7 +148,7 @@ export function StepCard({
           <div className="grid gap-5 border-t border-border pt-5 sm:grid-cols-2">
             <div className="grid gap-2">
               <h2 className="text-sm font-medium text-foreground">
-                Expected output
+                {t("expectedOutput")}
               </h2>
               <p className="text-sm leading-6 text-muted-foreground">
                 {step.expectedOutput}
@@ -124,7 +157,7 @@ export function StepCard({
 
             <div className="grid gap-2">
               <h2 className="text-sm font-medium text-foreground">
-                Common mistakes
+                {t("commonMistakes")}
               </h2>
               <ul className="grid gap-2 text-sm leading-6 text-muted-foreground">
                 {step.commonMistakes.map((mistake) => (

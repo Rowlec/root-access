@@ -1,34 +1,40 @@
 import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { Button } from "@/components/ui/button";
 
-const workflowSteps = [
-  "Problem Discovery",
-  "Target Customer",
-  "Value Proposition",
-];
-
 export function Hero() {
+  const t = useTranslations("Hero");
+  const workflowSteps = [
+    t("steps.problemDiscovery"),
+    t("steps.targetCustomer"),
+    t("steps.valueProposition"),
+  ];
+
   return (
     <section className="w-full border-b border-border bg-background">
       <div className="mx-auto grid min-h-[calc(100svh-3rem)] w-full max-w-6xl items-center gap-10 px-5 py-14 sm:px-8 sm:py-18 lg:grid-cols-[1.05fr_0.95fr] lg:px-10 lg:py-20">
         <div className="flex max-w-2xl flex-col items-start gap-6">
-          <div className="inline-flex h-8 items-center rounded-lg border border-border bg-muted/70 px-3 text-sm font-medium text-muted-foreground">
-            Root Access
+          <div className="flex w-full flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex h-8 items-center rounded-lg border border-border bg-muted/70 px-3 text-sm font-medium text-muted-foreground">
+              {t("brand")}
+            </div>
+            <LocaleSwitcher />
           </div>
 
           <div className="space-y-4">
             <h1 className="max-w-3xl text-4xl font-semibold leading-[1.08] tracking-normal text-foreground sm:text-5xl lg:text-6xl">
-              Build your startup proposal with structured AI workflows
+              {t("title")}
             </h1>
             <p className="max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl sm:leading-9">
-              Stop guessing prompts. Follow a proven workflow.
+              {t("subtitle")}
             </p>
           </div>
 
           <Button asChild size="lg" className="h-12 px-5 text-base">
             <a href="#goal-form">
-              Start Building
+              {t("action")}
               <ArrowRight aria-hidden="true" />
             </a>
           </Button>
@@ -38,12 +44,14 @@ export function Hero() {
           <div className="mb-5 flex items-start justify-between gap-4 border-b border-border pb-4">
             <div>
               <p className="text-sm font-medium text-foreground">
-                Startup Proposal
+                {t("workflowName")}
               </p>
-              <p className="text-sm text-muted-foreground">7 guided steps</p>
+              <p className="text-sm text-muted-foreground">
+                {t("guidedSteps")}
+              </p>
             </div>
             <div className="shrink-0 rounded-lg bg-secondary px-3 py-1 text-sm font-medium text-secondary-foreground">
-              Student-ready
+              {t("badge")}
             </div>
           </div>
 
@@ -59,7 +67,7 @@ export function Hero() {
                 />
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-foreground">
-                    Step {index + 1}
+                    {t("stepLabel", { step: index + 1 })}
                   </p>
                   <p className="line-clamp-1 text-sm text-muted-foreground">
                     {step}

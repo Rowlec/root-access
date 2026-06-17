@@ -1,5 +1,8 @@
+"use client";
+
 import { track } from "@vercel/analytics";
 import { ExternalLink, RotateCcw, Trophy } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -12,28 +15,43 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { GOOGLE_FORM_URL } from "@/constants/links";
+import {
+  formatAnalyticsTools,
+  getUniqueAnalyticsTools,
+} from "@/lib/analytics-payload";
 
 type WorkflowCompletionProps = {
+  adaptedToolCount: number;
+  adaptedTools: string[];
+  availableTools: string[];
   completedCount: number;
   totalSteps: number;
   workflowId: string;
+  workflowRunId: string;
   workflowTitle: string;
   onRestart: () => void;
 };
 
-function getCompletionTrackingKey(workflowId: string) {
-  return `root-access:workflow-completion-tracked:${workflowId}`;
+function getCompletionTrackingKey(workflowId: string, workflowRunId: string) {
+  return `root-access:workflow-completion-tracked:${workflowId}:${workflowRunId}`;
 }
 
 export function WorkflowCompletion({
+  adaptedToolCount,
+  adaptedTools,
+  availableTools,
   completedCount,
   totalSteps,
   workflowId,
+  workflowRunId,
   workflowTitle,
   onRestart,
 }: WorkflowCompletionProps) {
+  const t = useTranslations("WorkflowCompletion");
+
   useEffect(() => {
-    const trackingKey = getCompletionTrackingKey(workflowId);
+    const selectedTools = getUniqueAnalyticsTools(availableTools);
+    const trackingKey = getCompletionTrackingKey(workflowId, workflowRunId);
 
     try {
       if (window.sessionStorage.getItem(trackingKey) === "true") {
@@ -46,11 +64,36 @@ export function WorkflowCompletion({
     }
 
     track("Workflow Completion", {
+      workflowId,
+      workflowRunId,
       workflowTitle,
       completedSteps: completedCount,
+      completedCount,
       totalSteps,
+      selectedTools: formatAnalyticsTools(selectedTools),
+      selectedToolCount: selectedTools.length,
+      adaptedTools: formatAnalyticsTools(adaptedTools),
+      adaptedToolCount,
     });
-  }, [completedCount, totalSteps, workflowId, workflowTitle]);
+
+    selectedTools.forEach((tool) => {
+      track("Tool Workflow Completion", {
+        tool,
+        workflowId,
+        workflowRunId,
+        workflowTitle,
+      });
+    });
+  }, [
+    adaptedToolCount,
+    adaptedTools,
+    availableTools,
+    completedCount,
+    totalSteps,
+    workflowId,
+    workflowRunId,
+    workflowTitle,
+  ]);
 
   return (
     <Card className="rounded-lg border-primary/20 bg-muted/40 py-5 shadow-sm transition-shadow hover:shadow-md">
@@ -59,18 +102,15 @@ export function WorkflowCompletion({
           <Trophy aria-hidden="true" className="size-5" />
         </div>
         <div className="space-y-2">
-          <CardTitle className="text-2xl">Workflow complete</CardTitle>
+          <CardTitle className="text-2xl">{t("title")}</CardTitle>
           <CardDescription className="text-base leading-7">
-            Congratulations. You completed {workflowTitle} and checked off all
-            required steps.
+            {t("description", { workflowTitle })}
           </CardDescription>
         </div>
       </CardHeader>
       <CardContent>
         <p className="text-sm leading-6 text-muted-foreground">
-          Summary: {completedCount}/{totalSteps} steps completed. Review your
-          copied prompts, verify the outputs, and edit everything before using it
-          in your assignment.
+          {t("summary", { completedCount, totalSteps })}
         </p>
       </CardContent>
       <CardFooter className="flex flex-col gap-3 sm:flex-row">
@@ -82,10 +122,17 @@ export function WorkflowCompletion({
             onClick={() =>
               track("Feedback Click", {
                 source: "workflow_completion",
+                workflowId,
+                workflowRunId,
+                workflowTitle,
+                selectedTools: formatAnalyticsTools(availableTools),
+                selectedToolCount: getUniqueAnalyticsTools(availableTools)
+                  .length,
+                adaptedToolCount,
               })
             }
           >
-            Submit Feedback
+            {t("submitFeedback")}
             <ExternalLink aria-hidden="true" />
           </a>
         </Button>
@@ -96,7 +143,7 @@ export function WorkflowCompletion({
           onClick={() => {
             try {
               window.sessionStorage.removeItem(
-                getCompletionTrackingKey(workflowId),
+                getCompletionTrackingKey(workflowId, workflowRunId),
               );
             } catch {
               // Nothing to reset when sessionStorage is unavailable.
@@ -105,7 +152,7 @@ export function WorkflowCompletion({
             onRestart();
           }}
         >
-          Restart Workflow
+          {t("restart")}
           <RotateCcw aria-hidden="true" />
         </Button>
       </CardFooter>

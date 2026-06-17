@@ -1,0 +1,150 @@
+{
+  "Metadata": {
+    "title": "Root Access",
+    "description": "Xây dựng đề xuất khởi nghiệp bằng quy trình AI có cấu trúc."
+  },
+  "LocaleSwitcher": {
+    "ariaLabel": "Ngôn ngữ",
+    "options": {
+      "en": "EN",
+      "vi": "VI"
+    }
+  },
+  "Hero": {
+    "brand": "Root Access",
+    "title": "Xây dựng đề xuất khởi nghiệp bằng quy trình AI có cấu trúc",
+    "subtitle": "Đừng đoán prompt nữa. Hãy đi theo một quy trình đã được định hình.",
+    "action": "Bắt đầu",
+    "workflowName": "Đề xuất khởi nghiệp",
+    "guidedSteps": "7 bước hướng dẫn",
+    "badge": "Phù hợp cho sinh viên",
+    "stepLabel": "Bước {step}",
+    "steps": {
+      "problemDiscovery": "Khám phá vấn đề",
+      "targetCustomer": "Khách hàng mục tiêu",
+      "valueProposition": "Đề xuất giá trị"
+    }
+  },
+  "HowItWorks": {
+    "eyebrow": "Cách hoạt động",
+    "title": "Từ ý tưởng đến đề xuất trong ba bước tập trung",
+    "stepLabel": "Bước {step}",
+    "steps": {
+      "idea": {
+        "title": "Nhập ý tưởng khởi nghiệp",
+        "description": "Chia sẻ ý tưởng và ngành để Root Access điều chỉnh quy trình theo bài tập của bạn."
+      },
+      "workflow": {
+        "title": "Nhận quy trình hướng dẫn",
+        "description": "Đi qua các bước rõ ràng với prompt thực tế cho vấn đề, khách hàng, MVP và phần thuyết trình."
+      },
+      "proposal": {
+        "title": "Hoàn thiện đề xuất nhanh hơn",
+        "description": "Biến đầu ra có cấu trúc thành một đề xuất khởi nghiệp gọn hơn mà không phải thử prompt lặp lại."
+      }
+    }
+  },
+  "AcademicIntegrityNotice": {
+    "body": "Nền tảng này không tạo bài nộp cuối cùng thay cho sinh viên. Công cụ giúp người dùng cấu trúc quy trình, tạo dàn ý và cải thiện chất lượng prompt. Người dùng chịu trách nhiệm xem lại, xác minh và chỉnh sửa toàn bộ đầu ra."
+  },
+  "GoalForm": {
+    "eyebrow": "Bắt đầu xây dựng",
+    "title": "Cho Root Access biết bạn đang làm gì",
+    "description": "Thêm bối cảnh khởi nghiệp của bạn, rồi đi theo quy trình hướng dẫn được thiết kế cho đề xuất đại học.",
+    "cardTitle": "Mục tiêu khởi nghiệp",
+    "cardDescription": "Cung cấp chi tiết rõ ràng để prompt trong quy trình phù hợp với bài tập của bạn.",
+    "fields": {
+      "currentStage": {
+        "label": "Giai đoạn hiện tại",
+        "placeholder": "Chọn giai đoạn hiện tại",
+        "error": "Vui lòng chọn giai đoạn hiện tại.",
+        "options": {
+          "noClearIdeaYet": "Chưa có ý tưởng rõ ràng",
+          "haveIdeaButNotValidated": "Có ý tưởng nhưng chưa kiểm chứng",
+          "doingMarketResearch": "Đang nghiên cứu thị trường",
+          "buildingBusinessModel": "Đang xây dựng mô hình kinh doanh",
+          "preparingPitchDeck": "Đang chuẩn bị pitch deck"
+        }
+      },
+      "startupIdea": {
+        "label": "Ý tưởng khởi nghiệp",
+        "placeholder": "Trợ lý học tập AI cho sinh viên đại học",
+        "error": "Ý tưởng khởi nghiệp cần ít nhất 3 ký tự."
+      },
+      "industry": {
+        "label": "Ngành",
+        "placeholder": "Giáo dục",
+        "error": "Vui lòng nhập ngành."
+      },
+      "deadlineUrgency": {
+        "label": "Mức độ gấp của hạn nộp",
+        "placeholder": "Chọn mức độ gấp",
+        "error": "Vui lòng chọn mức độ gấp của hạn nộp.",
+        "options": {
+          "oneToThreeDays": "1-3 ngày",
+          "oneWeek": "1 tuần",
+          "twoWeeksPlus": "2 tuần trở lên",
+          "noDeadline": "Không có hạn nộp"
+        }
+      },
+      "availableTools": {
+        "label": "Công cụ AI hiện có",
+        "other": "Khác",
+        "error": "Chọn ít nhất một công cụ AI."
+      }
+    },
+    "actions": {
+      "submit": "Bắt đầu",
+      "submitting": "Đang chuẩn bị quy trình"
+    }
+  },
+  "ResultPage": {
+    "emptyState": {
+      "badge": "Root Access",
+      "title": "Hãy thêm bối cảnh khởi nghiệp trước",
+      "description": "Root Access cần giai đoạn hiện tại, ý tưởng, ngành, hạn nộp và công cụ bạn có trước khi tạo quy trình hữu ích.",
+      "action": "Quay lại form khởi nghiệp"
+    },
+    "missingContext": "Thiếu bối cảnh khởi nghiệp. Bạn vẫn có thể xem quy trình, hoặc quay lại nhập ý tưởng khởi nghiệp và ngành để nhận prompt cá nhân hóa hơn.",
+    "completionCta": {
+      "title": "Bạn đã hoàn thành bản nháp đề xuất đầu tiên?",
+      "description": "Xem lại các prompt đã sao chép và chuyển đầu ra thành bài nộp cuối cùng.",
+      "action": "Tạo quy trình khác"
+    }
+  },
+  "ProgressTracker": {
+    "title": "Tiến độ",
+    "description": "Theo dõi khi bạn xây dựng.",
+    "completedSteps": "Đã hoàn thành {completedCount}/{totalSteps} bước",
+    "currentStep": "Bước hiện tại: {stepId}",
+    "allComplete": "Đã hoàn thành tất cả các bước",
+    "progressAria": "Hoàn thành {completionPercentage}%"
+  },
+  "StepCard": {
+    "stepBadge": "Bước {step}",
+    "original": "Gốc:",
+    "adapted": "Điều chỉnh:",
+    "adaptedBadge": "Đã điều chỉnh theo công cụ bạn có",
+    "complete": "Hoàn thành",
+    "copyPrompt": "Sao chép prompt",
+    "copied": "Đã sao chép",
+    "details": "Chi tiết",
+    "locked": "Hoàn thành bước trước để mở khóa ô này.",
+    "prompt": "Prompt",
+    "expectedOutput": "Đầu ra mong đợi",
+    "commonMistakes": "Lỗi thường gặp"
+  },
+  "WorkflowCompletion": {
+    "title": "Quy trình đã hoàn thành",
+    "description": "Chúc mừng. Bạn đã hoàn thành {workflowTitle} và đánh dấu đủ các bước bắt buộc.",
+    "summary": "Tóm tắt: đã hoàn thành {completedCount}/{totalSteps} bước. Hãy xem lại prompt đã sao chép, xác minh đầu ra và chỉnh sửa mọi thứ trước khi dùng trong bài tập.",
+    "submitFeedback": "Gửi phản hồi",
+    "restart": "Làm lại quy trình"
+  },
+  "FeedbackCard": {
+    "title": "Giúp chúng tôi cải thiện Root Access",
+    "description": "Phản hồi của bạn giúp chúng tôi biết quy trình này có thật sự giảm nhầm lẫn, số lần thử prompt và thời gian làm bài khởi nghiệp hay không.",
+    "body": "Chia sẻ phần hiệu quả, chỗ bạn bị kẹt và điều gì sẽ làm phiên bản tiếp theo hữu ích hơn cho sinh viên.",
+    "action": "Gửi phản hồi"
+  }
+}

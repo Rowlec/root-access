@@ -8,6 +8,8 @@ export interface StartupWorkflowStep {
   title: string;
   goal: string;
   recommendedTool: string;
+  originalRecommendedTool?: string;
+  adaptedRecommendedTool?: string;
   promptTemplate: string;
   expectedOutput: string;
   commonMistakes: readonly string[];

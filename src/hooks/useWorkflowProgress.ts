@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 
 type UseWorkflowProgressOptions = {
   workflowId: string;
+  workflowRunId: string;
   stepIds: string[];
+  availableTools: string[];
 };
 
 type UseWorkflowProgressResult = {
@@ -21,8 +23,19 @@ type UseWorkflowProgressResult = {
   setStepCompleted: (stepId: string, isCompleted: boolean) => void;
 };
 
-function getStorageKey(workflowId: string) {
-  return `root-access:workflow-progress:${workflowId}`;
+type WorkflowProgressStorageValue = {
+  completedSteps: string[];
+  availableTools: string[];
+};
+
+const emptyStorageValue: WorkflowProgressStorageValue = {
+  completedSteps: [],
+  availableTools: [],
+};
+const emptyStorageSnapshot = JSON.stringify(emptyStorageValue);
+
+function getStorageKey(workflowId: string, workflowRunId: string) {
+  return `root-access:workflow-progress:${workflowId}:${workflowRunId}`;
 }
 
 const storageListeners = new Set<() => void>();
@@ -47,14 +60,14 @@ function notifyStorageListeners() {
 }
 
 function getServerSnapshot() {
-  return "[]";
+  return emptyStorageSnapshot;
 }
 
 function readStorageValue(storageKey: string) {
   try {
-    return window.localStorage.getItem(storageKey) ?? "[]";
+    return window.localStorage.getItem(storageKey) ?? emptyStorageSnapshot;
   } catch {
-    return "[]";
+    return emptyStorageSnapshot;
   }
 }
 
@@ -66,29 +79,78 @@ function writeStorageValue(storageKey: string, value: string) {
   }
 }
 
-function parseCompletedSteps(value: string, validStepIds: Set<string>) {
-  if (!value) {
+function parseStringArray(value: unknown) {
+  if (!Array.isArray(value)) {
     return [];
+  }
+
+  return value.filter(
+    (item): item is string =>
+      typeof item === "string" && item.trim().length > 0,
+  );
+}
+
+function parseCompletedStepIds(value: unknown, validStepIds: Set<string>) {
+  return parseStringArray(value).filter((stepId) => validStepIds.has(stepId));
+}
+
+function parseStoredProgress(
+  value: string,
+  validStepIds: Set<string>,
+): WorkflowProgressStorageValue {
+  if (!value) {
+    return emptyStorageValue;
   }
 
   try {
     const parsed: unknown = JSON.parse(value);
 
-    if (!Array.isArray(parsed)) {
-      return [];
+    if (Array.isArray(parsed)) {
+      return {
+        completedSteps: parseCompletedStepIds(parsed, validStepIds),
+        availableTools: [],
+      };
     }
 
-    return parsed.filter(
-      (stepId): stepId is string =>
-        typeof stepId === "string" && validStepIds.has(stepId),
-    );
+    if (!parsed || typeof parsed !== "object") {
+      return emptyStorageValue;
+    }
+
+    const storedProgress = parsed as {
+      completedSteps?: unknown;
+      availableTools?: unknown;
+    };
+
+    return {
+      completedSteps: parseCompletedStepIds(
+        storedProgress.completedSteps,
+        validStepIds,
+      ),
+      availableTools: parseStringArray(storedProgress.availableTools),
+    };
   } catch {
-    return [];
+    return emptyStorageValue;
   }
 }
 
 function uniqueStepIds(stepIds: string[]) {
   return Array.from(new Set(stepIds));
+}
+
+function uniqueStringValues(values: string[]) {
+  return Array.from(
+    new Set(values.filter((value) => value.trim().length > 0)),
+  );
+}
+
+function serializeStoredProgress(
+  completedSteps: string[],
+  availableTools: string[],
+) {
+  return JSON.stringify({
+    completedSteps,
+    availableTools,
+  } satisfies WorkflowProgressStorageValue);
 }
 
 function getSequentialCompletedSteps(
@@ -111,35 +173,65 @@ function getSequentialCompletedSteps(
 
 export function useWorkflowProgress({
   workflowId,
+  workflowRunId,
   stepIds,
+  availableTools,
 }: UseWorkflowProgressOptions): UseWorkflowProgressResult {
   const orderedStepIds = useMemo(() => uniqueStepIds(stepIds), [stepIds]);
   const validStepIds = useMemo(() => new Set(orderedStepIds), [orderedStepIds]);
-  const storageKey = useMemo(() => getStorageKey(workflowId), [workflowId]);
+  const storageKey = useMemo(
+    () => getStorageKey(workflowId, workflowRunId),
+    [workflowId, workflowRunId],
+  );
+  const availableToolsForStorage = useMemo(
+    () => uniqueStringValues(availableTools),
+    [availableTools],
+  );
   const getSnapshot = useCallback(
     () => readStorageValue(storageKey),
     [storageKey],
   );
-  const storedCompletedSteps = useSyncExternalStore(
+  const storedProgressSnapshot = useSyncExternalStore(
     subscribeToStorage,
     getSnapshot,
     getServerSnapshot,
   );
+  const storedProgress = useMemo(
+    () => parseStoredProgress(storedProgressSnapshot, validStepIds),
+    [storedProgressSnapshot, validStepIds],
+  );
   const completedSteps = useMemo(
     () =>
       getSequentialCompletedSteps(
-        parseCompletedSteps(storedCompletedSteps, validStepIds),
+        storedProgress.completedSteps,
         orderedStepIds,
       ),
-    [orderedStepIds, storedCompletedSteps, validStepIds],
+    [orderedStepIds, storedProgress.completedSteps],
   );
+  const normalizedStorageSnapshot = useMemo(
+    () =>
+      serializeStoredProgress(completedSteps, availableToolsForStorage),
+    [availableToolsForStorage, completedSteps],
+  );
+
+  useEffect(() => {
+    if (storedProgressSnapshot === normalizedStorageSnapshot) {
+      return;
+    }
+
+    writeStorageValue(storageKey, normalizedStorageSnapshot);
+    notifyStorageListeners();
+  }, [normalizedStorageSnapshot, storageKey, storedProgressSnapshot]);
 
   const saveCompletedSteps = useCallback(
     (nextCompletedSteps: string[]) => {
-      writeStorageValue(storageKey, JSON.stringify(nextCompletedSteps));
+      writeStorageValue(
+        storageKey,
+        serializeStoredProgress(nextCompletedSteps, availableToolsForStorage),
+      );
       notifyStorageListeners();
     },
-    [storageKey],
+    [availableToolsForStorage, storageKey],
   );
 
   const setStepCompleted = useCallback(
