@@ -12,29 +12,25 @@ Current capabilities:
 - Landing page explaining Root Access.
 - Structured startup proposal intake form.
 - Academic integrity notice on landing and workflow pages.
-- Legacy startup proposal workflow rendered on `/result`.
-- Expanded five-workflow library created in TypeScript.
-- Rule-based workflow selector created.
+- Five startup proposal workflows rendered on `/result`.
+- Rule-based workflow selector integrated.
 - Prompt template parser created.
 - Step-by-step workflow UI.
+- Tool-aware prompt adaptation.
+- EN/VI localization.
 - Sequential progress tracking.
 - localStorage persistence.
 - Completion CTA.
 - Google Form feedback collection.
 - Vercel Analytics integration.
-- Loading and empty states.
+- Loading, empty, error, and 404 states.
 - Responsive MVP UI polish.
 
-Current known implementation gap:
+Current validation gap:
 
-- `/result` still uses `src/data/startup-workflow.json`.
-- The five-workflow library and `selectWorkflow(stage)` are ready, but not wired
-  into the runtime workflow viewer.
-
-Recommended final Phase 1 task:
-
-- Integrate the `stage` query param into `/result` and render the selected
-  workflow from `src/data/workflows`.
+- Real student validation has not been run yet.
+- Use `USER_VALIDATION_PLAN.md`, `USER_VALIDATION_SCORECARD.md`, and
+  `USER_VALIDATION_RESULTS.md` before making larger product bets.
 
 ## Phase 2: Workflow Library Expansion
 
@@ -78,6 +74,7 @@ Recommended tasks:
 - Compare completion rates across workflows.
 - Collect qualitative feedback from FPT students.
 - Improve copy based on classroom language and assignment rubrics.
+- Run the A/B validation protocol documented in `USER_VALIDATION_PLAN.md`.
 
 Product experiments:
 
@@ -123,4 +120,3 @@ Guardrail for future growth:
 
 - Root Access should remain a workflow and prompt-quality platform, not a final
   assignment generator.
-

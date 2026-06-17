@@ -102,9 +102,9 @@ export const marketResearchWorkflowVi = {
     {
       title: "Lập bản đồ đối thủ",
       goal: "Tìm giải pháp trực tiếp, gián tiếp và thay thế.",
-      recommendedTool: "ChatGPT + Google",
+      recommendedTool: "Perplexity",
       promptTemplate:
-        "Hãy nghiên cứu đối thủ cho [STARTUP IDEA] trong lĩnh vực [INDUSTRY]. Liệt kê đối thủ trực tiếp, đối thủ gián tiếp và giải pháp thay thế. Với mỗi mục, nêu họ cung cấp gì, người dùng mục tiêu, điểm mạnh, điểm yếu và điều tôi nên kiểm chứng bằng Google.",
+        "Hãy nghiên cứu đối thủ cho [STARTUP IDEA] trong lĩnh vực [INDUSTRY]. Liệt kê đối thủ trực tiếp, đối thủ gián tiếp và giải pháp thay thế. Với mỗi mục, nêu họ cung cấp gì, người dùng mục tiêu, điểm mạnh, điểm yếu và claim nào cần kiểm chứng bằng nguồn đáng tin cậy.",
       expectedOutput:
         "Bản đồ đối thủ gồm lựa chọn trực tiếp, gián tiếp, thay thế và ghi chú kiểm chứng.",
       commonMistakes: [
@@ -116,9 +116,9 @@ export const marketResearchWorkflowVi = {
     {
       title: "Tóm tắt xu hướng thị trường",
       goal: "Kết nối ý tưởng với xu hướng liên quan mà không phóng đại.",
-      recommendedTool: "ChatGPT + Google",
+      recommendedTool: "Perplexity",
       promptTemplate:
-        "Với [STARTUP IDEA] trong lĩnh vực [INDUSTRY], hãy tóm tắt các xu hướng thị trường liên quan hỗ trợ cơ hội này. Giữ phù hợp cho đề xuất khởi nghiệp đại học và gợi ý nguồn hoặc từ khóa tôi nên tìm trên Google để kiểm chứng xu hướng.",
+        "Với [STARTUP IDEA] trong lĩnh vực [INDUSTRY], hãy tóm tắt các xu hướng thị trường liên quan hỗ trợ cơ hội này. Giữ phù hợp cho đề xuất khởi nghiệp đại học và gợi ý loại nguồn, từ khóa hoặc link tôi nên dùng để kiểm chứng xu hướng.",
       expectedOutput:
         "Tóm tắt xu hướng ngắn gọn kèm từ khóa kiểm chứng và gợi ý nguồn.",
       commonMistakes: [
@@ -358,9 +358,9 @@ export const pitchDeckPreparationWorkflowVi = {
       goal: "Lên kế hoạch hình ảnh đơn giản hỗ trợ bài pitch.",
       recommendedTool: "Gamma",
       promptTemplate:
-        "Hãy tạo định hướng hình ảnh cho pitch deck về [STARTUP IDEA] trong lĩnh vực [INDUSTRY]. Đề xuất hình ảnh, sơ đồ, icon hoặc biểu đồ đơn giản cho từng slide. Giữ phong cách gọn, thân thiện với sinh viên và dễ dựng trong Gamma.",
+        "Hãy tạo định hướng hình ảnh cho pitch deck về [STARTUP IDEA] trong lĩnh vực [INDUSTRY]. Đề xuất hình ảnh, sơ đồ, icon hoặc biểu đồ đơn giản cho từng slide. Giữ phong cách gọn, thân thiện với sinh viên và dễ dựng trong công cụ làm deck hiện có.",
       expectedOutput:
-        "Kế hoạch hình ảnh theo từng slide cho Gamma hoặc công cụ thuyết trình khác.",
+        "Kế hoạch hình ảnh theo từng slide cho một công cụ thuyết trình.",
       commonMistakes: [
         "Dùng trang trí không giải thích ý tưởng",
         "Nhồi quá nhiều biểu đồ vào slide",

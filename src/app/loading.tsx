@@ -1,6 +1,12 @@
 export default function Loading() {
   return (
-    <main className="min-h-svh bg-background px-5 py-14 sm:px-8 lg:px-10">
+    <main
+      aria-busy="true"
+      className="min-h-svh bg-background px-5 py-14 sm:px-8 lg:px-10"
+    >
+      <span className="sr-only" role="status">
+        Loading Root Access
+      </span>
       <div className="mx-auto grid w-full max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
         <section className="space-y-6">
           <div className="h-8 w-32 rounded-lg bg-muted" />

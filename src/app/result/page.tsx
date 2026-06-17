@@ -4,14 +4,16 @@ import Link from "next/link";
 
 import { AcademicIntegrityNotice } from "@/components/AcademicIntegrityNotice";
 import { WorkflowAnalytics } from "@/components/analytics/WorkflowAnalytics";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FeedbackForm } from "@/components/workflow/FeedbackForm";
 import { ProgressTracker } from "@/components/workflow/ProgressTracker";
-import { Badge } from "@/components/ui/badge";
 import {
   availableToolsSchema,
+  deadlineUrgencyOptions,
   type AvailableTool,
 } from "@/lib/goal-form-schema";
+import { defaultLocale, isSupportedLocale } from "@/i18n/config";
 import { injectWorkflowVariables } from "@/lib/workflow-parser";
 import { isStartupStage, selectWorkflow } from "@/lib/workflow-selector";
 
@@ -44,18 +46,28 @@ function parseAvailableTools(value: string | string[] | undefined) {
   return parsedTools.success ? parsedTools.data : null;
 }
 
+type DeadlineUrgency = (typeof deadlineUrgencyOptions)[number];
+
+const validDeadlineUrgencies = new Set<string>(deadlineUrgencyOptions);
+
+function isDeadlineUrgency(value: string | undefined): value is DeadlineUrgency {
+  return Boolean(value && validDeadlineUrgencies.has(value));
+}
+
 function createWorkflowRunId({
   availableTools,
   idea,
   industry,
   locale,
   stage,
+  urgency,
 }: {
   availableTools: AvailableTool[];
   idea: string;
   industry: string;
   locale: string;
   stage: string;
+  urgency: DeadlineUrgency;
 }) {
   const source = JSON.stringify({
     availableTools: [...availableTools].sort(),
@@ -63,6 +75,7 @@ function createWorkflowRunId({
     industry,
     locale,
     stage,
+    urgency,
   });
   let hash = 0;
 
@@ -74,7 +87,10 @@ function createWorkflowRunId({
 }
 
 export default async function ResultPage({ searchParams }: ResultPageProps) {
-  const locale = await getLocale();
+  const requestedLocale = await getLocale();
+  const locale = isSupportedLocale(requestedLocale)
+    ? requestedLocale
+    : defaultLocale;
   const t = await getTranslations("ResultPage");
   const {
     stage = "",
@@ -86,9 +102,16 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
   const startupIdea = idea.trim();
   const startupIndustry = industry.trim();
   const selectedStage = isStartupStage(stage) ? stage : null;
+  const selectedDeadlineUrgency = isDeadlineUrgency(urgency) ? urgency : null;
   const selectedAvailableTools = parseAvailableTools(availableToolsParam);
 
-  if (!startupIdea || !startupIndustry || !selectedStage || !selectedAvailableTools) {
+  if (
+    !startupIdea ||
+    !startupIndustry ||
+    !selectedStage ||
+    !selectedDeadlineUrgency ||
+    !selectedAvailableTools
+  ) {
     return (
       <main className="min-h-svh bg-background px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
@@ -107,7 +130,7 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
             </div>
           </section>
 
-          <AcademicIntegrityNotice compact />
+          <AcademicIntegrityNotice compact variant="workflow" />
         </div>
       </main>
     );
@@ -120,13 +143,15 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
     industry: startupIndustry,
     locale,
     stage: selectedStage,
+    urgency: selectedDeadlineUrgency,
   });
   const workflow = injectWorkflowVariables(selectWorkflow(selectedStage, locale), {
     currentStage: selectedStage,
     startupIdea,
     industry: startupIndustry,
-    deadlineUrgency: urgency,
+    deadlineUrgency: selectedDeadlineUrgency,
     availableTools,
+    locale,
   });
   const adaptedToolCount = workflow.steps.filter(
     (step) => step.adaptedTool && step.adaptedTool !== step.originalTool,
@@ -162,7 +187,7 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
 
         </section>
 
-        <AcademicIntegrityNotice compact />
+        <AcademicIntegrityNotice compact variant="workflow" />
 
         <ProgressTracker
           workflowId={workflow.id}

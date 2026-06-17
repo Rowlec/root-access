@@ -28,17 +28,19 @@ const defaultStage: StartupStage = "No clear idea yet";
 
 const workflowRulesEn = {
   "No clear idea yet": ideaValidationWorkflow,
-  "Have idea but not validated": marketResearchWorkflow,
-  "Doing market research": businessModelDesignWorkflow,
-  "Building business model": mvpPlanningWorkflow,
+  "Have idea but not validated": ideaValidationWorkflow,
+  "Doing market research": marketResearchWorkflow,
+  "Building business model": businessModelDesignWorkflow,
+  "Planning MVP": mvpPlanningWorkflow,
   "Preparing pitch deck": pitchDeckPreparationWorkflow,
 } satisfies Record<StartupStage, StartupWorkflow>;
 
 const workflowRulesVi = {
   "No clear idea yet": ideaValidationWorkflowVi,
-  "Have idea but not validated": marketResearchWorkflowVi,
-  "Doing market research": businessModelDesignWorkflowVi,
-  "Building business model": mvpPlanningWorkflowVi,
+  "Have idea but not validated": ideaValidationWorkflowVi,
+  "Doing market research": marketResearchWorkflowVi,
+  "Building business model": businessModelDesignWorkflowVi,
+  "Planning MVP": mvpPlanningWorkflowVi,
   "Preparing pitch deck": pitchDeckPreparationWorkflowVi,
 } satisfies Record<StartupStage, StartupWorkflow>;
 

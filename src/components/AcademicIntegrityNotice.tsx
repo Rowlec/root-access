@@ -3,10 +3,12 @@ import { useTranslations } from "next-intl";
 
 type AcademicIntegrityNoticeProps = {
   compact?: boolean;
+  variant?: "onboarding" | "workflow";
 };
 
 export function AcademicIntegrityNotice({
   compact = false,
+  variant = "onboarding",
 }: AcademicIntegrityNoticeProps) {
   const t = useTranslations("AcademicIntegrityNotice");
   const notice = (
@@ -15,7 +17,10 @@ export function AcademicIntegrityNotice({
         aria-hidden="true"
         className="mt-0.5 size-5 shrink-0 text-foreground"
       />
-      <p>{t("body")}</p>
+      <div className="space-y-1">
+        <p className="font-medium text-foreground">{t(`${variant}.title`)}</p>
+        <p>{t(`${variant}.body`)}</p>
+      </div>
     </div>
   );
 

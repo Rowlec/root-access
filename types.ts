@@ -1,4 +1,5 @@
 import type { AvailableTool } from "./src/lib/goal-form-schema";
+import type { Locale } from "./src/i18n/config";
 
 export interface Workflow {
   id: string;
@@ -27,4 +28,5 @@ export interface UserGoalInput {
   industry: string;
   deadlineUrgency: string;
   availableTools: AvailableTool[];
+  locale?: Locale;
 }

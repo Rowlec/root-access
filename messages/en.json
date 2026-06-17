@@ -45,7 +45,30 @@
     }
   },
   "AcademicIntegrityNotice": {
-    "body": "This platform does not generate final assignments for students. It helps users structure their workflow, create outlines, and improve prompt quality. Users are responsible for reviewing, verifying, and editing all outputs."
+    "onboarding": {
+      "title": "Use AI as a study assistant, not a submission shortcut",
+      "body": "Root Access helps with planning, outlining, research direction, and drafting prompts. It does not replace your original work, guarantee correctness, or encourage direct submission of AI output."
+    },
+    "workflow": {
+      "title": "Review every AI output before it becomes your proposal",
+      "body": "Use these prompts to create working material. Verify facts and sources, add your own reasoning, and rewrite the output in your voice before submitting anything."
+    }
+  },
+  "FooterDisclaimer": {
+    "body": "Academic integrity: Root Access supports planning, outlining, research, and drafting. Verify sources, add your own analysis, and do not submit AI output as final work."
+  },
+  "ErrorPage": {
+    "badge": "Something went wrong",
+    "title": "Root Access could not load this screen",
+    "description": "Try again. If the issue continues, go back to the startup form and generate the workflow again.",
+    "retry": "Try again",
+    "home": "Go to startup form"
+  },
+  "NotFoundPage": {
+    "badge": "404",
+    "title": "Page not found",
+    "description": "This route does not exist in Root Access. Return to the startup form to build a workflow.",
+    "home": "Go to startup form"
   },
   "GoalForm": {
     "eyebrow": "Start building",
@@ -55,15 +78,16 @@
     "cardDescription": "Use clear details so the workflow prompts fit your assignment.",
     "fields": {
       "currentStage": {
-        "label": "Current stage",
-        "placeholder": "Select your current stage",
-        "error": "Current stage is required.",
+        "label": "What do you need help with now?",
+        "placeholder": "Select your next startup task",
+        "error": "Please choose the startup task you want to work on.",
         "options": {
-          "noClearIdeaYet": "No clear idea yet",
-          "haveIdeaButNotValidated": "Have idea but not validated",
-          "doingMarketResearch": "Doing market research",
-          "buildingBusinessModel": "Building business model",
-          "preparingPitchDeck": "Preparing pitch deck"
+          "noClearIdeaYet": "Clarify a startup idea",
+          "haveIdeaButNotValidated": "Validate an existing idea",
+          "doingMarketResearch": "Research market and competitors",
+          "buildingBusinessModel": "Build a business model",
+          "planningMvp": "Plan an MVP",
+          "preparingPitchDeck": "Prepare a pitch deck"
         }
       },
       "startupIdea": {
@@ -103,7 +127,7 @@
     "emptyState": {
       "badge": "Root Access",
       "title": "Add your startup context first",
-      "description": "Root Access needs your stage, idea, industry, deadline, and available tools before it can build a useful workflow.",
+      "description": "Root Access needs your startup task, idea, industry, deadline, and available tools before it can build a useful workflow.",
       "action": "Go to startup form"
     },
     "completionCta": {

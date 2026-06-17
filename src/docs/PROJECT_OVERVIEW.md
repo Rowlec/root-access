@@ -29,11 +29,10 @@ Implemented startup workflow assets include:
 - MVP Planning
 - Pitch Deck Preparation
 
-The codebase also still contains a legacy runtime workflow file,
-`src/data/startup-workflow.json`, named `Startup Proposal Workflow`. The current
-`/result` page still renders this JSON workflow through `getStartupWorkflow()`.
-The expanded five-workflow TypeScript library and selector already exist, but
-they are not yet fully wired into the result page.
+The `/result` page renders the selected workflow from the TypeScript workflow
+library using a deterministic selector. The codebase still contains legacy JSON
+workflow files for reference and compatibility, but the runtime viewer uses the
+expanded workflow library.
 
 Out of scope for the current MVP:
 
@@ -75,21 +74,20 @@ Root Access solves the workflow problem, not the final-answer problem.
 The intended product flow is:
 
 1. User submits startup context:
-   - current stage
+   - startup task / stage
    - startup idea
    - industry
    - deadline urgency
+   - available AI tools
 2. The app selects a prebuilt workflow using deterministic rules.
 3. The workflow prompt templates receive user variables:
    - `[STARTUP IDEA]`
    - `[INDUSTRY]`
-4. The user completes the workflow step by step.
-5. Progress is stored locally in the browser.
-6. When all steps are completed, the app shows a completion CTA and feedback
+4. Prompt guidance is adapted for deadline urgency and available tools.
+5. The user completes the workflow step by step.
+6. Progress is stored locally in the browser per workflow run.
+7. When all steps are completed, the app shows a completion CTA and feedback
    entry point.
-
-The current runtime flow still uses the legacy single JSON workflow on
-`/result`, while the five-workflow selector is ready for integration.
 
 ## Academic Integrity Constraints
 
@@ -113,7 +111,7 @@ The product may assist with:
 - Review discipline
 
 The app includes an `AcademicIntegrityNotice` component on the landing page and
-workflow page to communicate this boundary clearly.
+workflow page, plus a footer disclaimer, to communicate this boundary clearly.
 
 ## Current Technical Stack
 
@@ -128,9 +126,5 @@ The current implementation uses:
 - zod
 - lucide-react
 - Vercel Analytics
+- next-intl
 - localStorage persistence for workflow progress
-
-The project context mentions `next-intl`, but it is not currently installed or
-configured in the codebase. Treat i18n as a planned capability unless it is added
-explicitly.
-

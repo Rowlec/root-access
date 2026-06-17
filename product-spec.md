@@ -33,11 +33,17 @@ Validate if a structured workflow can reduce:
 
 ## MVP Scope
 
-Only 1 workflow:
-Startup Proposal
+Startup proposal workflow guidance with 5 branches:
+
+* Idea Validation
+* Market Research
+* Business Model Design
+* MVP Planning
+* Pitch Deck Preparation
 
 ## Success Metrics
 
 * user completes 60%+ workflow
 * user copies prompt at least 3 times
 * user finishes first proposal draft faster than normal
+* user reports clearer proposal structure than ChatGPT-only workflow

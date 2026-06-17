@@ -36,9 +36,9 @@ export const marketResearchWorkflow = {
     {
       title: "Map Competitors",
       goal: "Find direct, indirect, and substitute solutions.",
-      recommendedTool: "ChatGPT + Google",
+      recommendedTool: "Perplexity",
       promptTemplate:
-        "Research competitors for [STARTUP IDEA] in [INDUSTRY]. List direct competitors, indirect competitors, and substitute solutions. For each, include what they offer, target users, strengths, weaknesses, and what I should verify with Google.",
+        "Research competitors for [STARTUP IDEA] in [INDUSTRY]. List direct competitors, indirect competitors, and substitute solutions. For each, include what they offer, target users, strengths, weaknesses, and what claims need source verification.",
       expectedOutput:
         "A competitor map with direct, indirect, and substitute alternatives plus verification notes.",
       commonMistakes: [
@@ -50,9 +50,9 @@ export const marketResearchWorkflow = {
     {
       title: "Summarize Market Trends",
       goal: "Connect the idea to relevant trends without overclaiming.",
-      recommendedTool: "ChatGPT + Google",
+      recommendedTool: "Perplexity",
       promptTemplate:
-        "For [STARTUP IDEA] in [INDUSTRY], summarize relevant market trends that support the opportunity. Keep it suitable for a university startup proposal and include what sources or keywords I should search on Google to verify the trends.",
+        "For [STARTUP IDEA] in [INDUSTRY], summarize relevant market trends that support the opportunity. Keep it suitable for a university startup proposal and include source types, keywords, or links I should use to verify the trends.",
       expectedOutput:
         "A concise trend summary with verification keywords and source suggestions.",
       commonMistakes: [

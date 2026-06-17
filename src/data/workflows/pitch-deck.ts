@@ -52,9 +52,9 @@ export const pitchDeckPreparationWorkflow = {
       goal: "Plan simple visuals that support the pitch.",
       recommendedTool: "Gamma",
       promptTemplate:
-        "Create visual direction for a pitch deck about [STARTUP IDEA] in [INDUSTRY]. Suggest simple visuals, diagrams, icons, or charts for each slide. Keep the style clean, student-friendly, and easy to build in Gamma.",
+        "Create visual direction for a pitch deck about [STARTUP IDEA] in [INDUSTRY]. Suggest simple visuals, diagrams, icons, or charts for each slide. Keep the style clean, student-friendly, and easy to build in the available deck tool.",
       expectedOutput:
-        "A slide-by-slide visual plan for Gamma or another presentation tool.",
+        "A slide-by-slide visual plan for a presentation tool.",
       commonMistakes: [
         "Using decoration that does not explain the idea",
         "Overloading slides with charts",

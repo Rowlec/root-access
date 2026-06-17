@@ -88,6 +88,7 @@ export function GoalForm() {
     "Building business model": t(
       "fields.currentStage.options.buildingBusinessModel",
     ),
+    "Planning MVP": t("fields.currentStage.options.planningMvp"),
     "Preparing pitch deck": t("fields.currentStage.options.preparingPitchDeck"),
   } satisfies Record<(typeof currentStageOptions)[number], string>;
   const deadlineUrgencyOptionLabels = {

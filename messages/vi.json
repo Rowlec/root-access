@@ -45,7 +45,30 @@
     }
   },
   "AcademicIntegrityNotice": {
-    "body": "Nền tảng này không tạo bài nộp cuối cùng thay cho sinh viên. Công cụ giúp người dùng cấu trúc quy trình, tạo dàn ý và cải thiện chất lượng prompt. Người dùng chịu trách nhiệm xem lại, xác minh và chỉnh sửa toàn bộ đầu ra."
+    "onboarding": {
+      "title": "Dùng AI như trợ lý học tập, không phải lối tắt để nộp bài",
+      "body": "Root Access hỗ trợ lập kế hoạch, tạo dàn ý, định hướng nghiên cứu và soạn nháp prompt. Công cụ không thay thế tư duy gốc của bạn, không đảm bảo mọi thông tin đều đúng và không khuyến khích nộp trực tiếp đầu ra AI."
+    },
+    "workflow": {
+      "title": "Hãy xem lại mọi đầu ra AI trước khi đưa vào proposal",
+      "body": "Dùng các prompt này để tạo tư liệu làm việc. Hãy kiểm chứng dữ kiện và nguồn, thêm lập luận của bạn, rồi viết lại bằng giọng văn của bạn trước khi nộp bất kỳ nội dung nào."
+    }
+  },
+  "FooterDisclaimer": {
+    "body": "Academic integrity: Root Access hỗ trợ lập kế hoạch, tạo dàn ý, nghiên cứu và soạn nháp. Hãy kiểm chứng nguồn, thêm phân tích của bạn và không nộp đầu ra AI như bài cuối cùng."
+  },
+  "ErrorPage": {
+    "badge": "Đã xảy ra lỗi",
+    "title": "Root Access chưa tải được màn hình này",
+    "description": "Hãy thử lại. Nếu lỗi vẫn tiếp diễn, quay về form khởi nghiệp và tạo lại workflow.",
+    "retry": "Thử lại",
+    "home": "Về form khởi nghiệp"
+  },
+  "NotFoundPage": {
+    "badge": "404",
+    "title": "Không tìm thấy trang",
+    "description": "Route này không tồn tại trong Root Access. Hãy quay về form khởi nghiệp để tạo workflow.",
+    "home": "Về form khởi nghiệp"
   },
   "GoalForm": {
     "eyebrow": "Bắt đầu xây dựng",
@@ -55,15 +78,16 @@
     "cardDescription": "Cung cấp chi tiết rõ ràng để prompt trong quy trình phù hợp với bài tập của bạn.",
     "fields": {
       "currentStage": {
-        "label": "Giai đoạn hiện tại",
-        "placeholder": "Chọn giai đoạn hiện tại",
-        "error": "Vui lòng chọn giai đoạn hiện tại.",
+        "label": "Hiện tại bạn cần hỗ trợ phần nào?",
+        "placeholder": "Chọn việc cần làm tiếp theo",
+        "error": "Vui lòng chọn phần bạn muốn làm trong đề xuất khởi nghiệp.",
         "options": {
-          "noClearIdeaYet": "Chưa có ý tưởng rõ ràng",
-          "haveIdeaButNotValidated": "Có ý tưởng nhưng chưa kiểm chứng",
-          "doingMarketResearch": "Đang nghiên cứu thị trường",
-          "buildingBusinessModel": "Đang xây dựng mô hình kinh doanh",
-          "preparingPitchDeck": "Đang chuẩn bị pitch deck"
+          "noClearIdeaYet": "Làm rõ ý tưởng khởi nghiệp",
+          "haveIdeaButNotValidated": "Kiểm chứng ý tưởng hiện có",
+          "doingMarketResearch": "Nghiên cứu thị trường và đối thủ",
+          "buildingBusinessModel": "Xây dựng mô hình kinh doanh",
+          "planningMvp": "Lập kế hoạch MVP",
+          "preparingPitchDeck": "Chuẩn bị pitch deck"
         }
       },
       "startupIdea": {
@@ -102,7 +126,7 @@
     "emptyState": {
       "badge": "Root Access",
       "title": "Hãy thêm bối cảnh khởi nghiệp trước",
-      "description": "Root Access cần giai đoạn hiện tại, ý tưởng, ngành, hạn nộp và công cụ bạn có trước khi tạo quy trình hữu ích.",
+      "description": "Root Access cần phần bạn muốn làm, ý tưởng, ngành, hạn nộp và công cụ bạn có trước khi tạo quy trình hữu ích.",
       "action": "Quay lại form khởi nghiệp"
     },
     "missingContext": "Thiếu bối cảnh khởi nghiệp. Bạn vẫn có thể xem quy trình, hoặc quay lại nhập ý tưởng khởi nghiệp và ngành để nhận prompt cá nhân hóa hơn.",

@@ -5,6 +5,7 @@ export const currentStageOptions = [
   "Have idea but not validated",
   "Doing market research",
   "Building business model",
+  "Planning MVP",
   "Preparing pitch deck",
 ] as const;
 

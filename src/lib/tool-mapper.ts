@@ -7,10 +7,23 @@ const defaultFallbackTool: AvailableTool = "Other";
 
 const toolFallbacks: Partial<Record<AvailableTool, readonly AvailableTool[]>> = {
   Claude: ["ChatGPT", "Gemini"],
-  Gamma: ["Canva AI"],
+  Gamma: ["Canva AI", "ChatGPT", "Gemini"],
   Perplexity: ["Gemini", "ChatGPT"],
   Lovable: ["ChatGPT"],
 };
+
+const researchIntentTools: readonly AvailableTool[] = [
+  "Perplexity",
+  "Gemini",
+  "ChatGPT",
+];
+
+const deckIntentTools: readonly AvailableTool[] = [
+  "Gamma",
+  "Canva AI",
+  "ChatGPT",
+  "Gemini",
+];
 
 const validTools = new Set<string>(availableToolOptions);
 
@@ -53,12 +66,42 @@ function findFirstAvailableTool(
   return candidates.find((candidate) => availableTools.includes(candidate));
 }
 
+function hasResearchIntent(toolName: string) {
+  return /\b(google|research|market|competitor|trend|source)\b/i.test(toolName);
+}
+
+function hasDeckIntent(toolName: string) {
+  return /\b(gamma|deck|presentation|slide)\b/i.test(toolName);
+}
+
 export function mapTool(
   originalTool: string,
   availableTools: readonly string[],
 ): AvailableTool {
   const normalizedAvailableTools = normalizeAvailableTools(availableTools);
   const knownOriginalTool = findKnownTool(originalTool);
+
+  if (hasResearchIntent(originalTool)) {
+    const mappedTool = findFirstAvailableTool(
+      researchIntentTools,
+      normalizedAvailableTools,
+    );
+
+    if (mappedTool) {
+      return mappedTool;
+    }
+  }
+
+  if (hasDeckIntent(originalTool)) {
+    const mappedTool = findFirstAvailableTool(
+      deckIntentTools,
+      normalizedAvailableTools,
+    );
+
+    if (mappedTool) {
+      return mappedTool;
+    }
+  }
 
   if (knownOriginalTool && normalizedAvailableTools.includes(knownOriginalTool)) {
     return knownOriginalTool;

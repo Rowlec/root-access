@@ -1,6 +1,12 @@
 export default function Loading() {
   return (
-    <main className="min-h-svh bg-background px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
+    <main
+      aria-busy="true"
+      className="min-h-svh bg-background px-5 py-10 sm:px-8 sm:py-14 lg:px-10"
+    >
+      <span className="sr-only" role="status">
+        Loading workflow
+      </span>
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <section className="space-y-5 border-b border-border pb-8">
           <div className="flex gap-3">

@@ -1,5 +1,9 @@
 # workflow-spec.md
 
+This file describes the original single-flow startup proposal concept. The
+current app now renders one of five specialized workflows from
+`src/data/workflows` based on the user's selected startup task.
+
 ## Startup Proposal Workflow
 
 ### Step 1 — Problem Discovery
