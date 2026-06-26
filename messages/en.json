@@ -16,13 +16,14 @@
     "subtitle": "Stop guessing prompts. Follow a proven workflow.",
     "action": "Start Building",
     "workflowName": "Startup Proposal",
-    "guidedSteps": "7 guided steps",
+    "guidedSteps": "Micro-step workflow",
     "badge": "Student-ready",
     "stepLabel": "Step {step}",
     "steps": {
-      "problemDiscovery": "Problem Discovery",
-      "targetCustomer": "Target Customer",
-      "valueProposition": "Value Proposition"
+      "problemDiscovery": "Problem & Idea Validation",
+      "targetCustomer": "Target Customer & Market",
+      "valueProposition": "Business Model & Competitor",
+      "proposalDraft": "Proposal Draft"
     }
   },
   "HowItWorks": {
@@ -77,6 +78,20 @@
     "cardTitle": "Startup goal",
     "cardDescription": "Use clear details so the workflow prompts fit your assignment.",
     "fields": {
+      "workflowMode": {
+        "label": "Choose workflow mode",
+        "description": "Use the same startup context, then decide how much structure you need.",
+        "options": {
+          "quick": {
+            "title": "Quick Mode",
+            "description": "A short branch for the specific startup task you choose."
+          },
+          "deep": {
+            "title": "Deep Mode",
+            "description": "The same focused branch with prompt coaching and quality checks."
+          }
+        }
+      },
       "currentStage": {
         "label": "What do you need help with now?",
         "placeholder": "Select your next startup task",
@@ -100,6 +115,11 @@
         "placeholder": "Education",
         "error": "Industry is required."
       },
+      "targetCustomer": {
+        "label": "Target customer (optional)",
+        "placeholder": "First-year university students",
+        "description": "Add this if you already know who you want to serve."
+      },
       "deadlineUrgency": {
         "label": "Deadline urgency",
         "placeholder": "Select urgency",
@@ -112,9 +132,10 @@
         }
       },
       "availableTools": {
-        "label": "Available AI tools",
-        "other": "Other",
-        "error": "Select at least one AI tool."
+        "label": "Preferred AI tools (optional)",
+        "description": "Choose one preference, or keep Root Access defaults.",
+        "noPreference": "No preference",
+        "error": "Choose a supported AI tool."
       }
     },
     "actions": {
@@ -123,29 +144,38 @@
     }
   },
   "ResultPage": {
+    "startWorkflow": "Start micro-step 1",
     "missingContext": "Missing startup context. You can still review the workflow, or go back and enter your startup idea and industry for personalized prompts.",
     "emptyState": {
       "badge": "Root Access",
       "title": "Add your startup context first",
-      "description": "Root Access needs your startup task, idea, industry, deadline, and available tools before it can build a useful workflow.",
+      "description": "Root Access needs your startup task, idea, industry, and deadline before it can build a useful workflow.",
       "action": "Go to startup form"
     },
     "completionCta": {
-      "title": "Finished your first proposal draft?",
-      "description": "Review your copied prompts and turn the outputs into your final submission.",
-      "action": "Build another workflow"
+      "title": "Need another pass?",
+      "description": "Start a fresh startup proposal workflow when your idea, industry, or deadline changes.",
+      "action": "Start a new proposal"
     }
   },
   "ProgressTracker": {
     "title": "Progress",
-    "description": "Keep track as you build.",
-    "completedSteps": "Completed {completedCount}/{totalSteps} steps",
-    "currentStep": "Current step: {stepId}",
-    "allComplete": "All steps completed",
+    "description": "Finish one small action at a time.",
+    "resume": {
+      "title": "Continue where you left off",
+      "description": "Your local progress is restored. Continue with micro-step {stepId}.",
+      "fallbackDescription": "Your local progress is restored."
+    },
+    "completedSteps": "Completed {completedCount}/{totalSteps} micro-steps",
+    "currentStep": "Current micro-step: {stepId}",
+    "remainingSteps": "{remainingCount} remaining",
+    "allComplete": "All micro-steps completed",
+    "milestoneListLabel": "Workflow micro-steps",
+    "milestoneLabel": "Micro-step {step}",
     "progressAria": "{completionPercentage}% complete"
   },
   "StepCard": {
-    "stepBadge": "Step {step}",
+    "stepBadge": "Micro-step {step}",
     "original": "Original:",
     "adapted": "Adapted:",
     "adaptedBadge": "Adapted based on your available tools",
@@ -153,17 +183,107 @@
     "copyPrompt": "Copy prompt",
     "copied": "Copied",
     "details": "Details",
-    "locked": "Complete the previous step to unlock this checkbox.",
-    "prompt": "Prompt",
+    "status": {
+      "complete": "Complete",
+      "current": "Current",
+      "locked": "Locked"
+    },
+    "actionLayer": {
+      "title": "Action",
+      "description": "Copy the prompt, run it in your AI tool, then paste the useful output."
+    },
+    "learnLayer": {
+      "title": "Learn why this works",
+      "description": "Optional prompt coaching, comparison, and tool reasoning."
+    },
+    "reviewLayer": {
+      "title": "Review",
+      "description": "Check the output before completing this micro-step.",
+      "waiting": "Paste an output above to unlock review and completion.",
+      "retrySuggestions": "Retry suggestions"
+    },
+    "lockedBadge": "Locked",
+    "locked": "Complete the previous micro-step to unlock this checkbox.",
+    "prompt": "Generated prompt",
+    "promptEditor": {
+      "description": "Preview and edit before copying.",
+      "hint": "Copy uses this final prompt.",
+      "saved": "Prompt edit saved locally. Copy uses your edited version.",
+      "reset": "Reset prompt",
+      "show": "Show prompt",
+      "hide": "Hide prompt"
+    },
+    "outputDraft": {
+      "title": "Step output",
+      "description": "Paste useful AI output or revised notes here.",
+      "placeholder": "Paste the useful output for this micro-step...",
+      "hint": "Exports will include this output when you add it.",
+      "saved": "Output saved locally for export.",
+      "reset": "Clear output"
+    },
+    "toolRecommendation": {
+      "title": "Tool Recommendation",
+      "description": "Use the best-fit tool, with backups when useful.",
+      "recommendedTool": "Recommended tool",
+      "alternatives": "Alternative tools",
+      "preferredBadge": "Preferred tool"
+    },
+    "promptComparison": {
+      "title": "Prompt Comparison",
+      "description": "Compare a weak request with the optimized prompt you should copy.",
+      "weakPrompt": "Weak Prompt",
+      "optimizedPrompt": "Optimized Prompt",
+      "explanation": "Why the optimized version is better",
+      "weakBadge": "Too vague",
+      "optimizedBadge": "Recommended"
+    },
+    "promptAssist": {
+      "title": "Prompt Assist",
+      "description": "Open this before editing the prompt.",
+      "whyItWorks": "Why this prompt works",
+      "aiFocus": "What the AI should focus on",
+      "customize": "How to customize it",
+      "editingMistakes": "Mistakes when editing"
+    },
+    "qualityChecklist": {
+      "title": "Output quality check",
+      "description": "Check these before marking the milestone complete.",
+      "completeHint": "Complete every quality check to finish this milestone.",
+      "progress": "{checkedCount}/{totalCount} checked"
+    },
     "expectedOutput": "Expected output",
     "commonMistakes": "Common mistakes"
   },
   "WorkflowCompletion": {
     "title": "Workflow complete",
-    "description": "Congratulations. You completed {workflowTitle} and checked off all required steps.",
-    "summary": "Summary: {completedCount}/{totalSteps} steps completed. Review your copied prompts, verify the outputs, and edit everything before using it in your assignment.",
+    "description": "Congratulations. You completed {workflowTitle} and checked off all required micro-steps.",
+    "summary": "Summary: {completedCount}/{totalSteps} micro-steps completed. Review your copied prompts, verify the outputs, and edit everything before using it in your assignment.",
     "submitFeedback": "Submit Feedback",
     "restart": "Restart Workflow"
+  },
+  "WorkflowExport": {
+    "title": "Export proposal draft",
+    "description": "Copy or download your saved micro-step outputs.",
+    "toggle": "Export draft",
+    "copyAll": "Copy all",
+    "copied": "Copied",
+    "copiedShort": "Done",
+    "downloadMarkdown": "Download .md",
+    "downloadText": "Download .txt",
+    "individualTitle": "Individual micro-step outputs",
+    "milestoneLabel": "Micro-step {step}",
+    "copyStep": "Copy",
+    "markdownShort": "MD",
+    "textShort": "TXT",
+    "labels": {
+      "generatedBy": "Generated by Root Access",
+      "goal": "Goal",
+      "milestone": "Micro-step",
+      "noOutput": "No output saved yet.",
+      "output": "Output",
+      "promptUsed": "Prompt used",
+      "recommendedTool": "Recommended tool"
+    }
   },
   "FeedbackCard": {
     "title": "Help us improve Root Access",

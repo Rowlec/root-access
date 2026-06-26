@@ -16,13 +16,14 @@
     "subtitle": "Đừng đoán prompt nữa. Hãy đi theo một quy trình đã được định hình.",
     "action": "Bắt đầu",
     "workflowName": "Đề xuất khởi nghiệp",
-    "guidedSteps": "7 bước hướng dẫn",
+    "guidedSteps": "Workflow micro-step",
     "badge": "Phù hợp cho sinh viên",
     "stepLabel": "Bước {step}",
     "steps": {
-      "problemDiscovery": "Khám phá vấn đề",
-      "targetCustomer": "Khách hàng mục tiêu",
-      "valueProposition": "Đề xuất giá trị"
+      "problemDiscovery": "Vấn đề & Kiểm chứng ý tưởng",
+      "targetCustomer": "Khách hàng mục tiêu & Thị trường",
+      "valueProposition": "Mô hình kinh doanh & Đối thủ",
+      "proposalDraft": "Dàn ý Proposal"
     }
   },
   "HowItWorks": {
@@ -77,6 +78,20 @@
     "cardTitle": "Mục tiêu khởi nghiệp",
     "cardDescription": "Cung cấp chi tiết rõ ràng để prompt trong quy trình phù hợp với bài tập của bạn.",
     "fields": {
+      "workflowMode": {
+        "label": "Chọn chế độ workflow",
+        "description": "Dùng cùng bối cảnh khởi nghiệp, rồi chọn mức độ hướng dẫn bạn cần.",
+        "options": {
+          "quick": {
+            "title": "Quick Mode",
+            "description": "Một nhánh ngắn cho đúng phần startup bạn chọn."
+          },
+          "deep": {
+            "title": "Deep Mode",
+            "description": "Cùng nhánh tập trung, kèm hướng dẫn prompt và kiểm tra chất lượng."
+          }
+        }
+      },
       "currentStage": {
         "label": "Hiện tại bạn cần hỗ trợ phần nào?",
         "placeholder": "Chọn việc cần làm tiếp theo",
@@ -96,9 +111,14 @@
         "error": "Ý tưởng khởi nghiệp cần ít nhất 3 ký tự."
       },
       "industry": {
-        "label": "Ngành",
+        "label": "Lĩnh vực",
         "placeholder": "Giáo dục",
-        "error": "Vui lòng nhập ngành."
+        "error": "Vui lòng nhập lĩnh vực."
+      },
+      "targetCustomer": {
+        "label": "Khách hàng mục tiêu (không bắt buộc)",
+        "placeholder": "Sinh viên năm nhất đại học",
+        "description": "Điền nếu bạn đã biết nhóm người mình muốn phục vụ."
       },
       "deadlineUrgency": {
         "label": "Mức độ gấp của hạn nộp",
@@ -112,9 +132,10 @@
         }
       },
       "availableTools": {
-        "label": "Công cụ AI hiện có",
-        "other": "Khác",
-        "error": "Chọn ít nhất một công cụ AI."
+        "label": "Công cụ AI ưu tiên (không bắt buộc)",
+        "description": "Chọn một ưu tiên, hoặc để Root Access dùng gợi ý mặc định.",
+        "noPreference": "Không ưu tiên",
+        "error": "Vui lòng chọn công cụ AI hợp lệ."
       }
     },
     "actions": {
@@ -123,29 +144,38 @@
     }
   },
   "ResultPage": {
+    "startWorkflow": "Bắt đầu micro-step 1",
     "emptyState": {
       "badge": "Root Access",
       "title": "Hãy thêm bối cảnh khởi nghiệp trước",
-      "description": "Root Access cần phần bạn muốn làm, ý tưởng, ngành, hạn nộp và công cụ bạn có trước khi tạo quy trình hữu ích.",
+      "description": "Root Access cần phần bạn muốn làm, ý tưởng, ngành và hạn nộp trước khi tạo quy trình hữu ích.",
       "action": "Quay lại form khởi nghiệp"
     },
     "missingContext": "Thiếu bối cảnh khởi nghiệp. Bạn vẫn có thể xem quy trình, hoặc quay lại nhập ý tưởng khởi nghiệp và ngành để nhận prompt cá nhân hóa hơn.",
     "completionCta": {
-      "title": "Bạn đã hoàn thành bản nháp đề xuất đầu tiên?",
-      "description": "Xem lại các prompt đã sao chép và chuyển đầu ra thành bài nộp cuối cùng.",
-      "action": "Tạo quy trình khác"
+      "title": "Cần làm lại một lượt?",
+      "description": "Bắt đầu quy trình đề xuất khởi nghiệp mới khi ý tưởng, lĩnh vực hoặc hạn nộp thay đổi.",
+      "action": "Tạo proposal mới"
     }
   },
   "ProgressTracker": {
     "title": "Tiến độ",
-    "description": "Theo dõi khi bạn xây dựng.",
-    "completedSteps": "Đã hoàn thành {completedCount}/{totalSteps} bước",
-    "currentStep": "Bước hiện tại: {stepId}",
-    "allComplete": "Đã hoàn thành tất cả các bước",
+    "description": "Hoàn thành từng hành động nhỏ.",
+    "resume": {
+      "title": "Tiếp tục từ chỗ bạn đã dừng",
+      "description": "Tiến độ trên máy này đã được khôi phục. Tiếp tục với micro-step {stepId}.",
+      "fallbackDescription": "Tiến độ trên máy này đã được khôi phục."
+    },
+    "completedSteps": "Đã hoàn thành {completedCount}/{totalSteps} micro-step",
+    "currentStep": "Micro-step hiện tại: {stepId}",
+    "remainingSteps": "Còn {remainingCount}",
+    "allComplete": "Đã hoàn thành tất cả micro-step",
+    "milestoneListLabel": "Các micro-step của workflow",
+    "milestoneLabel": "Micro-step {step}",
     "progressAria": "Hoàn thành {completionPercentage}%"
   },
   "StepCard": {
-    "stepBadge": "Bước {step}",
+    "stepBadge": "Micro-step {step}",
     "original": "Gốc:",
     "adapted": "Điều chỉnh:",
     "adaptedBadge": "Đã điều chỉnh theo công cụ bạn có",
@@ -153,17 +183,107 @@
     "copyPrompt": "Sao chép prompt",
     "copied": "Đã sao chép",
     "details": "Chi tiết",
-    "locked": "Hoàn thành bước trước để mở khóa ô này.",
-    "prompt": "Prompt",
+    "status": {
+      "complete": "Hoàn thành",
+      "current": "Đang làm",
+      "locked": "Đang khóa"
+    },
+    "actionLayer": {
+      "title": "Hành động",
+      "description": "Copy prompt, chạy trong công cụ AI, rồi dán đầu ra hữu ích."
+    },
+    "learnLayer": {
+      "title": "Học vì sao prompt hiệu quả",
+      "description": "Phần tùy chọn: coaching prompt, so sánh và lý do chọn tool."
+    },
+    "reviewLayer": {
+      "title": "Kiểm tra",
+      "description": "Kiểm tra đầu ra trước khi hoàn thành micro-step này.",
+      "waiting": "Dán output ở trên để mở phần review và hoàn thành.",
+      "retrySuggestions": "Gợi ý thử lại"
+    },
+    "lockedBadge": "Đang khóa",
+    "locked": "Hoàn thành micro-step trước để mở khóa ô này.",
+    "prompt": "Prompt đã tạo",
+    "promptEditor": {
+      "description": "Xem và chỉnh prompt trước khi sao chép.",
+      "hint": "Nút sao chép sẽ dùng prompt cuối cùng này.",
+      "saved": "Prompt đã chỉnh được lưu trên máy này. Nút sao chép sẽ dùng bản đã chỉnh.",
+      "reset": "Khôi phục prompt",
+      "show": "Hiện prompt",
+      "hide": "Ẩn prompt"
+    },
+    "outputDraft": {
+      "title": "Paste AI Result",
+      "description": "Paste câu trả lời từ ChatGPT hoặc Gemini vào đây để tiếp tục.",
+      "placeholder": "Dán đầu ra hữu ích cho micro-step này...",
+      "hint": "Bản export sẽ kèm đầu ra này khi bạn thêm nội dung.",
+      "saved": "Đầu ra đã được lưu trên máy này để export.",
+      "reset": "Xóa đầu ra"
+    },
+    "toolRecommendation": {
+      "title": "Gợi ý công cụ",
+      "description": "Dùng công cụ phù hợp nhất, kèm lựa chọn dự phòng.",
+      "recommendedTool": "Công cụ khuyến nghị",
+      "alternatives": "Công cụ thay thế",
+      "preferredBadge": "Công cụ ưu tiên"
+    },
+    "promptComparison": {
+      "title": "So sánh prompt",
+      "description": "So sánh một yêu cầu yếu với prompt tối ưu nên sao chép.",
+      "weakPrompt": "Prompt yếu",
+      "optimizedPrompt": "Prompt tối ưu",
+      "explanation": "Vì sao phiên bản tối ưu tốt hơn",
+      "weakBadge": "Quá mơ hồ",
+      "optimizedBadge": "Khuyến nghị"
+    },
+    "promptAssist": {
+      "title": "Hỗ trợ prompt",
+      "description": "Mở phần này trước khi chỉnh prompt.",
+      "whyItWorks": "Vì sao prompt này hiệu quả",
+      "aiFocus": "AI nên tập trung vào gì",
+      "customize": "Cách tùy chỉnh",
+      "editingMistakes": "Lỗi khi chỉnh prompt"
+    },
+    "qualityChecklist": {
+      "title": "Kiểm tra chất lượng đầu ra",
+      "description": "Tick các mục này trước khi hoàn thành milestone.",
+      "completeHint": "Hoàn thành toàn bộ kiểm tra chất lượng để kết thúc milestone này.",
+      "progress": "Đã tick {checkedCount}/{totalCount}"
+    },
     "expectedOutput": "Đầu ra mong đợi",
     "commonMistakes": "Lỗi thường gặp"
   },
   "WorkflowCompletion": {
     "title": "Quy trình đã hoàn thành",
-    "description": "Chúc mừng. Bạn đã hoàn thành {workflowTitle} và đánh dấu đủ các bước bắt buộc.",
-    "summary": "Tóm tắt: đã hoàn thành {completedCount}/{totalSteps} bước. Hãy xem lại prompt đã sao chép, xác minh đầu ra và chỉnh sửa mọi thứ trước khi dùng trong bài tập.",
+    "description": "Chúc mừng. Bạn đã hoàn thành {workflowTitle} và đánh dấu đủ các micro-step bắt buộc.",
+    "summary": "Tóm tắt: đã hoàn thành {completedCount}/{totalSteps} micro-step. Hãy xem lại prompt đã sao chép, xác minh đầu ra và chỉnh sửa mọi thứ trước khi dùng trong bài tập.",
     "submitFeedback": "Gửi phản hồi",
     "restart": "Làm lại quy trình"
+  },
+  "WorkflowExport": {
+    "title": "Xuất bản nháp proposal",
+    "description": "Sao chép hoặc tải xuống các đầu ra micro-step đã lưu.",
+    "toggle": "Export bản nháp",
+    "copyAll": "Copy tất cả",
+    "copied": "Đã copy",
+    "copiedShort": "Xong",
+    "downloadMarkdown": "Tải .md",
+    "downloadText": "Tải .txt",
+    "individualTitle": "Đầu ra từng micro-step",
+    "milestoneLabel": "Micro-step {step}",
+    "copyStep": "Copy",
+    "markdownShort": "MD",
+    "textShort": "TXT",
+    "labels": {
+      "generatedBy": "Tạo bởi Root Access",
+      "goal": "Mục tiêu",
+      "milestone": "Micro-step",
+      "noOutput": "Chưa có đầu ra được lưu.",
+      "output": "Đầu ra",
+      "promptUsed": "Prompt đã dùng",
+      "recommendedTool": "Công cụ khuyến nghị"
+    }
   },
   "FeedbackCard": {
     "title": "Giúp chúng tôi cải thiện Root Access",

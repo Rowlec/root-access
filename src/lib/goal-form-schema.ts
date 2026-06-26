@@ -16,27 +16,27 @@ export const deadlineUrgencyOptions = [
   "No deadline",
 ] as const;
 
+export const workflowModeOptions = ["quick", "deep"] as const;
+
 export const availableToolOptions = [
   "ChatGPT",
   "Gemini",
-  "Claude",
-  "Canva AI",
-  "Gamma",
-  "Perplexity",
-  "Lovable",
-  "Other",
 ] as const;
 
 export const availableToolSchema = z.enum(availableToolOptions);
-export const availableToolsSchema = z.array(availableToolSchema).min(1);
+export const availableToolsSchema = z.array(availableToolSchema);
+export const workflowModeSchema = z.enum(workflowModeOptions);
 
 export const goalFormSchema = z.object({
+  workflowMode: workflowModeSchema,
   currentStage: z.enum(currentStageOptions),
   startupIdea: z.string().trim().min(3),
   industry: z.string().trim().min(1),
+  targetCustomer: z.string().trim(),
   deadlineUrgency: z.enum(deadlineUrgencyOptions),
   availableTools: availableToolsSchema,
 });
 
 export type AvailableTool = z.infer<typeof availableToolSchema>;
+export type WorkflowMode = z.infer<typeof workflowModeSchema>;
 export type GoalFormValues = z.infer<typeof goalFormSchema>;

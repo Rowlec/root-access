@@ -3,6 +3,9 @@ import { availableToolOptions } from "@/lib/goal-form-schema";
 export interface TemplateVariables {
   startupIdea: string;
   industry: string;
+  targetCustomer: string;
+  deadlineUrgency: string;
+  preferredAiTools: string;
 }
 
 function escapeRegExp(value: string) {
@@ -51,5 +54,8 @@ export function injectWorkflowVariables(
 ): string {
   return template
     .replaceAll("[STARTUP IDEA]", variables.startupIdea)
-    .replaceAll("[INDUSTRY]", variables.industry);
+    .replaceAll("[INDUSTRY]", variables.industry)
+    .replaceAll("[TARGET CUSTOMER]", variables.targetCustomer)
+    .replaceAll("[DEADLINE URGENCY]", variables.deadlineUrgency)
+    .replaceAll("[PREFERRED AI TOOLS]", variables.preferredAiTools);
 }

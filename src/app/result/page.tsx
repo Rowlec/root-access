@@ -4,23 +4,29 @@ import Link from "next/link";
 
 import { AcademicIntegrityNotice } from "@/components/AcademicIntegrityNotice";
 import { WorkflowAnalytics } from "@/components/analytics/WorkflowAnalytics";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FeedbackForm } from "@/components/workflow/FeedbackForm";
 import { ProgressTracker } from "@/components/workflow/ProgressTracker";
 import {
+  availableToolOptions,
   availableToolsSchema,
   deadlineUrgencyOptions,
   type AvailableTool,
+  type WorkflowMode,
+  workflowModeSchema,
 } from "@/lib/goal-form-schema";
 import { defaultLocale, isSupportedLocale } from "@/i18n/config";
 import { injectWorkflowVariables } from "@/lib/workflow-parser";
 import { isStartupStage, selectWorkflow } from "@/lib/workflow-selector";
 
 type ResultPageSearchParams = {
+  mode?: string;
   stage?: string;
   idea?: string;
   industry?: string;
+  targetCustomer?: string;
   urgency?: string;
   availableTools?: string | string[];
 };
@@ -38,12 +44,23 @@ function toSearchParamArray(value: string | string[] | undefined) {
 }
 
 function parseAvailableTools(value: string | string[] | undefined) {
+  const validTools = new Set<string>(availableToolOptions);
   const uniqueTools = Array.from(
-    new Set(toSearchParamArray(value).filter((tool) => tool.trim().length > 0)),
+    new Set(
+      toSearchParamArray(value).filter(
+        (tool) => tool.trim().length > 0 && validTools.has(tool),
+      ),
+    ),
   );
   const parsedTools = availableToolsSchema.safeParse(uniqueTools);
 
-  return parsedTools.success ? parsedTools.data : null;
+  return parsedTools.success ? parsedTools.data : [];
+}
+
+function parseWorkflowMode(value: string | undefined): WorkflowMode {
+  const parsedMode = workflowModeSchema.safeParse(value);
+
+  return parsedMode.success ? parsedMode.data : "deep";
 }
 
 type DeadlineUrgency = (typeof deadlineUrgencyOptions)[number];
@@ -58,14 +75,18 @@ function createWorkflowRunId({
   availableTools,
   idea,
   industry,
+  targetCustomer,
   locale,
+  mode,
   stage,
   urgency,
 }: {
   availableTools: AvailableTool[];
   idea: string;
   industry: string;
+  targetCustomer: string;
   locale: string;
+  mode: WorkflowMode;
   stage: string;
   urgency: DeadlineUrgency;
 }) {
@@ -73,7 +94,9 @@ function createWorkflowRunId({
     availableTools: [...availableTools].sort(),
     idea,
     industry,
+    targetCustomer,
     locale,
+    mode,
     stage,
     urgency,
   });
@@ -93,14 +116,18 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
     : defaultLocale;
   const t = await getTranslations("ResultPage");
   const {
+    mode = "",
     stage = "",
     idea = "",
     industry = "",
+    targetCustomer = "",
     urgency = "",
     availableTools: availableToolsParam,
   } = await searchParams;
   const startupIdea = idea.trim();
   const startupIndustry = industry.trim();
+  const startupTargetCustomer = targetCustomer.trim();
+  const selectedWorkflowMode = parseWorkflowMode(mode);
   const selectedStage = isStartupStage(stage) ? stage : null;
   const selectedDeadlineUrgency = isDeadlineUrgency(urgency) ? urgency : null;
   const selectedAvailableTools = parseAvailableTools(availableToolsParam);
@@ -141,18 +168,24 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
     availableTools,
     idea: startupIdea,
     industry: startupIndustry,
+    targetCustomer: startupTargetCustomer,
     locale,
+    mode: selectedWorkflowMode,
     stage: selectedStage,
     urgency: selectedDeadlineUrgency,
   });
-  const workflow = injectWorkflowVariables(selectWorkflow(selectedStage, locale), {
-    currentStage: selectedStage,
-    startupIdea,
-    industry: startupIndustry,
-    deadlineUrgency: selectedDeadlineUrgency,
-    availableTools,
-    locale,
-  });
+  const workflow = injectWorkflowVariables(
+    selectWorkflow(selectedStage, locale, selectedWorkflowMode),
+    {
+      currentStage: selectedStage,
+      startupIdea,
+      industry: startupIndustry,
+      targetCustomer: startupTargetCustomer,
+      deadlineUrgency: selectedDeadlineUrgency,
+      availableTools,
+      locale,
+    },
+  );
   const adaptedToolCount = workflow.steps.filter(
     (step) => step.adaptedTool && step.adaptedTool !== step.originalTool,
   ).length;
@@ -167,13 +200,16 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
         steps={workflow.steps}
       />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <section className="space-y-5 border-b border-border pb-8">
-          <div className="flex flex-wrap items-center gap-3">
-            <Badge variant="secondary">{workflow.category}</Badge>
-            <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
-              <Clock aria-hidden="true" className="size-4" />
-              {workflow.estimatedTime}
-            </span>
+        <section id="workflow" className="space-y-5 border-b border-border pb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge variant="secondary">{workflow.category}</Badge>
+              <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                <Clock aria-hidden="true" className="size-4" />
+                {workflow.estimatedTime}
+              </span>
+            </div>
+            <LocaleSwitcher className="w-fit" />
           </div>
 
           <div className="max-w-3xl space-y-4">
@@ -183,19 +219,23 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
             <p className="text-base leading-7 text-muted-foreground sm:text-lg">
               {workflow.description}
             </p>
+            <Button asChild className="h-10 w-full sm:w-auto">
+              <a href="#milestones">{t("startWorkflow")}</a>
+            </Button>
           </div>
-
         </section>
 
         <AcademicIntegrityNotice compact variant="workflow" />
 
-        <ProgressTracker
-          workflowId={workflow.id}
-          workflowTitle={workflow.title}
-          workflowRunId={workflowRunId}
-          availableTools={availableTools}
-          steps={workflow.steps}
-        />
+        <div id="milestones">
+          <ProgressTracker
+            workflowId={workflow.id}
+            workflowTitle={workflow.title}
+            workflowRunId={workflowRunId}
+            availableTools={availableTools}
+            steps={workflow.steps}
+          />
+        </div>
 
         <section className="rounded-lg border border-border bg-muted/40 p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">

@@ -3,27 +3,8 @@ import {
   type AvailableTool,
 } from "@/lib/goal-form-schema";
 
-const defaultFallbackTool: AvailableTool = "Other";
-
-const toolFallbacks: Partial<Record<AvailableTool, readonly AvailableTool[]>> = {
-  Claude: ["ChatGPT", "Gemini"],
-  Gamma: ["Canva AI", "ChatGPT", "Gemini"],
-  Perplexity: ["Gemini", "ChatGPT"],
-  Lovable: ["ChatGPT"],
-};
-
-const researchIntentTools: readonly AvailableTool[] = [
-  "Perplexity",
-  "Gemini",
-  "ChatGPT",
-];
-
-const deckIntentTools: readonly AvailableTool[] = [
-  "Gamma",
-  "Canva AI",
-  "ChatGPT",
-  "Gemini",
-];
+const defaultTool: AvailableTool = "ChatGPT";
+const structuredIntentTool: AvailableTool = "Gemini";
 
 const validTools = new Set<string>(availableToolOptions);
 
@@ -54,24 +35,13 @@ function findKnownTool(toolName: string) {
 }
 
 function normalizeAvailableTools(availableTools: readonly string[]) {
-  const normalizedTools = availableTools.filter(isAvailableTool);
-
-  return Array.from(new Set(normalizedTools));
+  return Array.from(new Set(availableTools.filter(isAvailableTool)));
 }
 
-function findFirstAvailableTool(
-  candidates: readonly AvailableTool[],
-  availableTools: readonly AvailableTool[],
-) {
-  return candidates.find((candidate) => availableTools.includes(candidate));
-}
-
-function hasResearchIntent(toolName: string) {
-  return /\b(google|research|market|competitor|trend|source)\b/i.test(toolName);
-}
-
-function hasDeckIntent(toolName: string) {
-  return /\b(gamma|deck|presentation|slide)\b/i.test(toolName);
+function hasStructuredIntent(toolName: string) {
+  return /\b(compare|competitor|fact|market|organize|pricing|research|segment|source|structure|verify)\b/i.test(
+    toolName,
+  );
 }
 
 export function mapTool(
@@ -81,42 +51,23 @@ export function mapTool(
   const normalizedAvailableTools = normalizeAvailableTools(availableTools);
   const knownOriginalTool = findKnownTool(originalTool);
 
-  if (hasResearchIntent(originalTool)) {
-    const mappedTool = findFirstAvailableTool(
-      researchIntentTools,
-      normalizedAvailableTools,
-    );
-
-    if (mappedTool) {
-      return mappedTool;
-    }
+  if (normalizedAvailableTools.length === 0) {
+    return knownOriginalTool ?? (hasStructuredIntent(originalTool) ? structuredIntentTool : defaultTool);
   }
 
-  if (hasDeckIntent(originalTool)) {
-    const mappedTool = findFirstAvailableTool(
-      deckIntentTools,
-      normalizedAvailableTools,
-    );
-
-    if (mappedTool) {
-      return mappedTool;
-    }
-  }
-
-  if (knownOriginalTool && normalizedAvailableTools.includes(knownOriginalTool)) {
+  if (
+    knownOriginalTool &&
+    normalizedAvailableTools.includes(knownOriginalTool)
+  ) {
     return knownOriginalTool;
   }
 
-  if (knownOriginalTool) {
-    const mappedTool = findFirstAvailableTool(
-      toolFallbacks[knownOriginalTool] ?? [],
-      normalizedAvailableTools,
-    );
-
-    if (mappedTool) {
-      return mappedTool;
-    }
+  if (
+    hasStructuredIntent(originalTool) &&
+    normalizedAvailableTools.includes(structuredIntentTool)
+  ) {
+    return structuredIntentTool;
   }
 
-  return normalizedAvailableTools[0] ?? defaultFallbackTool;
+  return normalizedAvailableTools[0] ?? defaultTool;
 }

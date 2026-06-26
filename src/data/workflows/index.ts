@@ -1,16 +1,40 @@
-import { businessModelDesignWorkflow } from "@/data/workflows/business-model";
-import { ideaValidationWorkflow } from "@/data/workflows/idea-validation";
-import { marketResearchWorkflow } from "@/data/workflows/market-research";
-import { mvpPlanningWorkflow } from "@/data/workflows/mvp-planning";
-import { pitchDeckPreparationWorkflow } from "@/data/workflows/pitch-deck";
+import { startupProposalWorkflow } from "@/data/workflows/startup-proposal";
+
+export interface StartupPromptAssist {
+  whyItWorks: string;
+  aiFocus: string;
+  customize: string;
+  editingMistakes: readonly string[];
+}
+
+export interface StartupPromptComparison {
+  weakPrompt: string;
+  explanation: string;
+}
+
+export interface StartupToolAlternative {
+  tool: string;
+  reason: string;
+}
+
+export interface StartupToolRecommendation {
+  recommendedTool: string;
+  whyItFits: string;
+  alternativeTools: readonly StartupToolAlternative[];
+}
 
 export interface StartupWorkflowStep {
   title: string;
   goal: string;
+  timebox?: string;
   recommendedTool: string;
   originalRecommendedTool?: string;
   adaptedRecommendedTool?: string;
+  toolRecommendation?: StartupToolRecommendation;
   promptTemplate: string;
+  promptAssist?: StartupPromptAssist;
+  promptComparison?: StartupPromptComparison;
+  qualityChecklist?: readonly string[];
   expectedOutput: string;
   commonMistakes: readonly string[];
 }
@@ -24,9 +48,5 @@ export interface StartupWorkflow {
 }
 
 export const startupWorkflows = [
-  ideaValidationWorkflow,
-  marketResearchWorkflow,
-  businessModelDesignWorkflow,
-  mvpPlanningWorkflow,
-  pitchDeckPreparationWorkflow,
+  startupProposalWorkflow,
 ] satisfies readonly StartupWorkflow[];

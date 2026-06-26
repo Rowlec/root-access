@@ -10,11 +10,12 @@ export function Hero() {
     t("steps.problemDiscovery"),
     t("steps.targetCustomer"),
     t("steps.valueProposition"),
+    t("steps.proposalDraft"),
   ];
 
   return (
     <section className="w-full border-b border-border bg-background">
-      <div className="mx-auto grid min-h-[calc(100svh-3rem)] w-full max-w-6xl items-center gap-10 px-5 py-14 sm:px-8 sm:py-18 lg:grid-cols-[1.05fr_0.95fr] lg:px-10 lg:py-20">
+      <div className="mx-auto grid min-h-[78svh] w-full max-w-6xl items-center gap-10 px-5 py-12 sm:px-8 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:px-10 lg:py-18">
         <div className="flex max-w-2xl flex-col items-start gap-6">
           <div className="flex w-full flex-wrap items-center justify-between gap-3">
             <div className="inline-flex h-8 items-center rounded-lg border border-border bg-muted/70 px-3 text-sm font-medium text-muted-foreground">
@@ -27,7 +28,7 @@ export function Hero() {
             <h1 className="max-w-3xl text-4xl font-semibold leading-[1.08] tracking-normal text-foreground sm:text-5xl lg:text-6xl">
               {t("title")}
             </h1>
-            <p className="max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl sm:leading-9">
+            <p className="max-w-xl text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
               {t("subtitle")}
             </p>
           </div>
@@ -59,7 +60,7 @@ export function Hero() {
             {workflowSteps.map((step, index) => (
               <div
                 key={step}
-                className="flex min-h-16 items-center gap-3 rounded-lg border border-border bg-background px-3.5 transition-colors hover:bg-muted/40"
+                className="flex min-h-14 items-center gap-3 rounded-lg border border-border bg-background px-3.5 transition-colors hover:bg-muted/40"
               >
                 <CheckCircle2
                   aria-hidden="true"
