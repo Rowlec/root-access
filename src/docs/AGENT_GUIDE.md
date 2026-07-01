@@ -2,13 +2,21 @@
 
 ## Project Identity
 
-Root Access is a rule-based workflow library for student startup proposal work.
+Root Access is an AI Workflow + Output Review + Prompt Improvement product for
+Startup Proposal work.
 
-When continuing this project, preserve the core distinction:
+Preserve these core rules:
 
-- It is not an AI content generator.
-- It is not an AI workflow generator.
-- It selects prebuilt workflows and injects user variables into prompt templates.
+- Startup Proposal is the only active MVP product area.
+- The primary runtime experience is `WorkflowReviewWorkspace`.
+- Root Access creates starting prompts, reviews pasted AI outputs, and improves
+  prompts.
+- Root Access does not generate the final proposal for the user.
+- Proposal sections are static and rule-based.
+- Tool adaptation is rule-based only.
+- Output scoring, weakness detection, and prompt improvement call the server
+  API.
+- AI must not decide product flow or generate hidden workflow logic.
 
 ## Coding Conventions
 
@@ -21,6 +29,7 @@ Use the existing stack and style:
 - react-hook-form for forms
 - zod for validation
 - lucide-react for icons
+- next-intl for UI messages
 - Vercel Analytics for client-side events
 
 Keep components small and purpose-specific.
@@ -36,163 +45,124 @@ Use shadcn primitives for UI consistency:
 
 Use `cn` from `src/lib/utils.ts` for conditional classes.
 
-## Naming Conventions
+## Active Runtime Flow
 
-Use clear product-oriented names.
-
-Recommended:
-
-- `Workflow`
-- `WorkflowStep`
-- `StartupWorkflow`
-- `StartupWorkflowStep`
-- `GoalFormValues`
-- `TemplateVariables`
-- `selectWorkflow`
-- `injectWorkflowVariables`
-- `useWorkflowProgress`
-
-Avoid vague names:
-
-- `data`
-- `item`
-- `stuff`
-- `processor`
-- `magic`
-
-Workflow IDs should be kebab-case:
+The active path is:
 
 ```txt
-idea-validation
-market-research
-business-model-design
-mvp-planning
-pitch-deck-preparation
+GoalForm
+-> /result query params
+-> WorkflowReviewWorkspace
+-> Action Layer
+-> Review Layer
+-> Retry Layer
 ```
 
-Component files should use PascalCase:
+The user flow is:
 
 ```txt
-GoalForm.tsx
-ProgressTracker.tsx
-StepCard.tsx
-```
-
-Library files should use kebab-case:
-
-```txt
-workflow-selector.ts
-template-parser.ts
-goal-form-schema.ts
+Generate Prompt -> Test with AI -> Paste Output -> Get Feedback
+-> Copy Improved Prompt -> Retry -> Compare Scores
 ```
 
 ## Architecture Rules
 
-### Keep Workflow Selection Rule-Based
-
-Workflow selection must remain deterministic.
+### Keep Workflow Logic Rule-Based
 
 Correct:
 
 ```txt
-currentStage -> selectWorkflow(stage) -> prebuilt workflow
+startup context -> static Startup Proposal section -> predefined prompt
 ```
 
 Avoid:
 
 ```txt
-currentStage -> AI decides workflow dynamically
+startup context -> AI decides product workflow dynamically
 ```
 
-### Keep Prompt Templates Static
+### Keep The Review Engines API-Backed
 
-Prompt templates should live in workflow data files.
+These engines must call the server API:
 
-Template injection should only replace known placeholders:
+- Output Score Engine
+- Weakness Detection
+- Prompt Improvement Engine
 
-- `[STARTUP IDEA]`
-- `[INDUSTRY]`
+Current route:
 
-Do not add runtime prompt generation unless the product direction changes.
+```txt
+src/app/api/gemini/review/route.ts
+```
 
-### Keep Business Logic Out Of UI Components
+The API validates inputs and output JSON with zod. Gemini may review output and
+improve the prompt, but it must not generate the final proposal section.
 
-Preferred separation:
+### Keep The UI Three-Layered
 
-- Form validation in `src/lib/goal-form-schema.ts`
-- Workflow selection in `src/lib/workflow-selector.ts`
-- Template injection in `src/lib/template-parser.ts`
-- Progress persistence in `src/hooks/useWorkflowProgress.ts`
-- UI rendering in `src/components/*`
+`WorkflowReviewWorkspace` should stay focused on:
+
+- Action Layer: objective, prompt, copy button, paste output.
+- Review Layer: score, weaknesses, improved prompt.
+- Retry Layer: retry output, score comparison, complete section.
+
+Do not reintroduce excessive accordions, long coaching text, tool-comparison
+panels, or proposal export surfaces into the active MVP.
 
 ### Preserve Academic Integrity
 
-Do not add features that generate final assignments directly.
-
 Allowed:
 
-- Structure
-- Research prompts
-- Outlines
-- Drafting guidance
-- Review prompts
+- Starting prompts
+- Review feedback
+- Weakness diagnosis
+- Prompt improvement
+- Score comparison
 - Verification reminders
 
 Not allowed:
 
-- "Generate final proposal"
-- "Write my assignment"
+- "Write my final assignment"
 - "Create complete submission"
 - UI copy that implies the student can submit AI output directly
+- Server routes that generate final proposal content
 
-Keep `AcademicIntegrityNotice` visible on landing and workflow pages.
+Keep `AcademicIntegrityNotice` visible on landing and result pages.
 
-## Things That Must Not Be Changed Casually
+## Current Product Sections
 
-Do not change these without a clear product reason:
+The MVP tracks progress by five sections:
 
-- The rule-based workflow selection model
-- Academic integrity positioning
-- The five core startup workflow scopes
-- The Google Form URL constant location
-- localStorage progress persistence behavior
-- Sequential step completion rule
-- Vercel Analytics event names, unless updating analytics docs too
+- Problem
+- Customer
+- Validation
+- Revenue
+- MVP Scope
 
-Do not silently remove:
+These are proposal progress sections, not workflow categories. Do not add
+Academic Report, Presentation Slides, Interview Prep, CV Builder, Website
+Builder, or generic workflow-builder support.
 
-- `AcademicIntegrityNotice`
-- `ProgressTracker`
-- `WorkflowCompletion`
-- `FeedbackCard`
-- `LandingAnalytics`
+## Credit Rules
 
-## Current Integration Warning
+Free:
 
-The project has both:
+- 5 prompt generations
+- 5 output reviews
+- 3 improved prompts
 
-- a legacy JSON workflow used by `/result`
-- a newer five-workflow TypeScript library used by `workflow-selector`
+Pro:
 
-Before expanding features, decide whether the task touches runtime behavior.
+- unlimited prompt generations
+- unlimited output reviews
+- unlimited improved prompts
 
-If the task asks to change the active workflow experience, update `/result` to
-use:
-
-```txt
-stage query param
--> selectWorkflow(stage)
--> selected workflow
--> template injection
--> workflow UI
-```
-
-If the task only asks for data-library changes, update `src/data/workflows/*`.
+No real payment integration. `/checkout` is a fake checkout that stores Pro demo
+mode in localStorage.
 
 ## Next.js Guidance
 
-This project includes an `AGENTS.md` warning that the installed Next.js version
-may differ from older assumptions.
+The installed Next.js version may differ from older assumptions.
 
 Before changing Next-specific code, read the relevant local docs in:
 
@@ -206,6 +176,7 @@ Examples:
 - layouts
 - loading files
 - metadata
+- route handlers
 - server and client component boundaries
 
 ## Client And Server Component Rules
@@ -229,53 +200,27 @@ Client components are required for:
 
 When a component uses browser APIs, add `"use client";` at the top.
 
-## How Future Sessions Should Continue
-
-Start by checking actual code state, not just documentation.
-
-Recommended first commands:
-
-```txt
-rg --files src
-npm run lint
-npx tsc --noEmit
-```
-
-For UI work:
-
-- Inspect current component usage.
-- Preserve shadcn patterns.
-- Keep mobile layout first-class.
-- Avoid changing data structure unless requested.
-
-For workflow-engine work:
-
-- Read `src/data/workflows/index.ts`.
-- Read `src/lib/workflow-selector.ts`.
-- Read `src/lib/template-parser.ts`.
-- Check whether `/result` has been migrated from the legacy JSON workflow.
-
-For progress work:
-
-- Read `src/hooks/useWorkflowProgress.ts`.
-- Preserve sequential completion.
-- Preserve localStorage key format unless a migration is planned.
-
 ## Verification Checklist
 
 Before finishing code changes, run:
 
 ```txt
-npx tsc --noEmit
-npm run lint
-npm run build
+npx.cmd tsc --noEmit
+npm.cmd run lint
+npm.cmd run build
 ```
 
 For UI changes, manually check:
 
-- `/`
-- `/result?stage=No+clear+idea+yet&idea=AI+for+students&industry=Education&urgency=1+week`
-- `/result` empty state
-- mobile viewport
-- desktop viewport
+```txt
+/
+/result?idea=AI+for+students&industry=Education&targetCustomer=FPT+students&urgency=1+week&availableTools=Gemini
+/result
+/checkout
+```
 
+For review API changes:
+
+- Missing key returns a controlled `missing_api_key` JSON error.
+- Invalid input returns a controlled validation error.
+- Valid input returns score, weaknesses, improved prompt, and why-better text.

@@ -2,336 +2,117 @@
 
 ## Engine Principle
 
-Root Access uses a rule-based workflow library.
+Root Access keeps workflow logic rule-based.
 
-It does not generate workflows dynamically. It selects from known workflow
-definitions and injects user variables into existing prompt templates.
+It does not generate workflows dynamically. It uses a known Startup Proposal
+section set and predefined prompt templates.
 
-The workflow engine has three separate concerns:
+Current product direction:
 
-1. Workflow data
-2. Workflow selection
-3. Template injection
+```txt
+static prompt -> external AI test -> pasted output -> API review
+```
 
-## Current Workflow Data
+Not:
 
-There are two workflow data shapes in the project.
+```txt
+AI decides workflow -> Root Access writes final proposal
+```
 
-### Legacy Runtime Workflow
+## Active Startup Proposal Sections
 
-File:
+The active MVP uses five proposal progress sections:
+
+- Problem
+- Customer
+- Validation
+- Revenue
+- MVP Scope
+
+These sections are defined inside `WorkflowReviewWorkspace` for the current MVP
+surface. They should remain compact and easy to scan.
+
+## Prompt Creation
+
+Starting prompts are created from deterministic context:
+
+- startup idea
+- industry
+- target customer
+- deadline urgency
+- active section
+- locale
+
+Prompt creation is rule-based. It does not call AI and it does not create hidden
+workflow logic.
+
+## Review Engines
+
+The review step is API-backed.
+
+Route:
+
+```txt
+src/app/api/gemini/review/route.ts
+```
+
+The route calls Gemini for:
+
+- Output Score Engine
+- Weakness Detection
+- Prompt Improvement Engine
+
+Response rules:
+
+- Score relevance, specificity, actionability, and clarity from 0 to 10.
+- Total score is 0 to 40.
+- Return only the top two weaknesses.
+- Return a better prompt for the user's next external AI retry.
+- Do not write the final proposal section.
+
+## Legacy Workflow Library
+
+The repository still contains legacy static workflow files:
 
 ```txt
 src/data/startup-workflow.json
-```
-
-This is currently used by `/result`.
-
-Shape:
-
-```ts
-export interface Workflow {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  estimatedTime: string;
-  steps: WorkflowStep[];
-}
-
-export interface WorkflowStep {
-  id: number;
-  title: string;
-  goal: string;
-  tool: string;
-  originalTool?: string;
-  adaptedTool?: string;
-  promptTemplate: string;
-  expectedOutput: string;
-  commonMistakes: string[];
-}
-```
-
-Current workflow:
-
-- `Startup Proposal Workflow`
-- 7 steps
-- Uses placeholders:
-  - `[STARTUP IDEA]`
-  - `[INDUSTRY]`
-
-### Expanded Startup Workflow Library
-
-Folder:
-
-```txt
-src/data/workflows/
-```
-
-Files:
-
-- `idea-validation.ts`
-- `market-research.ts`
-- `business-model.ts`
-- `mvp-planning.ts`
-- `pitch-deck.ts`
-- `index.ts`
-
-Shared type:
-
-```ts
-export interface StartupWorkflowStep {
-  title: string;
-  goal: string;
-  recommendedTool: string;
-  originalRecommendedTool?: string;
-  adaptedRecommendedTool?: string;
-  promptTemplate: string;
-  expectedOutput: string;
-  commonMistakes: readonly string[];
-}
-
-export interface StartupWorkflow {
-  id: string;
-  title: string;
-  description: string;
-  estimatedTime: string;
-  steps: readonly StartupWorkflowStep[];
-}
-```
-
-Current workflow IDs:
-
-- `idea-validation`
-- `market-research`
-- `business-model-design`
-- `mvp-planning`
-- `pitch-deck-preparation`
-
-This library is ready for the next integration step, but is not yet the runtime
-source for `/result`.
-
-## Workflow Selection
-
-File:
-
-```txt
+src/data/workflows/*
 src/lib/workflow-selector.ts
-```
-
-Function:
-
-```ts
-selectWorkflow(currentStage, availableTools)
-```
-
-Input:
-
-```ts
-GoalFormValues["currentStage"]
-GoalFormValues["availableTools"]
-```
-
-Rules:
-
-```txt
-No clear idea yet              -> idea-validation
-Have idea but not validated    -> market-research
-Doing market research          -> business-model-design
-Building business model        -> mvp-planning
-Preparing pitch deck           -> pitch-deck-preparation
-```
-
-Implementation notes:
-
-- The selector is deterministic.
-- It returns a workflow object, not an ID.
-- The rule table uses TypeScript to ensure every valid stage maps to a workflow.
-- There is no fallback workflow. Unknown stages should be prevented by form
-  validation.
-- After stage selection, the selector clones the workflow and adapts each
-  step's `recommendedTool` through `mapTool`.
-- The selector preserves `originalRecommendedTool` and sets
-  `adaptedRecommendedTool` only when the adapted tool differs.
-- Static workflow objects in `src/data/workflows/*` are not mutated.
-
-## Rule-Based Matching
-
-The rule engine is intentionally simple:
-
-```txt
-currentStage string + availableTools string[]
--> exact match in workflowRules
--> selected StartupWorkflow object
--> cloned workflow with mapped recommendedTool values
-```
-
-This makes behavior predictable for academic use cases and avoids hidden AI
-decisions.
-
-Do not replace this with AI-generated routing unless the product direction
-changes. Workflow selection should remain explainable and testable.
-
-## Tool Adaptation
-
-File:
-
-```txt
-src/lib/tool-mapper.ts
-```
-
-Function:
-
-```ts
-mapTool(originalTool, availableTools)
-```
-
-Rules:
-
-```txt
-Claude     -> ChatGPT, then Gemini
-Gamma      -> Canva AI
-Perplexity -> Gemini, then ChatGPT
-Lovable    -> ChatGPT
-```
-
-If the original tool is already available, it is preserved. If no direct or
-rule-based candidate is available, the mapper returns the first valid available
-tool, then `Other` as the final fallback.
-
-## Template Injection
-
-File:
-
-```txt
 src/lib/template-parser.ts
-```
-
-Function:
-
-```ts
-injectWorkflowVariables(template, variables)
-replacePromptToolReferences(template, originalTool, adaptedTool)
-```
-
-Variables:
-
-```ts
-export interface TemplateVariables {
-  startupIdea: string;
-  industry: string;
-}
-```
-
-Replacement rules:
-
-```txt
-[STARTUP IDEA] -> variables.startupIdea
-[INDUSTRY]     -> variables.industry
-```
-
-Tool replacement rules:
-
-```txt
-original tool mention -> adapted tool mention
-```
-
-Tool replacement runs before user variable injection so placeholders remain
-intact until `[STARTUP IDEA]` and `[INDUSTRY]` are interpolated.
-
-Example:
-
-```txt
-Research customer pain points for [STARTUP IDEA] in [INDUSTRY].
-```
-
-With:
-
-```txt
-startupIdea = "AI learning platform"
-industry = "EdTech"
-```
-
-Result:
-
-```txt
-Research customer pain points for AI learning platform in EdTech.
-```
-
-The parser uses direct string replacement. It does not evaluate expressions,
-execute code, or call an AI model.
-
-## Legacy Workflow Parser
-
-File:
-
-```txt
 src/lib/workflow-parser.ts
 ```
 
-Function:
+These remain useful references for deterministic workflow and prompt-template
+patterns. They are not the active MVP runtime surface after the product pivot.
 
-```ts
-injectWorkflowVariables(workflow, userInput)
-```
+If future work reuses them, preserve these rules:
 
-This function adapts the template parser for the legacy `Workflow` object.
+- workflow library stays static
+- workflow selector stays deterministic
+- prompt templates stay predefined
+- tool adaptation stays rule-based
+- AI does not generate workflow logic
 
-It injects variables into:
+## Tool Adaptation
 
-- workflow title
-- workflow description
-- workflow category
-- workflow estimated time
-- step title
-- step goal
-- step tool
-- step tool adaptation metadata
-- step prompt template
-- step expected output
-- step common mistakes
+Selectable external AI tools remain:
 
-It returns a new workflow object and does not mutate the original workflow.
+- ChatGPT
+- Gemini
 
-When a step tool is adapted, the legacy parser updates matching tool references
-inside the prompt template before injecting startup idea and industry values.
+Tool choice does not change workflow routing. It only tells the user where they
+are likely to test the prompt externally.
 
-## Workflow Step Structure
-
-Every step should represent one useful unit of student work.
-
-Each step must include:
-
-- a clear title
-- a learning or research goal
-- a recommended AI or research tool
-- a practical prompt template
-- an expected output
-- common mistakes to avoid
-
-Prompt templates should:
-
-- Use `[STARTUP IDEA]` and `[INDUSTRY]` where relevant
-- Be practical for university startup assignments
-- Ask for structured outputs
-- Encourage verification, comparison, and student judgment
-- Avoid asking AI to generate final assignment text for submission
-
-## Integration Gap To Resolve
-
-The next workflow-engine task should connect `/result` to:
+## Runtime Flow
 
 ```txt
-stage query param
--> availableTools query params
--> selectWorkflow(stage, availableTools)
--> selected and tool-adapted StartupWorkflow
--> template injection per rendered step
+GoalForm
+-> /result query params
+-> WorkflowReviewWorkspace
+-> create starting prompt from static rules
+-> user tests prompt in ChatGPT/Gemini
+-> user pastes output
+-> /api/gemini/review scores, diagnoses, and improves
+-> user retries externally
+-> score comparison
 ```
-
-This will replace the current runtime dependency on
-`src/data/startup-workflow.json`.
-
-When doing that, normalize the UI step shape carefully because the new library
-uses `recommendedTool`, while the current `StepCard` expects `tool` and numeric
-step IDs.

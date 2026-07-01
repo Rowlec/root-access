@@ -102,7 +102,7 @@ export const marketResearchWorkflowVi = {
     {
       title: "Lập bản đồ đối thủ",
       goal: "Tìm giải pháp trực tiếp, gián tiếp và thay thế.",
-      recommendedTool: "Perplexity",
+      recommendedTool: "Gemini",
       promptTemplate:
         "Hãy nghiên cứu đối thủ cho [STARTUP IDEA] trong lĩnh vực [INDUSTRY]. Liệt kê đối thủ trực tiếp, đối thủ gián tiếp và giải pháp thay thế. Với mỗi mục, nêu họ cung cấp gì, người dùng mục tiêu, điểm mạnh, điểm yếu và claim nào cần kiểm chứng bằng nguồn đáng tin cậy.",
       expectedOutput:
@@ -116,7 +116,7 @@ export const marketResearchWorkflowVi = {
     {
       title: "Tóm tắt xu hướng thị trường",
       goal: "Kết nối ý tưởng với xu hướng liên quan mà không phóng đại.",
-      recommendedTool: "Perplexity",
+      recommendedTool: "Gemini",
       promptTemplate:
         "Với [STARTUP IDEA] trong lĩnh vực [INDUSTRY], hãy tóm tắt các xu hướng thị trường liên quan hỗ trợ cơ hội này. Giữ phù hợp cho đề xuất khởi nghiệp đại học và gợi ý loại nguồn, từ khóa hoặc link tôi nên dùng để kiểm chứng xu hướng.",
       expectedOutput:
@@ -356,7 +356,7 @@ export const pitchDeckPreparationWorkflowVi = {
     {
       title: "Tạo định hướng hình ảnh",
       goal: "Lên kế hoạch hình ảnh đơn giản hỗ trợ bài pitch.",
-      recommendedTool: "Gamma",
+      recommendedTool: "ChatGPT",
       promptTemplate:
         "Hãy tạo định hướng hình ảnh cho pitch deck về [STARTUP IDEA] trong lĩnh vực [INDUSTRY]. Đề xuất hình ảnh, sơ đồ, icon hoặc biểu đồ đơn giản cho từng slide. Giữ phong cách gọn, thân thiện với sinh viên và dễ dựng trong công cụ làm deck hiện có.",
       expectedOutput:

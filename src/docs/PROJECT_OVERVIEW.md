@@ -1,47 +1,41 @@
 # Root Access Project Overview
 
-## Product Vision
+## Product Identity
 
-Root Access is an MVP for a workflow-based AI guidance platform for students.
-It helps students complete startup proposal assignments by following structured,
-prebuilt workflows and better prompt sequences.
+Root Access is an AI Workflow + Output Review + Prompt Improvement product for
+Startup Proposal work.
 
-Root Access is not an AI content generator and not an AI workflow generator.
-The product should not produce final assignments directly. Instead, it guides
-students through research, outlining, drafting, verification, and prompt quality.
+The user should immediately understand:
 
-The intended product position is:
+```txt
+I am here to improve how I use AI for my startup proposal.
+```
 
-- A rule-based workflow library for academic startup proposal work.
-- A guided prompt workflow tool for students already using AI tools.
-- A structure-first assistant that improves process quality without replacing
-  student responsibility.
+Not:
+
+```txt
+Root Access will generate my proposal for me.
+I am here to browse prompts.
+I am here to build slides, websites, CVs, or reports.
+```
 
 ## Current MVP Scope
 
-The current MVP focuses only on startup proposal workflows.
+The current MVP supports only Startup Proposal.
 
-Implemented startup workflow assets include:
+Out of scope:
 
-- Idea Validation
-- Market Research
-- Business Model Design
-- MVP Planning
-- Pitch Deck Preparation
-
-The `/result` page renders the selected workflow from the TypeScript workflow
-library using a deterministic selector. The codebase still contains legacy JSON
-workflow files for reference and compatibility, but the runtime viewer uses the
-expanded workflow library.
-
-Out of scope for the current MVP:
-
-- Academic Reports
+- Academic Report
 - Presentation Slides
-- CV Builder
 - Interview Prep
-- Image Generation Workflow
-- Website Prototype Workflow
+- CV Builder
+- Website Builder
+- Canva integration
+- PDF export
+- PowerPoint generation
+- Excel generation
+- image generation
+- final proposal generation
 
 ## Target Users
 
@@ -49,82 +43,85 @@ Primary users are FPT University HCMC students:
 
 - Business, Marketing, and EXE students
 - Year 2 to Year 4
-- Frequently working on startup proposal assignments
-- Already using tools such as ChatGPT, Gemini, Claude, or Perplexity
-- Struggling with prompt quality, research order, validation logic, and proposal
-  structure
+- Working on startup proposal assignments
+- Already using ChatGPT or Gemini
+- Unsure why AI output is weak or how to improve their prompt
 
-## Problem Statement
+## Core Flow
 
-Students already use AI tools for startup assignments, but they often struggle
-with:
+Root Access follows one fixed product flow:
 
-- Starting from unclear or weak startup ideas
-- Asking prompts in the wrong order
-- Skipping market validation
-- Mixing customer research, value proposition, business model, MVP, and pitch
-  work too early
-- Generating polished text before understanding the assignment structure
-- Submitting AI-looking work without review or verification
+1. User chooses the Startup Proposal workflow.
+2. Root Access creates a starting prompt.
+3. User copies the prompt to ChatGPT or Gemini.
+4. User pastes the AI output back into Root Access.
+5. Root Access scores the output.
+6. Root Access points out the top two weaknesses.
+7. Root Access suggests a better prompt.
+8. User retries externally.
+9. Root Access compares old and new scores.
+10. User completes the proposal section.
 
-Root Access solves the workflow problem, not the final-answer problem.
+## Runtime Sections
 
-## Solution Logic
+The MVP tracks proposal progress by five sections:
 
-The intended product flow is:
+- Problem
+- Customer
+- Validation
+- Revenue
+- MVP Scope
 
-1. User submits startup context:
-   - startup task / stage
-   - startup idea
-   - industry
-   - deadline urgency
-   - available AI tools
-2. The app selects a prebuilt workflow using deterministic rules.
-3. The workflow prompt templates receive user variables:
-   - `[STARTUP IDEA]`
-   - `[INDUSTRY]`
-4. Prompt guidance is adapted for deadline urgency and available tools.
-5. The user completes the workflow step by step.
-6. Progress is stored locally in the browser per workflow run.
-7. When all steps are completed, the app shows a completion CTA and feedback
-   entry point.
+These are progress sections, not micro-step accordions. The UI should stay
+focused on the current section and avoid overwhelming the user.
 
-## Academic Integrity Constraints
+## Monetization Fit
 
-Root Access must preserve academic integrity.
+The MVP includes a visible credit model.
 
-The product must not:
+Free plan:
 
-- Generate final assignments for students
-- Present AI output as submission-ready work
-- Remove the need for review, verification, or editing
-- Encourage copying generated output directly into assignments
+- 5 prompt generations
+- 5 output reviews
+- 3 improved prompts
 
-The product may assist with:
+Pro demo:
 
-- Structure
-- Research planning
-- Outlining
-- Drafting support
-- Prompt quality
-- Workflow order
-- Review discipline
+- unlimited prompt generations
+- unlimited output reviews
+- unlimited improved prompts
 
-The app includes an `AcademicIntegrityNotice` component on the landing page and
-workflow page, plus a footer disclaimer, to communicate this boundary clearly.
+No real payment integration is implemented. `/checkout` is a fake checkout page
+for business-model validation.
 
-## Current Technical Stack
+## Technical Notes
 
-The current implementation uses:
+The active runtime route is `/result`.
 
-- Next.js App Router
-- React
-- TypeScript
-- TailwindCSS
-- shadcn UI primitives
-- react-hook-form
-- zod
-- lucide-react
-- Vercel Analytics
-- next-intl
-- localStorage persistence for workflow progress
+`/result` renders:
+
+```txt
+WorkflowReviewWorkspace
+-> proposal progress by section
+-> Action Layer
+-> Review Layer
+-> Retry Layer
+-> upgrade modal
+```
+
+The review API is:
+
+```txt
+src/app/api/gemini/review/route.ts
+```
+
+It calls Gemini for output scoring, weakness detection, and prompt improvement.
+
+Workflow logic remains rule-based:
+
+- static workflow library
+- deterministic workflow selection
+- predefined prompt templates
+- rule-based tool adaptation
+
+AI must not decide product workflow or generate hidden workflow logic.

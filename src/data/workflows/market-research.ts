@@ -36,7 +36,7 @@ export const marketResearchWorkflow = {
     {
       title: "Map Competitors",
       goal: "Find direct, indirect, and substitute solutions.",
-      recommendedTool: "Perplexity",
+      recommendedTool: "Gemini",
       promptTemplate:
         "Research competitors for [STARTUP IDEA] in [INDUSTRY]. List direct competitors, indirect competitors, and substitute solutions. For each, include what they offer, target users, strengths, weaknesses, and what claims need source verification.",
       expectedOutput:
@@ -50,7 +50,7 @@ export const marketResearchWorkflow = {
     {
       title: "Summarize Market Trends",
       goal: "Connect the idea to relevant trends without overclaiming.",
-      recommendedTool: "Perplexity",
+      recommendedTool: "Gemini",
       promptTemplate:
         "For [STARTUP IDEA] in [INDUSTRY], summarize relevant market trends that support the opportunity. Keep it suitable for a university startup proposal and include source types, keywords, or links I should use to verify the trends.",
       expectedOutput:

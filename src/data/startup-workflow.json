@@ -35,7 +35,7 @@
       "id": 3,
       "title": "Existing Solutions",
       "goal": "Research direct and indirect competitors for [STARTUP IDEA] in [INDUSTRY].",
-      "tool": "ChatGPT + Google",
+      "tool": "Gemini",
       "promptTemplate": "Act as a startup research assistant for a university assignment. My startup idea is [STARTUP IDEA] in the [INDUSTRY] industry. List possible direct competitors, indirect competitors, and substitute solutions. For each one, explain what they offer, their target users, their likely weaknesses, and what I should verify using Google before adding them to my proposal.",
       "expectedOutput": "A competitor overview with direct competitors, indirect competitors, substitutes, weaknesses, and Google research checks.",
       "commonMistakes": [
@@ -87,7 +87,7 @@
       "id": 7,
       "title": "Pitch Structure",
       "goal": "Create a clear pitch deck structure for [STARTUP IDEA] in [INDUSTRY].",
-      "tool": "Gamma",
+      "tool": "ChatGPT",
       "promptTemplate": "Create a university startup pitch deck for [STARTUP IDEA] in the [INDUSTRY] industry. Use a practical storytelling flow: problem, target customer, existing solutions, value proposition, business model, MVP, go-to-market idea, and closing summary. For each slide, provide a slide title, key message, and suggested bullet points.",
       "expectedOutput": "A pitch deck outline with slide titles, key messages, bullet points, and a clear storytelling flow.",
       "commonMistakes": [

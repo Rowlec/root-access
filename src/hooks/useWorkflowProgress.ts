@@ -5,6 +5,13 @@ import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
 type ChecklistItemsByStep = Record<string, number[]>;
 type PromptEditsByStep = Record<string, string>;
 type OutputDraftsByStep = Record<string, string>;
+export type RefinementHistoryEntry = {
+  id: string;
+  feedback: string;
+  output: string;
+  createdAt: string;
+};
+type RefinementHistoryByStep = Record<string, RefinementHistoryEntry[]>;
 
 type UseWorkflowProgressOptions = {
   workflowId: string;
@@ -25,9 +32,14 @@ type UseWorkflowProgressResult = {
   getChecklistItems: (stepId: string) => number[];
   getOutputDraft: (stepId: string) => string;
   getPromptDraft: (stepId: string, fallbackPrompt: string) => string;
+  getRefinementHistory: (stepId: string) => RefinementHistoryEntry[];
   hasOutputDraft: (stepId: string) => boolean;
   hasPromptEdit: (stepId: string) => boolean;
   isStepCompleted: (stepId: string) => boolean;
+  addRefinementHistory: (
+    stepId: string,
+    refinement: Omit<RefinementHistoryEntry, "id" | "createdAt">,
+  ) => void;
   resetOutputDraft: (stepId: string) => void;
   resetPromptEdit: (stepId: string) => void;
   restartWorkflow: () => void;
@@ -45,6 +57,7 @@ type WorkflowProgressStorageValue = {
   checklistItems: ChecklistItemsByStep;
   outputDrafts: OutputDraftsByStep;
   promptEdits: PromptEditsByStep;
+  refinementHistory: RefinementHistoryByStep;
 };
 
 const emptyStorageValue: WorkflowProgressStorageValue = {
@@ -54,6 +67,7 @@ const emptyStorageValue: WorkflowProgressStorageValue = {
   checklistItems: {},
   outputDrafts: {},
   promptEdits: {},
+  refinementHistory: {},
 };
 const emptyStorageSnapshot = JSON.stringify(emptyStorageValue);
 
@@ -200,6 +214,64 @@ function parseOutputDrafts(
   );
 }
 
+function parseRefinementHistoryEntries(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter(
+      (entry): entry is RefinementHistoryEntry =>
+        Boolean(entry) &&
+        typeof entry === "object" &&
+        !Array.isArray(entry) &&
+        typeof (entry as RefinementHistoryEntry).id === "string" &&
+        typeof (entry as RefinementHistoryEntry).feedback === "string" &&
+        typeof (entry as RefinementHistoryEntry).output === "string" &&
+        typeof (entry as RefinementHistoryEntry).createdAt === "string",
+    )
+    .map((entry) => ({
+      id: entry.id,
+      feedback: entry.feedback,
+      output: entry.output,
+      createdAt: entry.createdAt,
+    }))
+    .filter(
+      (entry) =>
+        entry.id.trim().length > 0 &&
+        entry.feedback.trim().length > 0 &&
+        entry.output.trim().length > 0 &&
+        entry.createdAt.trim().length > 0,
+    )
+    .slice(-20);
+}
+
+function parseRefinementHistory(
+  value: unknown,
+  validStepIds: Set<string>,
+): RefinementHistoryByStep {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.entries(value).reduce<RefinementHistoryByStep>(
+    (refinementHistory, [stepId, entries]) => {
+      if (!validStepIds.has(stepId)) {
+        return refinementHistory;
+      }
+
+      const parsedEntries = parseRefinementHistoryEntries(entries);
+
+      if (parsedEntries.length > 0) {
+        refinementHistory[stepId] = parsedEntries;
+      }
+
+      return refinementHistory;
+    },
+    {},
+  );
+}
+
 function parseStoredProgress(
   value: string,
   validStepIds: Set<string>,
@@ -229,6 +301,7 @@ function parseStoredProgress(
       checklistItems?: unknown;
       outputDrafts?: unknown;
       promptEdits?: unknown;
+      refinementHistory?: unknown;
     };
     const currentStepId =
       typeof storedProgress.currentStepId === "string" &&
@@ -252,6 +325,10 @@ function parseStoredProgress(
         validStepIds,
       ),
       promptEdits: parsePromptEdits(storedProgress.promptEdits, validStepIds),
+      refinementHistory: parseRefinementHistory(
+        storedProgress.refinementHistory,
+        validStepIds,
+      ),
     };
   } catch {
     return emptyStorageValue;
@@ -306,6 +383,7 @@ function serializeStoredProgress({
   currentStepId,
   outputDrafts,
   promptEdits,
+  refinementHistory,
 }: WorkflowProgressStorageValue) {
   return JSON.stringify({
     completedSteps,
@@ -314,6 +392,7 @@ function serializeStoredProgress({
     checklistItems,
     outputDrafts,
     promptEdits,
+    refinementHistory,
   } satisfies WorkflowProgressStorageValue);
 }
 
@@ -374,6 +453,7 @@ export function useWorkflowProgress({
         checklistItems: storedProgress.checklistItems,
         outputDrafts: storedProgress.outputDrafts,
         promptEdits: storedProgress.promptEdits,
+        refinementHistory: storedProgress.refinementHistory,
       }),
     [
       availableToolsForStorage,
@@ -382,6 +462,7 @@ export function useWorkflowProgress({
       storedProgress.checklistItems,
       storedProgress.outputDrafts,
       storedProgress.promptEdits,
+      storedProgress.refinementHistory,
     ],
   );
 
@@ -419,6 +500,10 @@ export function useWorkflowProgress({
         ),
         outputDrafts: parseOutputDrafts(nextProgress.outputDrafts, validStepIds),
         promptEdits: parsePromptEdits(nextProgress.promptEdits, validStepIds),
+        refinementHistory: parseRefinementHistory(
+          nextProgress.refinementHistory,
+          validStepIds,
+        ),
       });
 
       writeStorageValue(storageKey, nextValue);
@@ -550,6 +635,46 @@ export function useWorkflowProgress({
     [updateStoredProgress, validStepIds],
   );
 
+  const addRefinementHistory = useCallback(
+    (
+      stepId: string,
+      refinement: Omit<RefinementHistoryEntry, "id" | "createdAt">,
+    ) => {
+      if (!validStepIds.has(stepId)) {
+        return;
+      }
+
+      const feedback = refinement.feedback.trim();
+      const output = refinement.output.trim();
+
+      if (!feedback || !output) {
+        return;
+      }
+
+      updateStoredProgress((currentProgress) => {
+        const currentHistory = currentProgress.refinementHistory[stepId] ?? [];
+        const nextHistory = [
+          ...currentHistory,
+          {
+            id: `${Date.now()}-${currentHistory.length + 1}`,
+            feedback,
+            output,
+            createdAt: new Date().toISOString(),
+          },
+        ].slice(-20);
+
+        return {
+          ...currentProgress,
+          refinementHistory: {
+            ...currentProgress.refinementHistory,
+            [stepId]: nextHistory,
+          },
+        };
+      });
+    },
+    [updateStoredProgress, validStepIds],
+  );
+
   const resetOutputDraft = useCallback(
     (stepId: string) => {
       if (!validStepIds.has(stepId)) {
@@ -582,6 +707,7 @@ export function useWorkflowProgress({
       checklistItems: {},
       outputDrafts: {},
       promptEdits: {},
+      refinementHistory: {},
     }));
   }, [updateStoredProgress]);
 
@@ -610,6 +736,10 @@ export function useWorkflowProgress({
     (stepId: string) => storedProgress.outputDrafts[stepId] ?? "",
     [storedProgress.outputDrafts],
   );
+  const getRefinementHistory = useCallback(
+    (stepId: string) => storedProgress.refinementHistory[stepId] ?? [],
+    [storedProgress.refinementHistory],
+  );
   const hasPromptEdit = useCallback(
     (stepId: string) => hasOwnKey(storedProgress.promptEdits, stepId),
     [storedProgress.promptEdits],
@@ -629,7 +759,8 @@ export function useWorkflowProgress({
     completedSteps.length > 0 ||
     hasChecklistProgress(storedProgress.checklistItems) ||
     Object.keys(storedProgress.outputDrafts).length > 0 ||
-    Object.keys(storedProgress.promptEdits).length > 0;
+    Object.keys(storedProgress.promptEdits).length > 0 ||
+    Object.keys(storedProgress.refinementHistory).length > 0;
 
   return {
     completedSteps,
@@ -639,10 +770,12 @@ export function useWorkflowProgress({
     currentStepId,
     abandonStepId: currentStepId,
     hasSavedProgress,
+    addRefinementHistory,
     canCompleteStep,
     getChecklistItems,
     getOutputDraft,
     getPromptDraft,
+    getRefinementHistory,
     hasOutputDraft,
     hasPromptEdit,
     isStepCompleted,

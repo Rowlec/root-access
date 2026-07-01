@@ -29,11 +29,9 @@ import { cn } from "@/lib/utils";
 import {
   availableToolOptions,
   availableToolsSchema,
-  currentStageOptions,
   deadlineUrgencyOptions,
   goalFormSchema,
   type GoalFormValues,
-  workflowModeOptions,
 } from "@/lib/goal-form-schema";
 import {
   formatAnalyticsTools,
@@ -41,15 +39,16 @@ import {
 } from "@/lib/analytics-payload";
 
 const toolPreferencesStorageKey = "root-access:available-tools";
-const noPreferenceToolValue = "No preference";
-const toolPreferenceOptions = [
-  noPreferenceToolValue,
-  ...availableToolOptions,
-] as const;
+const goalContextStorageKey = "root-access:startup-context";
+const descriptionHeightClasses = {
+  default: "min-h-6",
+  paired: "min-h-6 sm:min-h-12",
+} as const;
 
 type FormFieldProps = {
   children: ReactNode;
   description?: string;
+  descriptionHeight?: keyof typeof descriptionHeightClasses;
   error?: string;
   id: string;
   label: string;
@@ -58,22 +57,28 @@ type FormFieldProps = {
 function FormField({
   children,
   description,
+  descriptionHeight = "default",
   error,
   id,
   label,
 }: FormFieldProps) {
   return (
-    <div className="grid content-start gap-2.5">
+    <div className="grid h-full content-start gap-2.5">
       <label
         htmlFor={id}
-        className="min-h-5 text-sm font-medium text-foreground"
+        className="min-h-5 text-sm font-medium leading-5 text-foreground"
       >
         {label}
       </label>
-      <p className="min-h-6 text-sm leading-6 text-muted-foreground">
+      <p
+        className={cn(
+          descriptionHeightClasses[descriptionHeight],
+          "text-sm leading-6 text-muted-foreground",
+        )}
+      >
         {description}
       </p>
-      {children}
+      <div className="grid">{children}</div>
       {error ? (
         <p className="text-sm text-destructive">{error}</p>
       ) : null}
@@ -116,40 +121,45 @@ function writeStoredAvailableTools(
   }
 }
 
+function readStoredGoalContext() {
+  try {
+    const storedValue = window.localStorage.getItem(goalContextStorageKey);
+
+    if (!storedValue) {
+      return null;
+    }
+
+    const parsedValue: unknown = JSON.parse(storedValue);
+    const parsedContext = goalFormSchema.safeParse(parsedValue);
+
+    if (!parsedContext.success) {
+      window.localStorage.removeItem(goalContextStorageKey);
+      return null;
+    }
+
+    return parsedContext.data;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredGoalContext(values: GoalFormValues) {
+  try {
+    window.localStorage.setItem(goalContextStorageKey, JSON.stringify(values));
+  } catch {
+    return;
+  }
+}
+
 export function GoalForm() {
   const router = useRouter();
   const t = useTranslations("GoalForm");
-  const currentStageOptionLabels = {
-    "No clear idea yet": t("fields.currentStage.options.noClearIdeaYet"),
-    "Have idea but not validated": t(
-      "fields.currentStage.options.haveIdeaButNotValidated",
-    ),
-    "Doing market research": t("fields.currentStage.options.doingMarketResearch"),
-    "Building business model": t(
-      "fields.currentStage.options.buildingBusinessModel",
-    ),
-    "Planning MVP": t("fields.currentStage.options.planningMvp"),
-    "Preparing pitch deck": t("fields.currentStage.options.preparingPitchDeck"),
-  } satisfies Record<(typeof currentStageOptions)[number], string>;
   const deadlineUrgencyOptionLabels = {
     "1-3 days": t("fields.deadlineUrgency.options.oneToThreeDays"),
     "1 week": t("fields.deadlineUrgency.options.oneWeek"),
     "2 weeks+": t("fields.deadlineUrgency.options.twoWeeksPlus"),
     "No deadline": t("fields.deadlineUrgency.options.noDeadline"),
   } satisfies Record<(typeof deadlineUrgencyOptions)[number], string>;
-  const workflowModeOptionContent = {
-    quick: {
-      title: t("fields.workflowMode.options.quick.title"),
-      description: t("fields.workflowMode.options.quick.description"),
-    },
-    deep: {
-      title: t("fields.workflowMode.options.deep.title"),
-      description: t("fields.workflowMode.options.deep.description"),
-    },
-  } satisfies Record<
-    (typeof workflowModeOptions)[number],
-    { title: string; description: string }
-  >;
   const {
     control,
     formState: { errors, isSubmitting },
@@ -160,16 +170,57 @@ export function GoalForm() {
     resolver: zodResolver(goalFormSchema),
     defaultValues: {
       workflowMode: "deep",
-      currentStage: undefined,
+      currentStage: "No clear idea yet",
       startupIdea: "",
       industry: "",
       targetCustomer: "",
       deadlineUrgency: undefined,
-      availableTools: [],
+      availableTools: ["Gemini"],
     },
   });
 
   useEffect(() => {
+    const storedGoalContext = readStoredGoalContext();
+
+    if (storedGoalContext) {
+      setValue("workflowMode", storedGoalContext.workflowMode, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
+      setValue("currentStage", storedGoalContext.currentStage, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
+      setValue("startupIdea", storedGoalContext.startupIdea, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
+      setValue("industry", storedGoalContext.industry, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
+      setValue("targetCustomer", storedGoalContext.targetCustomer, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
+      setValue("deadlineUrgency", storedGoalContext.deadlineUrgency, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
+      setValue("availableTools", storedGoalContext.availableTools, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
+      return;
+    }
+
     const storedAvailableTools = readStoredAvailableTools();
 
     if (!storedAvailableTools) {
@@ -187,6 +238,7 @@ export function GoalForm() {
     const selectedTools = getUniqueAnalyticsTools(values.availableTools);
 
     writeStoredAvailableTools(values.availableTools);
+    writeStoredGoalContext(values);
 
     track("Workflow Start", {
       mode: values.workflowMode,
@@ -222,14 +274,6 @@ export function GoalForm() {
     router.push(`/result?${params.toString()}`);
   }
 
-  function getAvailableToolLabel(
-    toolPreference: (typeof toolPreferenceOptions)[number],
-  ) {
-    return toolPreference === noPreferenceToolValue
-      ? t("fields.availableTools.noPreference")
-      : toolPreference;
-  }
-
   return (
     <section id="goal-form" className="w-full bg-muted/40 py-16 sm:py-24">
       <div className="mx-auto grid w-full max-w-6xl items-start gap-8 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12 lg:px-10">
@@ -251,94 +295,17 @@ export function GoalForm() {
             <CardDescription className="leading-6">
               {t("cardDescription")}
             </CardDescription>
-          </CardHeader>
+            </CardHeader>
           <CardContent>
             <form className="grid gap-5" onSubmit={handleSubmit(onSubmit)}>
-              <fieldset className="grid gap-2.5">
-                <legend className="text-sm font-medium text-foreground">
-                  {t("fields.workflowMode.label")}
-                </legend>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {t("fields.workflowMode.description")}
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <p className="text-sm font-medium text-foreground">
+                  {t("workflowChoice.title")}
                 </p>
-                <Controller
-                  control={control}
-                  name="workflowMode"
-                  render={({ field }) => (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {workflowModeOptions.map((mode) => {
-                        const isSelected = field.value === mode;
-                        const modeContent = workflowModeOptionContent[mode];
-
-                        return (
-                          <label
-                            key={mode}
-                            className={cn(
-                              "flex min-h-24 cursor-pointer items-start gap-3 rounded-lg border border-input bg-background p-3 text-sm transition-colors hover:bg-muted/50",
-                              isSelected &&
-                                "border-foreground bg-muted text-foreground",
-                            )}
-                          >
-                            <input
-                              ref={field.ref}
-                              type="radio"
-                              name={field.name}
-                              value={mode}
-                              checked={isSelected}
-                              onBlur={field.onBlur}
-                              onChange={() => field.onChange(mode)}
-                              className="mt-1 size-4 rounded-full border-input accent-foreground"
-                            />
-                            <span className="grid gap-1">
-                              <span className="font-medium text-foreground">
-                                {modeContent.title}
-                              </span>
-                              <span className="leading-6 text-muted-foreground">
-                                {modeContent.description}
-                              </span>
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  )}
-                />
-              </fieldset>
-
-              <FormField
-                id="currentStage"
-                label={t("fields.currentStage.label")}
-                error={
-                  errors.currentStage
-                    ? t("fields.currentStage.error")
-                    : undefined
-                }
-              >
-                <Controller
-                  control={control}
-                  name="currentStage"
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger
-                        id="currentStage"
-                        className="h-10 w-full"
-                        aria-invalid={Boolean(errors.currentStage)}
-                      >
-                        <SelectValue
-                          placeholder={t("fields.currentStage.placeholder")}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {currentStageOptions.map((option) => (
-                          <SelectItem key={option} value={option}>
-                            {currentStageOptionLabels[option]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </FormField>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {t("workflowChoice.description")}
+                </p>
+              </div>
 
               <FormField
                 id="startupIdea"
@@ -362,6 +329,8 @@ export function GoalForm() {
                 <FormField
                   id="industry"
                   label={t("fields.industry.label")}
+                  description={t("fields.industry.description")}
+                  descriptionHeight="paired"
                   error={
                     errors.industry ? t("fields.industry.error") : undefined
                   }
@@ -379,6 +348,7 @@ export function GoalForm() {
                   id="targetCustomer"
                   label={t("fields.targetCustomer.label")}
                   description={t("fields.targetCustomer.description")}
+                  descriptionHeight="paired"
                 >
                   <Input
                     id="targetCustomer"
@@ -391,6 +361,8 @@ export function GoalForm() {
                 <FormField
                   id="deadlineUrgency"
                   label={t("fields.deadlineUrgency.label")}
+                  description={t("fields.deadlineUrgency.description")}
+                  descriptionHeight="paired"
                   error={
                     errors.deadlineUrgency
                       ? t("fields.deadlineUrgency.error")
@@ -454,13 +426,10 @@ export function GoalForm() {
                     const selectedTools = field.value ?? [];
 
                     return (
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        {toolPreferenceOptions.map((toolPreference) => {
-                          const isNoPreference =
-                            toolPreference === noPreferenceToolValue;
-                          const isSelected = isNoPreference
-                            ? selectedTools.length === 0
-                            : selectedTools.includes(toolPreference);
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {availableToolOptions.map((toolPreference) => {
+                          const isSelected =
+                            selectedTools.includes(toolPreference);
 
                           return (
                             <label
@@ -479,14 +448,12 @@ export function GoalForm() {
                                 checked={isSelected}
                                 onBlur={field.onBlur}
                                 onChange={() => {
-                                  field.onChange(
-                                    isNoPreference ? [] : [toolPreference],
-                                  );
+                                  field.onChange([toolPreference]);
                                 }}
                                 className="size-4 rounded-full border-input accent-foreground"
                               />
                               <span className="font-medium text-foreground">
-                                {getAvailableToolLabel(toolPreference)}
+                                {toolPreference}
                               </span>
                             </label>
                           );

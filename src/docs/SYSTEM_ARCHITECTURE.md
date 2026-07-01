@@ -1,316 +1,160 @@
 # Root Access System Architecture
 
-## Folder Structure
+## Active Runtime
 
-Current important folders and files:
+Root Access uses the Next.js App Router.
 
-```txt
-.
-├── src
-│   ├── app
-│   │   ├── layout.tsx
-│   │   ├── loading.tsx
-│   │   ├── page.tsx
-│   │   └── result
-│   │       ├── loading.tsx
-│   │       └── page.tsx
-│   ├── components
-│   │   ├── AcademicIntegrityNotice.tsx
-│   │   ├── GoalForm.tsx
-│   │   ├── analytics
-│   │   │   └── LandingAnalytics.tsx
-│   │   ├── feedback
-│   │   │   └── FeedbackCard.tsx
-│   │   ├── landing
-│   │   │   ├── Hero.tsx
-│   │   │   └── HowItWorks.tsx
-│   │   ├── ui
-│   │   │   ├── badge.tsx
-│   │   │   ├── button.tsx
-│   │   │   ├── card.tsx
-│   │   │   ├── input.tsx
-│   │   │   ├── select.tsx
-│   │   │   ├── sonner.tsx
-│   │   │   └── textarea.tsx
-│   │   └── workflow
-│   │       ├── FeedbackForm.tsx
-│   │       ├── ProgressTracker.tsx
-│   │       ├── StepCard.tsx
-│   │       └── WorkflowCompletion.tsx
-│   ├── constants
-│   │   └── links.ts
-│   ├── data
-│   │   ├── startup-workflow.json
-│   │   └── workflows
-│   │       ├── business-model.ts
-│   │       ├── idea-validation.ts
-│   │       ├── index.ts
-│   │       ├── market-research.ts
-│   │       ├── mvp-planning.ts
-│   │       └── pitch-deck.ts
-│   ├── hooks
-│   │   └── useWorkflowProgress.ts
-│   └── lib
-│       ├── goal-form-schema.ts
-│       ├── template-parser.ts
-│       ├── utils.ts
-│       ├── workflow-loader.ts
-│       ├── workflow-parser.ts
-│       └── workflow-selector.ts
-├── types.ts
-├── product-spec.md
-├── tech-spec.md
-└── workflow-spec.md
-```
-
-## Routing Structure
-
-The app currently has two main routes:
+Primary routes:
 
 ```txt
-/         Landing and intake form
-/result   Workflow result page
+/          Landing and startup context form
+/result    Startup Proposal prompt review workspace
+/checkout  Fake Pro checkout for monetization validation
 ```
 
-### `/`
-
-Implemented in `src/app/page.tsx`.
-
-Renders:
-
-1. `LandingAnalytics`
-2. `Hero`
-3. `HowItWorks`
-4. `AcademicIntegrityNotice`
-5. `GoalForm`
-
-The landing page is the main entry point for students.
-
-### `/result`
-
-Implemented in `src/app/result/page.tsx`.
-
-Responsibilities:
-
-1. Read query params from the URL.
-2. Validate that `idea` and `industry` exist.
-3. Load the workflow.
-4. Inject variables into prompt templates.
-5. Render the workflow header and step tracker.
-6. Show feedback and completion affordances.
-
-Current query params produced by `GoalForm`:
+Server route:
 
 ```txt
-stage
-idea
-industry
-urgency
-availableTools
+/api/gemini/review
 ```
 
-Current `/result` runtime behavior only consumes:
+The API route reviews pasted external AI output. It does not generate final
+proposal content for the user.
 
-```txt
-idea
-industry
-availableTools
-```
-
-The `stage` and `urgency` params are included in the workflow input object, but
-`stage` is not yet used to select one of the five workflow-library workflows.
-
-## Component Hierarchy
-
-Landing page:
+## Important Files
 
 ```txt
 src/app/page.tsx
-├── LandingAnalytics
-├── Hero
-├── HowItWorks
-├── AcademicIntegrityNotice
-└── GoalForm
-```
-
-Result page:
-
-```txt
 src/app/result/page.tsx
-├── WorkflowAnalytics
-├── AcademicIntegrityNotice
-├── ProgressTracker
-│   ├── WorkflowCompletion
-│   └── StepCard[]
-└── FeedbackForm
-    └── FeedbackCard
+src/app/checkout/page.tsx
+src/app/api/gemini/review/route.ts
+src/components/GoalForm.tsx
+src/components/proposal/WorkflowReviewWorkspace.tsx
+src/components/proposal/CheckoutClient.tsx
+src/hooks/useCreditUsage.ts
+src/lib/credit-policy.ts
+src/lib/goal-form-schema.ts
+messages/en.json
+messages/vi.json
 ```
 
-## State Flow
+Older workflow components may remain in `src/components/workflow/` for legacy
+reference, but they are not the active MVP runtime surface.
 
-### Intake Form State
+## Landing Flow
 
-`GoalForm` is a client component.
-
-State management:
-
-- `react-hook-form` manages input state.
-- `zod` validates the form through `goalFormSchema`.
-- `localStorage` prefills previously selected available AI tools.
-- On submit, the form pushes the user to `/result` with query params.
-
-Validated fields:
-
-- `currentStage`
-- `startupIdea`
-- `industry`
-- `deadlineUrgency`
-- `availableTools`
-
-Stored tool preference key:
+`src/app/page.tsx` renders:
 
 ```txt
+LandingAnalytics
+Hero
+HowItWorks
+AcademicIntegrityNotice
+GoalForm
+```
+
+`GoalForm` collects:
+
+- startup idea
+- industry
+- target customer
+- deadline urgency
+- AI model: ChatGPT or Gemini
+
+The form keeps the workflow deterministic. Startup Proposal is the only active
+workflow.
+
+## Result Flow
+
+`src/app/result/page.tsx` validates query params and renders
+`WorkflowReviewWorkspace`.
+
+The workspace has exactly three user-facing layers:
+
+- Action Layer: objective, starting prompt, copy button, paste output.
+- Review Layer: output score, top weaknesses, improved prompt.
+- Retry Layer: copy improved prompt, paste retry output, score comparison.
+
+## Review API
+
+`src/app/api/gemini/review/route.ts` calls Gemini once for the review bundle:
+
+- Output Score Engine
+- Weakness Detection
+- Prompt Improvement Engine
+
+The route validates request and response shapes with zod. The score dimensions
+are:
+
+- Relevance: 0-10
+- Specificity: 0-10
+- Actionability: 0-10
+- Clarity: 0-10
+
+Total score is recomputed server-side as 0-40.
+
+## Proposal Progress
+
+Progress is tracked by section:
+
+- Problem
+- Customer
+- Validation
+- Revenue
+- MVP Scope
+
+The sidebar shows completed, current, and remaining sections. It should stay
+compact on mobile and sticky on desktop.
+
+## Persistence
+
+Browser localStorage stores:
+
+- startup context
+- selected AI model
+- review workspace state
+- credit usage
+- Pro demo plan state
+
+Main keys:
+
+```txt
+root-access:startup-context
 root-access:available-tools
+root-access:workflow-review:${workflowRunId}
+root-access:credit-usage:v1
+root-access:credit-plan:v1
 ```
 
-The form validates stored tool preferences before using them and ignores
-corrupted values.
+## Credit Structure
 
-### Workflow Progress State
+Credit policy lives in `src/lib/credit-policy.ts`.
 
-`ProgressTracker` is a client component.
+Free:
 
-It delegates persistence and calculations to `useWorkflowProgress`.
+- 5 prompt generations
+- 5 output reviews
+- 3 improved prompts
 
-Tracked values:
+Pro:
 
-- `completedSteps`
-- `completedCount`
-- `totalSteps`
-- `completionPercentage`
-- `currentStepId`
-- `abandonStepId`
+- unlimited prompt generations
+- unlimited output reviews
+- unlimited improved prompts
 
-The hook enforces sequential completion. Users can complete the current step,
-but cannot skip ahead.
+`/checkout` is a fake checkout page. It activates Pro demo mode in localStorage
+and does not process payment.
 
-## Workflow Engine Flow
+## Architecture Invariants
 
-There are currently two workflow paths in the repository.
-
-### Runtime Path Used Today
-
-```txt
-src/app/result/page.tsx
--> getStartupWorkflow()
--> src/data/startup-workflow.json
--> parseWorkflowVariables()
--> ProgressTracker
--> StepCard[]
-```
-
-This path uses the legacy `Workflow` and `WorkflowStep` interfaces from
-`types.ts`.
-
-### Expanded Library Path Ready For Integration
-
-```txt
-GoalForm currentStage
--> selectWorkflow(stage)
--> src/data/workflows/*
--> injectWorkflowVariables(template, variables)
--> workflow viewer
-```
-
-This path uses `StartupWorkflow` and `StartupWorkflowStep` from
-`src/data/workflows/index.ts`.
-
-The selector exists in `src/lib/workflow-selector.ts`, but the result page does
-not yet use it.
-
-## i18n Flow
-
-The project context lists `next-intl`, but the current package and source files
-do not show an implemented i18n layer.
-
-Current state:
-
-- No locale route segment is implemented.
-- No message files are present.
-- No `next-intl` provider is wired into `layout.tsx`.
-- UI text is currently hardcoded in English.
-
-Recommended future i18n flow:
-
-```txt
-locale route segment
--> message files
--> provider in layout
--> translated component strings
--> workflow data translated separately or locale-aware
-```
-
-Do not assume i18n exists until `next-intl` is installed and configured.
-
-## Persistence Flow
-
-Workflow progress persists through browser `localStorage`.
-
-Storage key format:
-
-```txt
-root-access:workflow-progress:${workflowId}
-```
-
-Stored value:
-
-```json
-{
-  "completedSteps": ["1", "2", "3"],
-  "availableTools": ["ChatGPT", "Gemini"]
-}
-```
-
-Important implementation details:
-
-- Step IDs are normalized to strings before persistence.
-- Available tools are persisted with the workflow progress context.
-- Invalid stored step IDs are filtered out.
-- Legacy array values are still accepted and normalized into the object shape.
-- Stored completion is normalized to a sequential prefix.
-- localStorage access is guarded for server rendering and browser errors.
-- The hook uses `useSyncExternalStore` for hydration-safe subscription behavior.
-
-Workflow completion analytics uses `sessionStorage` to avoid duplicate completion
-events in the same browser session.
-
-Completion event key format:
-
-```txt
-root-access:workflow-completion-tracked:${workflowId}
-```
-
-## Analytics Flow
-
-Vercel Analytics is installed in the root app layout through:
-
-```txt
-src/app/layout.tsx
-```
-
-Tracked custom events:
-
-- `Landing Visit`
-- `Workflow Start`
-- `Tool Selected`
-- `Workflow Selected`
-- `Tool Adapted`
-- `Workflow Completion`
-- `Tool Workflow Completion`
-- `Feedback Click`
-
-Event calls are placed in client components only.
-
-Tool analytics payloads use primitive values only. Lists such as selected tools
-and adapted tools are serialized as comma-separated strings. Startup idea text
-is not sent to analytics.
+- Startup Proposal remains the only MVP workflow area.
+- Root Access reviews AI outputs and improves prompts; it does not generate the
+  final proposal.
+- Workflow library remains static.
+- Workflow selection remains deterministic.
+- Prompt templates remain predefined.
+- Tool adaptation remains rule-based.
+- Output scoring, weakness detection, and prompt improvement call the server API.
+- No Canva, PDF, PowerPoint, Excel, image, or website generation.
+- No real payment integration.
+- Academic integrity notices remain visible.

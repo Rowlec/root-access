@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "Root Access",
-    "description": "Build startup proposals with structured AI workflows."
+    "description": "Improve how you use AI for Startup Proposals."
   },
   "LocaleSwitcher": {
     "ariaLabel": "Language",
@@ -12,36 +12,36 @@
   },
   "Hero": {
     "brand": "Root Access",
-    "title": "Build your startup proposal with structured AI workflows",
-    "subtitle": "Stop guessing prompts. Follow a proven workflow.",
-    "action": "Start Building",
+    "title": "Improve how you use AI for Startup Proposals.",
+    "subtitle": "RootAccess helps you build better prompts, test them with AI, review the output, and improve until it works.",
+    "action": "Start workflow",
     "workflowName": "Startup Proposal",
-    "guidedSteps": "Micro-step workflow",
-    "badge": "Student-ready",
+    "guidedSteps": "Prompt review loop",
+    "badge": "AI workflow",
     "stepLabel": "Step {step}",
     "steps": {
-      "problemDiscovery": "Problem & Idea Validation",
-      "targetCustomer": "Target Customer & Market",
-      "valueProposition": "Business Model & Competitor",
-      "proposalDraft": "Proposal Draft"
+      "problemDiscovery": "Generate Prompt",
+      "targetCustomer": "Test with AI",
+      "valueProposition": "Get Feedback",
+      "proposalDraft": "Improve and retry"
     }
   },
   "HowItWorks": {
     "eyebrow": "How it works",
-    "title": "From idea to proposal in three focused moves",
+    "title": "Generate Prompt -> Test with AI -> Get Feedback",
     "stepLabel": "Step {step}",
     "steps": {
       "idea": {
-        "title": "Enter startup idea",
-        "description": "Share your idea and industry so Root Access can shape the workflow around your assignment."
+        "title": "Generate Prompt",
+        "description": "RootAccess turns your startup context into a focused prompt for one proposal section."
       },
       "workflow": {
-        "title": "Get guided workflow",
-        "description": "Move through clear steps with practical prompts for problem, customer, MVP, and pitch work."
+        "title": "Test with AI",
+        "description": "Copy the prompt into ChatGPT or Gemini, then paste the AI output back into RootAccess."
       },
       "proposal": {
-        "title": "Build proposal faster",
-        "description": "Turn structured outputs into a cleaner startup proposal without repeated prompt guessing."
+        "title": "Get Feedback",
+        "description": "RootAccess scores the output, finds the top weaknesses, and suggests a better prompt."
       }
     }
   },
@@ -72,11 +72,11 @@
     "home": "Go to startup form"
   },
   "GoalForm": {
-    "eyebrow": "Start building",
-    "title": "Tell Root Access what you are working on",
-    "description": "Add your startup context, then follow a guided workflow built for a university proposal.",
-    "cardTitle": "Startup goal",
-    "cardDescription": "Use clear details so the workflow prompts fit your assignment.",
+    "eyebrow": "Start workflow",
+    "title": "Start with your startup context",
+    "description": "RootAccess will create a starting prompt, then help you review and improve the AI output.",
+    "cardTitle": "Startup context",
+    "cardDescription": "Keep it short. RootAccess reviews the output from your external AI tool, not a final proposal.",
     "fields": {
       "workflowMode": {
         "label": "Choose workflow mode",
@@ -113,6 +113,7 @@
       "industry": {
         "label": "Industry",
         "placeholder": "Education",
+        "description": "Name the market or category your idea belongs to.",
         "error": "Industry is required."
       },
       "targetCustomer": {
@@ -123,6 +124,7 @@
       "deadlineUrgency": {
         "label": "Deadline urgency",
         "placeholder": "Select urgency",
+        "description": "This keeps drafts realistic for your timeline.",
         "error": "Deadline urgency is required.",
         "options": {
           "oneToThreeDays": "1-3 days",
@@ -132,30 +134,153 @@
         }
       },
       "availableTools": {
-        "label": "Preferred AI tools (optional)",
-        "description": "Choose one preference, or keep Root Access defaults.",
-        "noPreference": "No preference",
+        "label": "AI model",
+        "description": "Choose the model style you want Root Access to use.",
         "error": "Choose a supported AI tool."
       }
     },
     "actions": {
-      "submit": "Start Building",
+      "submit": "Start prompt workflow",
       "submitting": "Preparing workflow"
+    },
+    "workflowChoice": {
+      "title": "Workflow: Startup Proposal",
+      "description": "This MVP only supports Startup Proposal. Other workflow types are intentionally out of scope."
     }
   },
   "ResultPage": {
-    "startWorkflow": "Start micro-step 1",
-    "missingContext": "Missing startup context. You can still review the workflow, or go back and enter your startup idea and industry for personalized prompts.",
     "emptyState": {
       "badge": "Root Access",
       "title": "Add your startup context first",
-      "description": "Root Access needs your startup task, idea, industry, and deadline before it can build a useful workflow.",
+      "description": "RootAccess needs your idea, industry, urgency, and AI model before it can create a useful prompt workflow.",
       "action": "Go to startup form"
+    }
+  },
+  "ProposalBuilder": {
+    "badge": "AI Startup Proposal Builder",
+    "title": "Build your startup proposal",
+    "description": "Choose a section, generate a draft, refine it with feedback, and save it into your live proposal preview.",
+    "context": {
+      "title": "Project"
     },
-    "completionCta": {
-      "title": "Need another pass?",
-      "description": "Start a fresh startup proposal workflow when your idea, industry, or deadline changes.",
-      "action": "Start a new proposal"
+    "credits": {
+      "plan": "Plan",
+      "free": "Free",
+      "pro": "Pro",
+      "generations": "Generations left",
+      "refinements": "Refinements left",
+      "upgrade": "Upgrade",
+      "limits": {
+        "generation": "Free generation limit reached.",
+        "refinement": "Free refinement limit reached."
+      }
+    },
+    "progress": {
+      "title": "Proposal progress",
+      "count": "{completed}/{total} sections saved",
+      "saved": "Saved",
+      "empty": "Not saved"
+    },
+    "builder": {
+      "sectionBadge": "Proposal section",
+      "generate": "Generate section",
+      "regenerate": "Regenerate",
+      "result": "Generated result",
+      "resultPlaceholder": "Generate this section inside Root Access, then edit the draft here...",
+      "save": "Save section",
+      "saved": "Saved to proposal"
+    },
+    "refine": {
+      "title": "Refine output",
+      "placeholder": "Example: make it shorter, clearer, more realistic, narrower market, stronger revenue logic...",
+      "action": "Refine",
+      "history": "{count} refinements saved for this section"
+    },
+    "prompt": {
+      "show": "View AI prompt",
+      "hide": "Hide AI prompt",
+      "title": "AI prompt"
+    },
+    "preview": {
+      "title": "Your Startup Proposal",
+      "description": "Saved sections appear here live. This is the product: one proposal being built section by section.",
+      "emptySection": "Build and save this section to add it here.",
+      "copy": "Copy full draft",
+      "copied": "Copied",
+      "exportMd": "Export .md",
+      "exportTxt": "Export .txt",
+      "locked": "Full export is a Pro feature in this CP3 business model flow."
+    },
+    "upgrade": {
+      "badge": "Pro preview",
+      "title": "Unlock more proposal building",
+      "description": "The Free plan is intentionally limited so the MVP has a visible business model.",
+      "freeUsage": "Generations used: {count}/5",
+      "freeRefinements": "Refinements used: {count}/3",
+      "proOffer": "Pro: 50 generations, unlimited refinements, and full export.",
+      "checkout": "Open checkout",
+      "later": "Not now"
+    },
+    "errors": {
+      "feedbackRequired": "Add feedback before refining this section.",
+      "generateFailed": "Root Access could not generate this section right now.",
+      "empty": "The AI returned no usable draft."
+    },
+    "sections": {
+      "problem": {
+        "title": "Problem",
+        "objective": "Explain the painful problem your startup solves.",
+        "promptFocus": "Specific user situation, current workaround, pain intensity, and why the problem matters now."
+      },
+      "customer": {
+        "title": "Customer",
+        "objective": "Define the first target customer segment.",
+        "promptFocus": "Narrow segment, context, needs, buying/user behavior, and why this group is the first target."
+      },
+      "validation": {
+        "title": "Validation",
+        "objective": "Describe how the team will validate the problem and solution.",
+        "promptFocus": "Interviews, surveys, tests, evidence to collect, and success signals."
+      },
+      "marketSegment": {
+        "title": "Market Segment",
+        "objective": "Clarify the market segment and initial beachhead.",
+        "promptFocus": "Market category, first niche, alternatives, and assumptions that need verification."
+      },
+      "revenueModel": {
+        "title": "Revenue Model",
+        "objective": "Choose a realistic first revenue model.",
+        "promptFocus": "Pricing logic, payer, willingness-to-pay assumptions, and a simple test."
+      },
+      "competitiveDifference": {
+        "title": "Competitive Difference",
+        "objective": "Explain why your solution is meaningfully different.",
+        "promptFocus": "Existing alternatives, comparison criteria, defensible difference, and proof needed."
+      },
+      "mvpScope": {
+        "title": "MVP Scope",
+        "objective": "Define what the MVP includes and excludes.",
+        "promptFocus": "Core value, must-have features, excluded features, and what can be built/tested first."
+      }
+    }
+  },
+  "CheckoutPage": {
+    "eyebrow": "Root Access Pro",
+    "title": "Fake checkout for CP3 monetization flow",
+    "description": "This screen demonstrates how RootAccess can monetize prompt review loops without adding real payment integration yet.",
+    "card": {
+      "title": "Pro plan",
+      "description": "Designed for students who need more prompt tests, output reviews, and improvement loops.",
+      "features": {
+        "prompts": "Unlimited prompt generations",
+        "reviews": "Unlimited output reviews",
+        "improvements": "Unlimited improved prompts"
+      },
+      "priceLabel": "Demo price",
+      "price": "49,000 VND",
+      "fakePayment": "No payment is processed. This button only activates Pro demo mode in localStorage.",
+      "action": "Activate Pro demo",
+      "back": "Back"
     }
   },
   "ProgressTracker": {
@@ -183,6 +308,11 @@
     "copyPrompt": "Copy prompt",
     "copied": "Copied",
     "details": "Details",
+    "completedSummary": {
+      "review": "Review / edit",
+      "collapse": "Collapse",
+      "outputPreview": "Saved output"
+    },
     "status": {
       "complete": "Complete",
       "current": "Current",
@@ -190,7 +320,7 @@
     },
     "actionLayer": {
       "title": "Action",
-      "description": "Copy the prompt, run it in your AI tool, then paste the useful output."
+      "description": "Generate inside Root Access, or copy the prompt if you want to inspect it."
     },
     "learnLayer": {
       "title": "Learn why this works",
@@ -215,11 +345,72 @@
     },
     "outputDraft": {
       "title": "Step output",
-      "description": "Paste useful AI output or revised notes here.",
-      "placeholder": "Paste the useful output for this micro-step...",
+      "description": "Root Access writes the result here. You can still edit or paste revised notes.",
+      "placeholder": "Generate with Gemini or paste useful notes for this micro-step...",
       "hint": "Exports will include this output when you add it.",
       "saved": "Output saved locally for export.",
       "reset": "Clear output"
+    },
+    "execution": {
+      "generate": "Generate with Gemini",
+      "generating": "Generating",
+      "error": "Root Access could not generate right now.",
+      "empty": "Gemini returned no usable text."
+    },
+    "credits": {
+      "remaining": "Free credits left: {generations} generations, {refinements} refinements.",
+      "limits": {
+        "generation": "Free generation limit reached. Pro unlimited generations are ready for future billing.",
+        "refinement": "Free refinement limit reached. Pro unlimited refinements are ready for future billing."
+      }
+    },
+    "refinement": {
+      "title": "Refine output",
+      "description": "Tell Root Access what to improve, then regenerate this micro-step.",
+      "placeholder": "Example: make it shorter, more formal, more realistic, or narrow the customer segment...",
+      "action": "Refine with Gemini",
+      "refining": "Refining",
+      "historyCount": "{count} refinements saved",
+      "historyTitle": "Recent refinement requests",
+      "historyItem": "Refinement {index}"
+    },
+    "coach": {
+      "title": "RootAccess Coach",
+      "why": "Why this step matters",
+      "signalsTitle": "Coach check",
+      "nextAction": "Stronger next action",
+      "showDetails": "Details",
+      "hideDetails": "Hide",
+      "badges": {
+        "generate": "Generate",
+        "refine": "Refine",
+        "review": "Review",
+        "continue": "Continue"
+      },
+      "recommendations": {
+        "generate": "Generate an output first so the coach can review the work.",
+        "refine": "Refine this output before moving on; it still has weak spots.",
+        "review": "Review the checklist before completing this micro-step.",
+        "continue": "This output looks ready enough to continue after your own review."
+      },
+      "signals": {
+        "missingOutput": "No output yet.",
+        "tooShort": "The output looks too thin to use as proposal material.",
+        "tooBroad": "The output may rely on a broad customer or assumption.",
+        "missingEvidence": "The output needs a clearer validation, evidence, or verification action.",
+        "tooLong": "The output may be too long for this micro-step.",
+        "checklistIncomplete": "Some quality checks are still incomplete.",
+        "ready": "No obvious rule-based issue detected."
+      },
+      "nextActions": {
+        "generate": "Use Generate with Gemini to create the first version.",
+        "addSpecifics": "Ask for one concrete example, user situation, or decision.",
+        "narrowAssumption": "Ask Gemini to narrow the customer, assumption, or segment.",
+        "addEvidence": "Ask for a validation action, source expectation, or signal to verify.",
+        "shorten": "Ask for a shorter version with only the essential bullets.",
+        "finishReview": "Complete the review checklist, then decide whether to continue.",
+        "continue": "Mark the step complete and move to the next micro-step."
+      }
     },
     "toolRecommendation": {
       "title": "Tool Recommendation",
@@ -261,6 +452,21 @@
     "submitFeedback": "Submit Feedback",
     "restart": "Restart Workflow"
   },
+  "ProposalDraftEngine": {
+    "title": "Startup Proposal Draft",
+    "description": "Root Access turns your completed micro-step outputs into an editable proposal draft.",
+    "placeholder": "Complete the workflow and generate a proposal draft here.",
+    "regenerate": "Generate draft",
+    "generating": "Generating draft",
+    "error": "Root Access could not generate the proposal draft right now.",
+    "empty": "Gemini returned no usable proposal draft.",
+    "remaining": "Free proposal draft credits left: {drafts}.",
+    "limitReached": "Free proposal draft limit reached. Full proposal export is prepared as a Pro feature for future billing.",
+    "copy": "Copy draft",
+    "copied": "Copied",
+    "downloadMarkdown": "Download .md",
+    "downloadText": "Download .txt"
+  },
   "WorkflowExport": {
     "title": "Export proposal draft",
     "description": "Copy or download your saved micro-step outputs.",
@@ -290,5 +496,120 @@
     "description": "Your feedback helps us learn whether this workflow actually reduces confusion, prompt retries, and time spent on startup assignments.",
     "body": "Share what worked, where you got stuck, and what would make the next version more useful for students.",
     "action": "Submit Feedback"
+  },
+  "WorkflowWorkspace": {
+    "badge": "AI Workflow + Output Review + Prompt Improvement",
+    "title": "Improve one startup proposal section at a time",
+    "description": "RootAccess creates the prompt, you test it in an external AI tool, then RootAccess reviews the output and improves the prompt.",
+    "copied": "Copied",
+    "context": {
+      "title": "Startup context"
+    },
+    "credits": {
+      "plan": "Plan",
+      "free": "Free",
+      "pro": "Pro",
+      "promptGenerations": "Prompt generations left",
+      "outputReviews": "Output reviews left",
+      "improvedPrompts": "Improved prompts left",
+      "upgrade": "Upgrade",
+      "limits": {
+        "generation": "Free prompt generation limit reached.",
+        "review": "Free output review limit reached.",
+        "improvement": "Free improved prompt limit reached."
+      }
+    },
+    "progress": {
+      "title": "Proposal progress",
+      "count": "{completed}/{total} completed, {remaining} remaining",
+      "completed": "Completed",
+      "current": "Current",
+      "remaining": "Remaining"
+    },
+    "action": {
+      "layer": "Action Layer",
+      "prompt": "Starting prompt",
+      "promptHint": "Copy this into ChatGPT or Gemini. RootAccess does not write the final proposal for you.",
+      "generatePrompt": "Generate prompt",
+      "regeneratePrompt": "Regenerate prompt",
+      "copyPrompt": "Copy prompt",
+      "pasteOutput": "Paste AI output",
+      "outputPlaceholder": "Paste the output you received from ChatGPT or Gemini..."
+    },
+    "review": {
+      "layer": "Review Layer",
+      "title": "Score and diagnose output",
+      "description": "RootAccess calls the review API to score the output and identify the top two weaknesses.",
+      "locked": "Paste an AI output first to unlock scoring, weakness detection, and prompt improvement.",
+      "action": "Review output",
+      "firstPass": "First output score",
+      "retryPass": "Retry output score",
+      "weaknesses": "Top weaknesses",
+      "dimensions": {
+        "relevance": "Relevance",
+        "specificity": "Specificity",
+        "actionability": "Actionability",
+        "clarity": "Clarity"
+      }
+    },
+    "improvement": {
+      "title": "Improved prompt"
+    },
+    "retry": {
+      "layer": "Retry Layer",
+      "title": "Retry and compare",
+      "description": "Copy the improved prompt, run it in your AI tool, paste the new output, then compare scores.",
+      "locked": "Review the first output first to unlock the improved prompt.",
+      "copyImproved": "Copy improved prompt",
+      "pasteOutput": "Paste retry output",
+      "outputPlaceholder": "Paste the new output generated from the improved prompt...",
+      "rescore": "Re-score retry",
+      "complete": "Complete section",
+      "oldScore": "Old score",
+      "newScore": "New score",
+      "change": "Change"
+    },
+    "upgrade": {
+      "badge": "Pro preview",
+      "title": "Unlock more review loops",
+      "description": "The Free plan is limited so the MVP has a visible business model.",
+      "promptUsage": "Prompt generations used: {count}/5",
+      "reviewUsage": "Output reviews used: {count}/5",
+      "improvementUsage": "Improved prompts used: {count}/3",
+      "proOffer": "Pro: unlimited prompt generations, output reviews, and improved prompts.",
+      "checkout": "Open checkout",
+      "later": "Not now"
+    },
+    "errors": {
+      "outputRequired": "Paste an AI output before reviewing.",
+      "reviewFailed": "RootAccess could not review this output right now."
+    },
+    "sections": {
+      "problem": {
+        "title": "Problem",
+        "objective": "Clarify the painful problem your startup should solve.",
+        "promptFocus": "Specific user situation, current workaround, pain intensity, urgency, and evidence needed."
+      },
+      "customer": {
+        "title": "Customer",
+        "objective": "Define the first target customer segment.",
+        "promptFocus": "Narrow segment, context, needs, usage behavior, and why this group should be first."
+      },
+      "validation": {
+        "title": "Validation",
+        "objective": "Plan how to test the problem and solution assumptions.",
+        "promptFocus": "Interviews, surveys, prototype tests, evidence to collect, and success signals."
+      },
+      "revenue": {
+        "title": "Revenue",
+        "objective": "Choose a realistic first revenue model.",
+        "promptFocus": "Payer, pricing logic, willingness-to-pay assumptions, and a simple validation test."
+      },
+      "mvpScope": {
+        "title": "MVP Scope",
+        "objective": "Define what the MVP includes and excludes.",
+        "promptFocus": "Core value, must-have features, excluded features, build constraints, and first test."
+      }
+    }
   }
 }

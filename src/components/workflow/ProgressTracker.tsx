@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ProposalDraftEngine } from "@/components/workflow/ProposalDraftEngine";
 import { StepCard } from "@/components/workflow/StepCard";
 import { WorkflowCompletion } from "@/components/workflow/WorkflowCompletion";
 import { WorkflowExport } from "@/components/workflow/WorkflowExport";
@@ -46,9 +47,11 @@ export function ProgressTracker({
     completedCount,
     completionPercentage,
     currentStepId,
+    addRefinementHistory,
     getChecklistItems,
     getOutputDraft,
     getPromptDraft,
+    getRefinementHistory,
     hasOutputDraft,
     hasPromptEdit,
     hasSavedProgress,
@@ -192,6 +195,18 @@ export function ProgressTracker({
           ) : null}
         </AnimatePresence>
 
+        {completionPercentage === 100 ? (
+          <ProposalDraftEngine
+            key={workflowRunId}
+            workflowRunId={workflowRunId}
+            workflowTitle={workflowTitle}
+            steps={steps.map((step) => ({
+              step,
+              outputDraft: getOutputDraft(String(step.id)),
+            }))}
+          />
+        ) : null}
+
         <AnimatePresence initial={false}>
           {visibleSteps.map((step) => (
             <motion.div key={step.id} layout {...unlockMotion}>
@@ -201,6 +216,7 @@ export function ProgressTracker({
                 hasPromptEdit={hasPromptEdit(String(step.id))}
                 outputDraft={getOutputDraft(String(step.id))}
                 promptDraft={getPromptDraft(String(step.id), step.promptTemplate)}
+                refinementHistory={getRefinementHistory(String(step.id))}
                 step={step}
                 canComplete={canCompleteStep(String(step.id))}
                 isCompleted={isStepCompleted(String(step.id))}
@@ -218,6 +234,9 @@ export function ProgressTracker({
                   setPromptEdit(String(step.id), promptDraft)
                 }
                 onPromptDraftReset={() => resetPromptEdit(String(step.id))}
+                onRefinementHistoryAdd={(refinement) =>
+                  addRefinementHistory(String(step.id), refinement)
+                }
               />
             </motion.div>
           ))}

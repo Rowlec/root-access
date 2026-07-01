@@ -35,7 +35,7 @@
       "id": 3,
       "title": "Giải pháp hiện có",
       "goal": "Nghiên cứu đối thủ trực tiếp và gián tiếp của [STARTUP IDEA] trong lĩnh vực [INDUSTRY].",
-      "tool": "ChatGPT + Google",
+      "tool": "Gemini",
       "promptTemplate": "Hãy đóng vai trợ lý nghiên cứu khởi nghiệp cho một bài tập đại học. Ý tưởng khởi nghiệp của tôi là [STARTUP IDEA] trong lĩnh vực [INDUSTRY]. Hãy liệt kê các đối thủ trực tiếp, đối thủ gián tiếp và giải pháp thay thế có thể có. Với mỗi mục, giải thích họ cung cấp gì, người dùng mục tiêu là ai, điểm yếu có thể là gì, và tôi cần kiểm chứng điều gì bằng Google trước khi đưa vào đề xuất.",
       "expectedOutput": "Tổng quan đối thủ gồm đối thủ trực tiếp, đối thủ gián tiếp, giải pháp thay thế, điểm yếu và các điểm cần kiểm chứng bằng Google.",
       "commonMistakes": [
@@ -87,7 +87,7 @@
       "id": 7,
       "title": "Cấu trúc slide thuyết trình",
       "goal": "Tạo cấu trúc pitch deck rõ ràng cho [STARTUP IDEA] trong lĩnh vực [INDUSTRY].",
-      "tool": "Gamma",
+      "tool": "ChatGPT",
       "promptTemplate": "Hãy tạo cấu trúc pitch deck cho bài thuyết trình khởi nghiệp đại học về [STARTUP IDEA] trong lĩnh vực [INDUSTRY]. Dùng mạch kể chuyện thực tế: vấn đề, khách hàng mục tiêu, giải pháp hiện có, giá trị cốt lõi, mô hình kinh doanh, MVP, ý tưởng go-to-market và phần kết. Với mỗi slide, hãy đưa ra tiêu đề slide, thông điệp chính và các gạch đầu dòng đề xuất.",
       "expectedOutput": "Dàn ý pitch deck với tiêu đề slide, thông điệp chính, gạch đầu dòng và mạch kể chuyện rõ ràng.",
       "commonMistakes": [

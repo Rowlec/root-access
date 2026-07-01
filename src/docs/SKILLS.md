@@ -3,9 +3,18 @@
 This file defines repeatable project workflows for future AI-assisted
 development sessions.
 
+Active MVP guardrail:
+
+- Startup Proposal is the only supported workflow area.
+- Do not add Academic Report, Presentation Slides, Interview Prep, CV Builder,
+  Website Builder, or generic workflow-builder support.
+- New workflow-library work during the MVP should mean adding or improving
+  Startup Proposal micro-steps/branches, not adding a new product workflow.
+
 ## Skill: Add New Workflow
 
-Use when adding a new prebuilt workflow to the library.
+Use only when product direction explicitly approves a new workflow area. During
+the current MVP, prefer improving the Startup Proposal micro-step pool instead.
 
 Steps:
 
@@ -21,11 +30,35 @@ Steps:
 
 Checklist:
 
+- Not used for the current Startup Proposal-only MVP unless explicitly approved.
 - Workflow ID is kebab-case.
 - Every step has `title`, `goal`, `recommendedTool`, `promptTemplate`,
   `expectedOutput`, and `commonMistakes`.
 - Prompt templates are practical for university startup assignments.
 - The workflow does not generate final assignments directly.
+
+## Skill: Improve Startup Proposal Micro-Steps
+
+Use when improving the active MVP workflow without expanding product scope.
+
+Steps:
+
+1. Edit `src/data/workflows/startup-proposal.ts`.
+2. Edit `src/data/workflows/startup-proposal.vi.ts` when Vietnamese runtime copy
+   needs the same behavior.
+3. Keep steps short, clear, and beginner-friendly.
+4. Preserve Action, Learn, and Review layers.
+5. Keep tool recommendations limited to ChatGPT and Gemini.
+6. Keep prompts static and proposal-safe.
+7. Update docs when workflow behavior changes.
+
+Checklist:
+
+- The change remains inside Startup Proposal.
+- The selector remains deterministic.
+- No AI-generated workflow logic is introduced.
+- Micro-step outputs stay useful as working proposal material, not final
+  submission text.
 
 ## Skill: Add New Intake Stage
 
@@ -42,7 +75,7 @@ Steps:
 Checklist:
 
 - Zod validation accepts the new stage.
-- `selectWorkflow(currentStage, availableTools)` handles the new stage.
+- `selectWorkflow(currentStage, locale, mode)` handles the new stage.
 - No default fallback hides missing rules.
 - Analytics still receives the stage value.
 
@@ -54,19 +87,18 @@ student can access.
 Steps:
 
 1. Add the available tool options to `src/lib/goal-form-schema.ts`.
-2. Require `availableTools` as a minimum-one array in `goalFormSchema`.
+2. Allow `availableTools` to be empty when the user chooses No preference.
 3. Let `GoalFormValues` infer the new field from the schema.
 4. Add an `availableTools` default value in `GoalForm`.
-5. Render the tools as a multi-select checkbox group.
+5. Render the tools as a single-choice preference group.
 6. Keep the existing form styling and validation pattern.
 
 Checklist:
 
-- Options include ChatGPT, Gemini, Claude, Canva AI, Gamma, Perplexity,
-  Lovable, and Other.
-- At least one tool is required before submission.
-- The field does not change workflow selection until the workflow engine is
-  made tool-aware.
+- Options include ChatGPT, Gemini, and No preference.
+- No preference is stored as an empty `availableTools` array.
+- The field affects deterministic tool adaptation only; it does not change
+  workflow routing.
 - No AI-generated workflow logic is introduced.
 
 ## Skill: Create Tool Mapping Engine
@@ -84,17 +116,19 @@ Steps:
 
 Rules:
 
-- Claude maps to ChatGPT, then Gemini.
-- Gamma maps to Canva AI.
-- Perplexity maps to Gemini, then ChatGPT.
-- Lovable maps to ChatGPT.
+- ChatGPT and Gemini are the only selectable tools.
+- No preference falls back to Root Access defaults.
+- Research, verification, comparison, and structured-output steps prefer Gemini
+  when a fallback is needed.
+- General brainstorming and drafting steps prefer ChatGPT when a fallback is
+  needed.
 
 Checklist:
 
 - Mapping is deterministic and rule-based.
 - The mapper does not call AI or generate workflow logic.
 - Empty or invalid available-tool input still returns a valid fallback.
-- The mapper remains separate until the workflow engine is made tool-aware.
+- The mapper remains separate from workflow routing.
 
 ## Skill: Make Workflow Engine Tool-Aware
 
@@ -223,17 +257,16 @@ Use when i18n is implemented.
 
 Current status:
 
-- `next-intl` is mentioned in project context but is not currently configured.
+- `next-intl` is configured for English and Vietnamese message files.
 
 Recommended future steps:
 
-1. Install and configure `next-intl`.
-2. Add locale routing.
-3. Create message files for each supported locale.
-4. Move hardcoded UI strings into messages.
-5. Decide whether workflow data is translated in separate files or through
+1. Add the locale to the i18n config.
+2. Create a message file for the supported locale.
+3. Move new hardcoded UI strings into messages.
+4. Decide whether workflow data is translated in separate files or through
    message keys.
-6. Test landing and result routes in every locale.
+5. Test landing and result routes in every locale.
 
 Checklist:
 
@@ -315,7 +348,7 @@ Steps:
 1. Read `src/lib/workflow-selector.ts`.
 2. Read `src/lib/template-parser.ts`.
 3. Read `src/data/workflows/index.ts`.
-4. Check whether `/result` still uses `startup-workflow.json`.
+4. Confirm `/result` still uses `selectWorkflow` and not AI-generated routing.
 5. Normalize workflow data before rendering if needed.
 6. Preserve deterministic selection.
 

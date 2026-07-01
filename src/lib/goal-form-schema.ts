@@ -24,7 +24,7 @@ export const availableToolOptions = [
 ] as const;
 
 export const availableToolSchema = z.enum(availableToolOptions);
-export const availableToolsSchema = z.array(availableToolSchema);
+export const availableToolsSchema = z.array(availableToolSchema).min(1);
 export const workflowModeSchema = z.enum(workflowModeOptions);
 
 export const goalFormSchema = z.object({

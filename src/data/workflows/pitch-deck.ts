@@ -50,7 +50,7 @@ export const pitchDeckPreparationWorkflow = {
     {
       title: "Create Visual Direction",
       goal: "Plan simple visuals that support the pitch.",
-      recommendedTool: "Gamma",
+      recommendedTool: "ChatGPT",
       promptTemplate:
         "Create visual direction for a pitch deck about [STARTUP IDEA] in [INDUSTRY]. Suggest simple visuals, diagrams, icons, or charts for each slide. Keep the style clean, student-friendly, and easy to build in the available deck tool.",
       expectedOutput:
