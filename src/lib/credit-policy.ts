@@ -1,4 +1,4 @@
-export type CreditPlan = "free" | "pro";
+export type CreditPlan = "free" | "starter" | "pro";
 export type CreditAction =
   | "generation"
   | "review"
@@ -23,7 +23,7 @@ export const emptyCreditUsage: CreditUsageSnapshot = {
 export const creditPlans = {
   free: {
     limits: {
-      generation: 5,
+      generation: "unlimited",
       review: 5,
       improvement: 3,
       refinement: 3,
@@ -34,16 +34,29 @@ export const creditPlans = {
       advancedWorkflowTemplates: false,
     },
   },
+  starter: {
+    limits: {
+      generation: "unlimited",
+      review: 20,
+      improvement: 20,
+      refinement: 20,
+      proposalDraft: 20,
+    },
+    features: {
+      unlimitedPromptReviews: false,
+      advancedWorkflowTemplates: false,
+    },
+  },
   pro: {
     limits: {
       generation: "unlimited",
-      review: "unlimited",
-      improvement: "unlimited",
-      refinement: "unlimited",
-      proposalDraft: "unlimited",
+      review: 50,
+      improvement: 50,
+      refinement: 50,
+      proposalDraft: 50,
     },
     features: {
-      unlimitedPromptReviews: true,
+      unlimitedPromptReviews: false,
       advancedWorkflowTemplates: false,
     },
   },
@@ -73,6 +86,13 @@ export function canUseCredit({
 }) {
   const limit = getCreditLimit(plan, action);
 
+  if (
+    (plan === "starter" || plan === "pro") &&
+    (action === "review" || action === "improvement")
+  ) {
+    return limit === "unlimited" || usage.review + usage.improvement < limit;
+  }
+
   return limit === "unlimited" || usage[action] < limit;
 }
 
@@ -89,6 +109,13 @@ export function getRemainingCredits({
 
   if (limit === "unlimited") {
     return "unlimited";
+  }
+
+  if (
+    (plan === "starter" || plan === "pro") &&
+    (action === "review" || action === "improvement")
+  ) {
+    return Math.max(limit - usage.review - usage.improvement, 0);
   }
 
   return Math.max(limit - usage[action], 0);
@@ -146,5 +173,9 @@ export function parseCreditUsage(value: string | null): CreditUsageSnapshot {
 }
 
 export function parseCreditPlan(value: string | null): CreditPlan {
-  return value === "pro" ? "pro" : defaultCreditPlan;
+  if (value === "starter" || value === "pro") {
+    return value;
+  }
+
+  return defaultCreditPlan;
 }

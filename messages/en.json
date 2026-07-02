@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "Root Access",
-    "description": "Improve how you use AI for Startup Proposals."
+    "description": "Build better Startup Proposals with AI, step by step."
   },
   "LocaleSwitcher": {
     "ariaLabel": "Language",
@@ -12,36 +12,36 @@
   },
   "Hero": {
     "brand": "Root Access",
-    "title": "Improve how you use AI for Startup Proposals.",
-    "subtitle": "RootAccess helps you build better prompts, test them with AI, review the output, and improve until it works.",
-    "action": "Start workflow",
+    "title": "Build better Startup Proposals with AI, step by step.",
+    "subtitle": "Generate prompts, test outputs, detect weaknesses, and improve until your proposal is strong.",
+    "action": "Start proposal review",
     "workflowName": "Startup Proposal",
-    "guidedSteps": "Prompt review loop",
-    "badge": "AI workflow",
-    "stepLabel": "Step {step}",
+    "guidedSteps": "AI Improvement Loop",
+    "badge": "Proposal Section",
+    "stepLabel": "Build Step {step}",
     "steps": {
-      "problemDiscovery": "Generate Prompt",
-      "targetCustomer": "Test with AI",
-      "valueProposition": "Get Feedback",
-      "proposalDraft": "Improve and retry"
+      "problemDiscovery": "Generate prompt",
+      "targetCustomer": "Test output",
+      "valueProposition": "Detect weaknesses",
+      "proposalDraft": "Improve prompt"
     }
   },
   "HowItWorks": {
-    "eyebrow": "How it works",
-    "title": "Generate Prompt -> Test with AI -> Get Feedback",
-    "stepLabel": "Step {step}",
+    "eyebrow": "AI Improvement Loop",
+    "title": "One clear action for each Proposal Section",
+    "stepLabel": "Build Step {step}",
     "steps": {
       "idea": {
-        "title": "Generate Prompt",
-        "description": "RootAccess turns your startup context into a focused prompt for one proposal section."
+        "title": "Generate prompt",
+        "description": "RootAccess turns your startup context into a focused prompt for the current Proposal Section."
       },
       "workflow": {
-        "title": "Test with AI",
-        "description": "Copy the prompt into ChatGPT or Gemini, then paste the AI output back into RootAccess."
+        "title": "Test output",
+        "description": "Copy the prompt into ChatGPT or Gemini, then paste the output back into RootAccess."
       },
       "proposal": {
-        "title": "Get Feedback",
-        "description": "RootAccess scores the output, finds the top weaknesses, and suggests a better prompt."
+        "title": "Improve prompt",
+        "description": "RootAccess scores with a stable rubric, detects 2 weaknesses, and creates a better prompt."
       }
     }
   },
@@ -72,11 +72,11 @@
     "home": "Go to startup form"
   },
   "GoalForm": {
-    "eyebrow": "Start workflow",
-    "title": "Start with your startup context",
-    "description": "RootAccess will create a starting prompt, then help you review and improve the AI output.",
+    "eyebrow": "Startup Proposal",
+    "title": "Add context for your Proposal Sections",
+    "description": "RootAccess focuses only on Startup Proposal in this MVP.",
     "cardTitle": "Startup context",
-    "cardDescription": "Keep it short. RootAccess reviews the output from your external AI tool, not a final proposal.",
+    "cardDescription": "Keep it short. You will test prompts externally, then paste the output for review.",
     "fields": {
       "workflowMode": {
         "label": "Choose workflow mode",
@@ -140,19 +140,19 @@
       }
     },
     "actions": {
-      "submit": "Start prompt workflow",
-      "submitting": "Preparing workflow"
+      "submit": "Start proposal review",
+      "submitting": "Preparing"
     },
     "workflowChoice": {
-      "title": "Workflow: Startup Proposal",
-      "description": "This MVP only supports Startup Proposal. Other workflow types are intentionally out of scope."
+      "title": "Proposal type: Startup Proposal",
+      "description": "More workflows coming later."
     }
   },
   "ResultPage": {
     "emptyState": {
       "badge": "Root Access",
       "title": "Add your startup context first",
-      "description": "RootAccess needs your idea, industry, urgency, and AI model before it can create a useful prompt workflow.",
+      "description": "RootAccess needs your idea, industry, urgency, and AI model before starting the AI Improvement Loop.",
       "action": "Go to startup form"
     }
   },
@@ -265,22 +265,36 @@
     }
   },
   "CheckoutPage": {
-    "eyebrow": "Root Access Pro",
-    "title": "Fake checkout for CP3 monetization flow",
-    "description": "This screen demonstrates how RootAccess can monetize prompt review loops without adding real payment integration yet.",
+    "eyebrow": "Credit packs",
+    "title": "Buy credits for the AI Improvement Loop",
+    "description": "Demo checkout for CP3. No real payment is processed.",
     "card": {
-      "title": "Pro plan",
-      "description": "Designed for students who need more prompt tests, output reviews, and improvement loops.",
-      "features": {
-        "prompts": "Unlimited prompt generations",
-        "reviews": "Unlimited output reviews",
-        "improvements": "Unlimited improved prompts"
-      },
       "priceLabel": "Demo price",
-      "price": "49,000 VND",
-      "fakePayment": "No payment is processed. This button only activates Pro demo mode in localStorage.",
-      "action": "Activate Pro demo",
+      "fakePayment": "This button only activates the demo plan in localStorage.",
+      "action": "Activate {plan}",
       "back": "Back"
+    },
+    "plans": {
+      "starter": {
+        "title": "Starter",
+        "description": "For one short proposal work session.",
+        "price": "19,000 VND",
+        "features": {
+          "credits": "20 credits",
+          "reviews": "Use for output reviews",
+          "improvements": "Use for prompt improvements"
+        }
+      },
+      "pro": {
+        "title": "Pro",
+        "description": "For more retries and score comparison.",
+        "price": "39,000 VND",
+        "features": {
+          "credits": "50 credits",
+          "reviews": "Use for output reviews",
+          "improvements": "Use for prompt improvements"
+        }
+      }
     }
   },
   "ProgressTracker": {
@@ -498,9 +512,9 @@
     "action": "Submit Feedback"
   },
   "WorkflowWorkspace": {
-    "badge": "AI Workflow + Output Review + Prompt Improvement",
-    "title": "Improve one startup proposal section at a time",
-    "description": "RootAccess creates the prompt, you test it in an external AI tool, then RootAccess reviews the output and improves the prompt.",
+    "badge": "AI Improvement Loop",
+    "title": "Build a better Startup Proposal, one Proposal Section at a time",
+    "description": "Work one Build Step at a time: generate a prompt, test output, review business logic, improve the prompt, and retry.",
     "copied": "Copied",
     "context": {
       "title": "Startup context"
@@ -508,19 +522,21 @@
     "credits": {
       "plan": "Plan",
       "free": "Free",
+      "starter": "Starter",
       "pro": "Pro",
-      "promptGenerations": "Prompt generations left",
-      "outputReviews": "Output reviews left",
-      "improvedPrompts": "Improved prompts left",
-      "upgrade": "Upgrade",
+      "paidCredits": "Credits left",
+      "outputReviews": "Reviews left",
+      "improvedPrompts": "Improvements left",
+      "dashboard": "Dashboard",
+      "upgrade": "Buy credits",
       "limits": {
-        "generation": "Free prompt generation limit reached.",
-        "review": "Free output review limit reached.",
-        "improvement": "Free improved prompt limit reached."
+        "generation": "Prompt generation is unlimited.",
+        "review": "Free review limit reached.",
+        "improvement": "Free improvement limit reached."
       }
     },
     "progress": {
-      "title": "Proposal progress",
+      "title": "Proposal Progress",
       "count": "{completed}/{total} completed, {remaining} remaining",
       "completed": "Completed",
       "current": "Current",
@@ -528,28 +544,34 @@
     },
     "action": {
       "layer": "Action Layer",
-      "prompt": "Starting prompt",
+      "prompt": "Generated prompt",
       "promptHint": "Copy this into ChatGPT or Gemini. RootAccess does not write the final proposal for you.",
       "generatePrompt": "Generate prompt",
       "regeneratePrompt": "Regenerate prompt",
       "copyPrompt": "Copy prompt",
-      "pasteOutput": "Paste AI output",
+      "pasteOutput": "Paste output",
       "outputPlaceholder": "Paste the output you received from ChatGPT or Gemini..."
+    },
+    "learn": {
+      "title": "Learn Layer",
+      "whyPromptWorks": "This prompt forces the AI to answer against the current section's business checks instead of writing generically.",
+      "toolReason": "{tool} is the external AI tool you selected for testing output.",
+      "comparisonBeforeReview": "After review, you will see how the improved prompt differs from the starting prompt.",
+      "comparisonAfterReview": "The improved prompt targets the weaknesses detected in the previous output."
     },
     "review": {
       "layer": "Review Layer",
-      "title": "Score and diagnose output",
-      "description": "RootAccess calls the review API to score the output and identify the top two weaknesses.",
-      "locked": "Paste an AI output first to unlock scoring, weakness detection, and prompt improvement.",
+      "title": "Review business logic",
+      "description": "Scores come from a stable rubric. Gemini only detects weaknesses and improves the prompt.",
       "action": "Review output",
-      "firstPass": "First output score",
+      "firstPass": "Output 1 score",
       "retryPass": "Retry output score",
-      "weaknesses": "Top weaknesses",
+      "weaknesses": "Top 2 weaknesses",
       "dimensions": {
         "relevance": "Relevance",
         "specificity": "Specificity",
-        "actionability": "Actionability",
-        "clarity": "Clarity"
+        "clarity": "Clarity",
+        "actionability": "Actionability"
       }
     },
     "improvement": {
@@ -558,58 +580,81 @@
     "retry": {
       "layer": "Retry Layer",
       "title": "Retry and compare",
-      "description": "Copy the improved prompt, run it in your AI tool, paste the new output, then compare scores.",
-      "locked": "Review the first output first to unlock the improved prompt.",
+      "description": "Copy the improved prompt, test it externally, paste the new output, then compare scores.",
       "copyImproved": "Copy improved prompt",
       "pasteOutput": "Paste retry output",
       "outputPlaceholder": "Paste the new output generated from the improved prompt...",
-      "rescore": "Re-score retry",
-      "complete": "Complete section",
+      "rescore": "Review retry",
+      "complete": "Complete Proposal Section",
       "oldScore": "Old score",
       "newScore": "New score",
       "change": "Change"
     },
+    "history": {
+      "title": "Version History",
+      "promptVersions": "Prompt versions",
+      "outputHistory": "Output history",
+      "output": "Output",
+      "timeline": "Improvement timeline"
+    },
     "upgrade": {
-      "badge": "Pro preview",
-      "title": "Unlock more review loops",
-      "description": "The Free plan is limited so the MVP has a visible business model.",
-      "promptUsage": "Prompt generations used: {count}/5",
-      "reviewUsage": "Output reviews used: {count}/5",
-      "improvementUsage": "Improved prompts used: {count}/3",
-      "proOffer": "Pro: unlimited prompt generations, output reviews, and improved prompts.",
+      "badge": "Credit packs",
+      "title": "Buy more credits",
+      "description": "Free is for trying the loop. Starter and Pro are demo credit packs for CP3 BMC.",
+      "reviewUsage": "Reviews used: {count}/5",
+      "improvementUsage": "Improvements used: {count}/3",
+      "proOffer": "Starter: 20 credits - 19k. Pro: 50 credits - 39k.",
       "checkout": "Open checkout",
       "later": "Not now"
     },
     "errors": {
-      "outputRequired": "Paste an AI output before reviewing.",
+      "outputRequired": "Paste output before reviewing.",
       "reviewFailed": "RootAccess could not review this output right now."
     },
     "sections": {
       "problem": {
         "title": "Problem",
-        "objective": "Clarify the painful problem your startup should solve.",
-        "promptFocus": "Specific user situation, current workaround, pain intensity, urgency, and evidence needed."
+        "objective": "Clarify a specific, urgent, and testable problem.",
+        "promptFocus": "Specificity, urgency, frequency, validation ability."
       },
       "customer": {
         "title": "Customer",
-        "objective": "Define the first target customer segment.",
-        "promptFocus": "Narrow segment, context, needs, usage behavior, and why this group should be first."
-      },
-      "validation": {
-        "title": "Validation",
-        "objective": "Plan how to test the problem and solution assumptions.",
-        "promptFocus": "Interviews, surveys, prototype tests, evidence to collect, and success signals."
+        "objective": "Define a narrow, painful, and reachable customer segment.",
+        "promptFocus": "Narrowness, pain intensity, reachability."
       },
       "revenue": {
         "title": "Revenue",
-        "objective": "Choose a realistic first revenue model.",
-        "promptFocus": "Payer, pricing logic, willingness-to-pay assumptions, and a simple validation test."
+        "objective": "Choose realistic and scalable revenue logic.",
+        "promptFocus": "Realism, willingness to pay, scalability."
       },
-      "mvpScope": {
-        "title": "MVP Scope",
-        "objective": "Define what the MVP includes and excludes.",
-        "promptFocus": "Core value, must-have features, excluded features, build constraints, and first test."
+      "mvp": {
+        "title": "MVP",
+        "objective": "Keep MVP scope clear, feasible, and testable.",
+        "promptFocus": "Scope clarity, feasibility, testability."
+      },
+      "differentiation": {
+        "title": "Differentiation",
+        "objective": "Clarify valuable and defensible differentiation.",
+        "promptFocus": "Uniqueness, defensibility, user value clarity."
       }
+    }
+  },
+  "IntelligenceDashboard": {
+    "eyebrow": "Internal dashboard",
+    "title": "Product intelligence",
+    "description": "Track weaknesses, failed steps, improvements, and retries from localStorage.",
+    "back": "Back home",
+    "empty": "No data yet.",
+    "cards": {
+      "events": "Events",
+      "reviews": "Reviews",
+      "averageImprovement": "Average improvement"
+    },
+    "sections": {
+      "weaknesses": "Most common weaknesses",
+      "failedSteps": "Most failed steps",
+      "dropOffs": "Drop-off points",
+      "retries": "Most retried prompts"
     }
   }
 }

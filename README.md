@@ -1,16 +1,16 @@
 # Root Access
 
-Root Access is an AI Workflow + Output Review + Prompt Improvement product for
-Startup Proposal work.
+Root Access helps students build better Startup Proposals with AI by guiding
+them step by step, reviewing AI outputs, and improving prompts iteratively.
 
 It helps students improve how they use AI:
 
 ```txt
-Generate Prompt -> Test with AI -> Get Feedback -> Improve Prompt -> Retry
+Generate prompt -> Test output -> Detect weaknesses -> Improve prompt -> Retry
 ```
 
-Root Access is not a proposal generator, prompt library, slide builder, PDF
-generator, website builder, or generic AI assistant.
+Root Access is not a proposal generator, slide builder, PDF generator, website
+builder, or generic AI assistant.
 
 ## Current MVP
 
@@ -37,6 +37,7 @@ proposal for the user.
 `/result` uses three layers:
 
 - Action Layer: objective, starting prompt, copy prompt, paste AI output.
+- Learn Layer: why the prompt works, tool reasoning, prompt comparison.
 - Review Layer: score, weakness detection, improved prompt.
 - Retry Layer: copy improved prompt, paste retry output, compare scores.
 
@@ -44,9 +45,9 @@ Proposal progress is tracked by section:
 
 - Problem
 - Customer
-- Validation
 - Revenue
-- MVP Scope
+- MVP
+- Differentiation
 
 ## Review API
 
@@ -56,30 +57,47 @@ The review engine lives at:
 src/app/api/gemini/review/route.ts
 ```
 
-It calls Gemini for:
+It computes deterministic scores for:
 
 - Output Score Engine
+
+It calls Gemini for:
+
 - Weakness Detection
 - Prompt Improvement Engine
 
-Workflow selection and prompt templates remain rule-based and static.
+Scoring is stable: the same output receives the same score. Workflow selection
+and prompt templates remain rule-based and static.
 
 ## Credit Model
 
 Free:
 
-- 5 prompt generations
-- 5 output reviews
-- 3 improved prompts
+- 5 reviews
+- 3 improvements
+
+Starter demo:
+
+- 20 credits - 19k
 
 Pro demo:
 
-- unlimited prompt generations
-- unlimited output reviews
-- unlimited improved prompts
+- 50 credits - 39k
 
-The fake checkout lives at `/checkout` and activates Pro demo mode in
+The fake checkout lives at `/checkout` and activates the selected demo plan in
 localStorage. No real payment integration is implemented.
+
+## Product Intelligence
+
+The internal dashboard lives at `/dashboard`.
+
+It reads localStorage telemetry for:
+
+- most common weaknesses
+- most failed steps
+- average score improvements
+- drop-off points
+- most retried prompts
 
 ## Getting Started
 

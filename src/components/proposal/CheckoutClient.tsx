@@ -5,15 +5,17 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import { creditPlanStorageKey } from "@/lib/credit-policy";
+import { creditPlanStorageKey, type CreditPlan } from "@/lib/credit-policy";
+
+const paidPlans = ["starter", "pro"] as const satisfies readonly CreditPlan[];
 
 export function CheckoutClient() {
   const t = useTranslations("CheckoutPage");
   const router = useRouter();
 
-  function activateProDemo() {
+  function activatePlanDemo(plan: CreditPlan) {
     try {
-      window.localStorage.setItem(creditPlanStorageKey, "pro");
+      window.localStorage.setItem(creditPlanStorageKey, plan);
     } catch {
       return;
     }
@@ -22,50 +24,62 @@ export function CheckoutClient() {
   }
 
   return (
-    <section className="rounded-lg border border-border bg-background p-5 shadow-sm">
-      <div className="flex items-start gap-3 border-b border-border pb-4">
-        <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-          <CreditCard aria-hidden="true" className="size-5" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">
-            {t("card.title")}
-          </h2>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            {t("card.description")}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid gap-3 py-5">
-        {["prompts", "reviews", "improvements"].map((feature) => (
-          <div key={feature} className="flex gap-3 text-sm leading-6">
-            <CheckCircle2
-              aria-hidden="true"
-              className="mt-0.5 size-4 shrink-0 text-emerald-600"
-            />
-            <span className="text-muted-foreground">
-              {t(`card.features.${feature}`)}
-            </span>
+    <section className="grid gap-4">
+      {paidPlans.map((plan) => (
+        <div
+          key={plan}
+          className="rounded-lg border border-border bg-background p-5 shadow-sm"
+        >
+          <div className="flex items-start gap-3 border-b border-border pb-4">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+              <CreditCard aria-hidden="true" className="size-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-foreground">
+                {t(`plans.${plan}.title`)}
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                {t(`plans.${plan}.description`)}
+              </p>
+            </div>
           </div>
-        ))}
-      </div>
 
-      <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm leading-6">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-muted-foreground">{t("card.priceLabel")}</span>
-          <span className="text-xl font-semibold text-foreground">
-            {t("card.price")}
-          </span>
+          <div className="grid gap-3 py-5">
+            {["credits", "reviews", "improvements"].map((feature) => (
+              <div key={feature} className="flex gap-3 text-sm leading-6">
+                <CheckCircle2
+                  aria-hidden="true"
+                  className="mt-0.5 size-4 shrink-0 text-emerald-600"
+                />
+                <span className="text-muted-foreground">
+                  {t(`plans.${plan}.features.${feature}`)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm leading-6">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-muted-foreground">
+                {t("card.priceLabel")}
+              </span>
+              <span className="text-xl font-semibold text-foreground">
+                {t(`plans.${plan}.price`)}
+              </span>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">
+              {t("card.fakePayment")}
+            </p>
+          </div>
+
+          <Button
+            className="mt-5 h-11 w-full"
+            onClick={() => activatePlanDemo(plan)}
+          >
+            {t("card.action", { plan: t(`plans.${plan}.title`) })}
+          </Button>
         </div>
-        <p className="mt-2 text-xs leading-5 text-muted-foreground">
-          {t("card.fakePayment")}
-        </p>
-      </div>
-
-      <Button className="mt-5 h-11 w-full" onClick={activateProDemo}>
-        {t("card.action")}
-      </Button>
+      ))}
       <Button
         type="button"
         variant="ghost"

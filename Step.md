@@ -1,394 +1,512 @@
-Đây là kế hoạch prompt hợp lý nhất cho RootAccess hiện tại, theo hướng mới:
+# RootAccess CP3 Refactor Plan
 
-Core identity:
+## Mission
 
-```text
-RootAccess = AI Workflow + Output Review + Prompt Improvement
-```
+Refactor RootAccess into a clear, focused MVP for Checkpoint 3.
 
-Không generate hộ kết quả.
-Không biến thành content generator.
+Current issues:
 
----
-
-# PRODUCT FLOW (phải giữ cố định)
-
-User journey:
-
-```text
-1. User chọn workflow
-2. RootAccess tạo prompt khởi đầu
-3. User copy sang ChatGPT/Gemini
-4. User paste output về RootAccess
-5. RootAccess chấm điểm output
-6. RootAccess chỉ ra lỗi
-7. RootAccess gợi ý prompt tốt hơn
-8. User retry
-9. Compare improvement
-10. Complete step
-```
-
-Flow này cực quan trọng vì:
-
-* dễ hiểu
-* đúng thesis
-* không overload
-
----
-
-# PROMPT IMPLEMENTATION PLAN (Codex)
-
-Chạy theo phase này. Không nhảy.
-
----
-
-## PHASE 1 — Rebuild onboarding clarity
-
-Mục tiêu:
-
-Người mới vào phải hiểu app làm gì trong 5 giây.
-
-Prompt:
-
-PHASE 1 — ONBOARDING CLARITY
-
-Refactor onboarding.
+* product identity is unclear
+* too much cognitive overload
+* workflow is easy to bypass
+* scoring lacks trust
+* retention is weak
+* monetization does not match user willingness
 
 Goal:
-Make RootAccess understandable for first-time users immediately.
+
+Transform RootAccess into a domain-specific AI workflow improvement system for Startup Proposal only.
+
+Core positioning:
+
+```text
+RootAccess helps students build better Startup Proposals with AI by guiding them step-by-step, reviewing AI outputs, and improving prompts iteratively.
+```
+
+Non-goals:
+
+```text
+Do NOT add:
+- presentation generator
+- pdf export generator
+- slide maker
+- canva integration
+- academic report workflows
+- multi-domain workflows
+```
+
+Keep scope tight.
+
+---
+
+# Phase 1 — Product Identity Cleanup
+
+## Goal
+
+Make the product understandable in under 5 seconds.
 
 Tasks:
 
-Replace vague landing explanation.
+### 1. Rewrite landing page copy
 
-New hero:
-"Improve how you use AI for Startup Proposals."
-
-Subtext:
-RootAccess helps you:
-
-1. build better prompts
-2. test them with AI
-3. review the output
-4. improve until it works
-
-Add a 3-step visual flow:
-
-Generate Prompt
-→ Test with AI
-→ Get Feedback
-
-Add "How it works" section before entering workflow.
-
-Remove anything that makes the app look like a prompt library.
-
-Priority:
-clarity first.
-
----
-
-## PHASE 2 — Simplify workflow UI
-
-Mục tiêu:
-
-Không overload.
-
-Chỉ giữ 3 layer.
-
-Prompt:
-
-PHASE 2 — SIMPLIFY WORKFLOW UI
-
-Refactor each workflow step.
-
-Keep only:
-
-1. Action Layer (always open)
-
-* objective
-* prompt
-* copy button
-* paste output
-
-2. Review Layer (locked until output exists)
-
-* output score
-* weakness detection
-* prompt improvement
-
-3. Retry Layer
-
-* improved prompt
-* retry button
-* compare previous vs new output
-
-Remove:
-
-* excessive coaching text
-* long explanations
-* too many accordions
-* unnecessary tool comparisons
-
-Goal:
-Make each step feel fast and lightweight.
-
----
-
-## PHASE 3 — Build Output Score Engine
-
-Đây là core moat.
-
-Prompt:
-
-PHASE 3 — BUILD OUTPUT SCORE ENGINE
-
-Build a lightweight scoring engine.
-
-Input:
-user pasted AI output.
-
-Score across 4 dimensions:
-
-1. Relevance (0-10)
-2. Specificity (0-10)
-3. Actionability (0-10)
-4. Clarity (0-10)
-
-Total score:
-0-40
-
-Show:
-
-* total score
-* score breakdown
-* simple explanation
-
-Example:
-28/40
-Strong idea, but customer segment is still too broad.
-
-Important:
-Scoring must stay simple and understandable.
-
-Do not overcomplicate.
-
----
-
-## PHASE 4 — Build Weakness Detection
-
-Cực quan trọng.
-
-Prompt:
-
-PHASE 4 — BUILD WEAKNESS DETECTION
-
-After scoring, detect weaknesses.
-  
-Possible weaknesses:
-
-* too broad
-* unclear customer
-* weak pain point
-* no urgency
-* solution-first thinking
-* unrealistic assumptions
-
-Show only top 2 weaknesses.
-
-Do not overwhelm users.
-
-Format:
-
-Weakness found:
-1.
-2.
-
-Goal:
-Make feedback actionable.
-
----
-
-## PHASE 5 — Build Prompt Improvement Engine
-
-Đây là retention engine.
-
-Prompt:
-
-PHASE 5 — BUILD PROMPT IMPROVEMENT ENGINE
-
-After weakness detection:
-
-Generate an improved version of the user's original prompt.
-
-Logic:
-Original prompt
-+
-AI output weaknesses
-====================
-
-Better prompt
-
-Show:
-
-Old Prompt
-Improved Prompt
-
-Add:
-"Why this is better"
-
-Keep explanation short.
-
-Goal:
-Teach prompt improvement through iteration.
-
----
-
-## PHASE 6 — Retry Loop
-
-Đây là human-in-the-loop.
-
-Prompt:
-
-PHASE 6 — BUILD RETRY LOOP
-
-Allow users to retry with improved prompt.
-
-Flow:
-
-Copy improved prompt
-→ run in ChatGPT/Gemini
-→ paste new output
-→ re-score
-
-Store both:
-old output
-new output
-
-Show improvement comparison.
-
-Example:
-
-Old Score: 21/40
-New Score: 33/40
-
-Goal:
-Make progress visible.
-
----
-
-## PHASE 7 — Progress System
-
-Mục tiêu:
-
-Cho user biết họ đang làm gì.
-
-Prompt:
-
-PHASE 7 — REBUILD PROGRESS SYSTEM
-
-Show workflow progress.
-
-Not micro-step progress.
+Replace vague workflow wording.
 
 Use:
 
-Proposal Progress
+Hero:
 
-Sections:
+```text
+Build better Startup Proposals with AI, step by step.
+```
 
-* Problem
-* Customer
-* Validation
-* Revenue
-* MVP Scope
+Sub:
 
-Show:
-completed
-current
-remaining
-
-Keep sticky on desktop.
-
-Keep compact on mobile.
+```text
+Generate prompts, test outputs, detect weaknesses, and improve until your proposal is strong.
+```
 
 ---
 
-## PHASE 8 — Monetization Fit (CP3)
+### 2. Rename UI labels
 
-Phải khớp BMC.
+Replace:
 
-Prompt:
+```text
+Workflow
+Micro-step
+Prompt library
+Milestone
+```
 
-PHASE 8 — CREDIT SYSTEM FOR BMC FIT
+With:
 
-Build a credit system.
+```text
+Proposal Section
+Build Step
+AI Improvement Loop
+Proposal Progress
+```
+
+---
+
+### 3. Remove multi-workflow options
+
+Keep only:
+
+```text
+Startup Proposal
+```
+
+Add placeholder:
+
+```text
+More workflows coming later.
+```
+
+---
+
+Success criteria:
+
+* user instantly understands what RootAccess does
+* no wording implies “prompt library”
+
+---
+
+# Phase 2 — Rebuild Workflow Structure
+
+## Goal
+
+Reduce overload.
+
+Refactor all current milestones into:
+
+---
+
+## Section A — Action Layer (default open)
+
+Show only:
+
+* title
+* objective
+* generated prompt
+* copy button
+* paste output field
+
+Minimal.
+
+---
+
+## Section B — Learn Layer (collapsed)
+
+Contains:
+
+* why this prompt works
+* tool choice reasoning
+* prompt comparison
+
+Hidden by default.
+
+---
+
+## Section C — Review Layer (locked)
+
+Only appears after output paste.
+
+Contains:
+
+* score
+* weaknesses
+* improved prompt
+* retry button
+
+---
+
+Rules:
+
+* no long text visible by default
+* no checklist before action
+* action first
+
+---
+
+Success criteria:
+
+* user sees one action at a time
+* low cognitive load
+
+---
+
+# Phase 3 — Domain-Specific Review Engine
+
+## Goal
+
+Prevent easy bypass.
+
+Build structured Startup Proposal review.
+
+Create 5 review frameworks:
+
+---
+
+## Problem Review
+
+Check:
+
+* specificity
+* urgency
+* frequency
+* validation ability
+
+---
+
+## Customer Review
+
+Check:
+
+* narrowness
+* pain intensity
+* reachability
+
+---
+
+## Revenue Review
+
+Check:
+
+* realism
+* willingness to pay
+* scalability
+
+---
+
+## MVP Review
+
+Check:
+
+* scope clarity
+* feasibility
+* testability
+
+---
+
+## Differentiation Review
+
+Check:
+
+* uniqueness
+* defensibility
+* user value clarity
+
+---
+
+Rules:
+
+No generic writing feedback.
+
+Only business logic.
+
+---
+
+Success criteria:
+
+RootAccess feedback must feel specialized.
+
+---
+
+# Phase 4 — Stable Scoring System
+
+## Goal
+
+Increase trust.
+
+Build scoring rubric:
+
+4 dimensions:
+
+---
+
+## Relevance (0–10)
+
+Measures fit to current step.
+
+---
+
+## Specificity (0–10)
+
+Measures precision.
+
+---
+
+## Clarity (0–10)
+
+Measures understandable structure.
+
+---
+
+## Actionability (0–10)
+
+Measures usefulness for proposal.
+
+---
+
+Each score must include:
+
+```text
+Why this score?
+```
+
+Example:
+
+```text
+Specificity: 4/10
+Reason: target customer still too broad.
+```
+
+Rules:
+
+No random scoring.
+
+Must be deterministic.
+
+---
+
+Success criteria:
+
+same output = same score.
+
+---
+
+# Phase 5 — AI Weakness Detection + Prompt Improvement
+
+## Goal
+
+Use Gemini API only where necessary.
+
+Build:
+
+---
+
+## Weakness Detection
+
+Input:
+
+* current step
+* original prompt
+* user output
+* score breakdown
+
+Return:
+
+* top 2 weaknesses only
+
+---
+
+## Prompt Improvement
+
+Input:
+
+* original prompt
+* weaknesses
+
+Return:
+
+* improved prompt
+* why improved
+
+---
+
+Rules:
+
+API only triggers after user action.
+
+Never auto-run.
+
+---
+
+Success criteria:
+
+feedback loop feels smart, not noisy.
+
+---
+
+# Phase 6 — Version History
+
+## Goal
+
+Increase retention.
+
+Build:
+
+---
+
+## Prompt Version History
+
+Track:
+
+```text
+v1
+v2
+v3
+```
+
+---
+
+## Output History
+
+Track:
+
+```text
+Output 1 → score
+Output 2 → score
+```
+
+---
+
+## Improvement Timeline
+
+Visual:
+
+```text
+21 → 28 → 35
+```
+
+---
+
+Success criteria:
+
+user sees progress over time.
+
+---
+
+# Phase 7 — Monetization Alignment
+
+## Goal
+
+Match CP3 BMC.
+
+Remove subscription-first UI.
+
+Replace with:
+
+---
 
 Free:
 
-* 5 prompt generations
-* 5 output reviews
-* 3 improved prompts
-
-Pro:
-
-* unlimited
-
-Add:
-
-visible credits
-upgrade modal
-fake checkout flow
-
-No payment integration.
-
-Purpose:
-show business model fit for CP3.
+```text
+5 reviews
+3 improvements
+```
 
 ---
 
-# FINAL CHECKLIST (rất quan trọng)
-
-Nếu làm xong, RootAccess phải trả lời rõ:
-
-User hỏi:
+Starter:
 
 ```text
-App này làm gì?
+20 credits — 19k
 ```
 
-User phải hiểu ngay:
+---
+
+Pro:
 
 ```text
-Nó giúp tôi tạo prompt tốt hơn, kiểm tra output AI, và cải thiện prompt từng vòng để làm proposal tốt hơn.
+50 credits — 39k
 ```
 
-Nếu user hiểu khác:
+---
+
+Rules:
+
+UI only.
+No real payment needed.
+
+Must include checkout flow.
+
+Required for BMC consistency.
+
+---
+
+# Phase 8 — Data Moat Tracking
+
+## Goal
+
+Start collecting product intelligence.
+
+Track:
+
+* most common weaknesses
+* most failed steps
+* average score improvements
+* drop-off points
+* most retried prompts
+
+Build simple internal dashboard.
+
+Can be basic.
+
+---
+
+Success criteria:
+
+RootAccess learns from users.
+
+---
+
+# Build Order (strict)
+
+Do in exact order:
 
 ```text
-nó generate proposal hộ tôi
+1. Product identity cleanup
+2. Workflow structure refactor
+3. Domain review engine
+4. Stable scoring system
+5. Gemini integration
+6. Version history
+7. Credit model UI
+8. Analytics dashboard
 ```
 
-=> sai.
+Do not skip order.
 
-Nếu user hiểu:
-
-```text
-nó chỉ là thư viện prompt
-```
-
-=> sai.
-
-Target understanding phải là:
-
-```text
-AI skill improvement through structured workflow.
-```
-
-Đây là version fit nhất với:
-
-* ý tưởng gốc
-* mentor feedback
-* CP3 BMC
-* retention
-* low overload
-* clear product identity.
+Each phase must be stable before next.

@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+import {
+  isProposalSectionId,
+  proposalReviewFrameworks,
+  proposalSectionIds,
+  scoreStartupProposalOutput,
+} from "@/lib/proposal-review";
+
 const reviewRequestSchema = z.object({
   context: z.object({
     deadlineUrgency: z.string().trim().max(120),
@@ -11,27 +18,10 @@ const reviewRequestSchema = z.object({
   output: z.string().trim().min(1).max(20000),
   previousScore: z.number().int().min(0).max(40).optional(),
   section: z.string().trim().min(1).max(120),
+  sectionId: z.enum(proposalSectionIds),
 });
 
-const scoreDimensionSchema = z
-  .number()
-  .min(0)
-  .max(10)
-  .transform((score) => Math.round(score));
-
-const scoreBreakdownSchema = z.object({
-  relevance: scoreDimensionSchema,
-  specificity: scoreDimensionSchema,
-  actionability: scoreDimensionSchema,
-  clarity: scoreDimensionSchema,
-});
-
-const reviewResponseSchema = z.object({
-  score: z.object({
-    total: z.number().min(0).max(40).optional(),
-    breakdown: scoreBreakdownSchema,
-    explanation: z.string().trim().min(1).max(1500),
-  }),
+const geminiReviewSchema = z.object({
   weaknesses: z.array(z.string().trim().min(1).max(1000)).min(0).max(5),
   improvedPrompt: z.string().trim().min(1).max(16000),
   whyBetter: z.string().trim().min(1).max(1500),
@@ -77,8 +67,7 @@ async function readGeminiResponse(response: Response) {
   } catch {
     return {
       error: {
-        message:
-          "Gemini returned an unreadable response. Try again later.",
+        message: "Gemini returned an unreadable response. Try again later.",
       },
     } satisfies GeminiResponse;
   }
@@ -111,53 +100,42 @@ function truncateReviewText(value: string, maxLength: number) {
   return `${value.slice(0, maxLength - 3).trimEnd()}...`;
 }
 
-function parseReviewJson(value: string) {
+function parseGeminiReviewJson(value: string) {
   const parsed: unknown = JSON.parse(extractJsonObject(value));
-  const review = reviewResponseSchema.parse(parsed);
-  const total =
-    review.score.breakdown.relevance +
-    review.score.breakdown.specificity +
-    review.score.breakdown.actionability +
-    review.score.breakdown.clarity;
+  const review = geminiReviewSchema.parse(parsed);
 
   return {
     ...review,
-    score: {
-      ...review.score,
-      total,
-    },
     weaknesses: review.weaknesses
       .slice(0, 2)
       .map((weakness) => truncateReviewText(weakness, 240)),
   };
 }
 
-function createReviewPrompt({
+function createGeminiReviewPrompt({
   context,
   originalPrompt,
   output,
   previousScore,
+  score,
   section,
-}: z.infer<typeof reviewRequestSchema>) {
+  sectionId,
+}: z.infer<typeof reviewRequestSchema> & {
+  score: ReturnType<typeof scoreStartupProposalOutput>;
+}) {
+  const framework = proposalReviewFrameworks[sectionId];
+
   return [
-    "You are RootAccess, an AI workflow reviewer for FPT University startup proposal work.",
-    "The user already tested a prompt in ChatGPT/Gemini and pasted the AI output back into RootAccess.",
-    "Do not write the user's proposal section. Review the output quality and improve the prompt for the next retry.",
+    "You are RootAccess, a domain-specific Startup Proposal reviewer for FPT University students.",
+    "The deterministic scoring engine has already scored the output. Do not change or invent scores.",
+    "Your job is only Weakness Detection and Prompt Improvement.",
+    "Do not write the final proposal section for the user.",
+    "Do not give generic writing feedback. Focus only on startup business logic.",
     "",
     "Return ONLY valid JSON matching this exact shape:",
     JSON.stringify(
       {
-        score: {
-          total: 0,
-          breakdown: {
-            relevance: 0,
-            specificity: 0,
-            actionability: 0,
-            clarity: 0,
-          },
-          explanation: "short explanation",
-        },
-        weaknesses: ["top weakness 1", "top weakness 2"],
+        weaknesses: ["top business weakness 1", "top business weakness 2"],
         improvedPrompt: "better prompt the user can copy into ChatGPT/Gemini",
         whyBetter: "short reason why the prompt is better",
       },
@@ -165,16 +143,17 @@ function createReviewPrompt({
       2,
     ),
     "",
-    "Scoring rules:",
-    "- Score relevance, specificity, actionability, and clarity from 0 to 10.",
-    "- Total must equal the four dimensions, 0 to 40.",
-    "- Keep the explanation simple and understandable.",
-    "- Detect only the top 2 weaknesses.",
-    "- Possible weakness types include: too broad, unclear customer, weak pain point, no urgency, solution-first thinking, unrealistic assumptions.",
-    "- Improved prompt must address the detected weaknesses and help the user retry externally.",
+    `Proposal section: ${section}`,
+    `Review framework: ${framework.title}`,
+    `Framework checks: ${framework.checks.join(", ")}`,
+    `Previous score, if retry: ${previousScore ?? "none"}`,
     "",
-    `Workflow section: ${section}`,
-    `Previous score, if this is a retry: ${previousScore ?? "none"}`,
+    "Deterministic score breakdown:",
+    `- Relevance: ${score.breakdown.relevance.score}/10. Why this score? ${score.breakdown.relevance.reason}`,
+    `- Specificity: ${score.breakdown.specificity.score}/10. Why this score? ${score.breakdown.specificity.reason}`,
+    `- Clarity: ${score.breakdown.clarity.score}/10. Why this score? ${score.breakdown.clarity.reason}`,
+    `- Actionability: ${score.breakdown.actionability.score}/10. Why this score? ${score.breakdown.actionability.reason}`,
+    `- Total: ${score.total}/40`,
     "",
     "Project context:",
     `- Startup idea: ${context.startupIdea}`,
@@ -220,7 +199,7 @@ export async function POST(request: Request) {
 
   const parsedBody = reviewRequestSchema.safeParse(body);
 
-  if (!parsedBody.success) {
+  if (!parsedBody.success || !isProposalSectionId(parsedBody.data.sectionId)) {
     return Response.json(
       {
         code: "invalid_request",
@@ -230,6 +209,11 @@ export async function POST(request: Request) {
     );
   }
 
+  const deterministicScore = scoreStartupProposalOutput({
+    context: parsedBody.data.context,
+    output: parsedBody.data.output,
+    sectionId: parsedBody.data.sectionId,
+  });
   const model = getModel();
   let response: Response;
 
@@ -247,7 +231,10 @@ export async function POST(request: Request) {
               role: "user",
               parts: [
                 {
-                  text: createReviewPrompt(parsedBody.data),
+                  text: createGeminiReviewPrompt({
+                    ...parsedBody.data,
+                    score: deterministicScore,
+                  }),
                 },
               ],
             },
@@ -258,7 +245,7 @@ export async function POST(request: Request) {
           systemInstruction: {
             parts: [
               {
-                text: "You review AI outputs for startup proposal workflows. You score outputs, detect the top weaknesses, and improve prompts. You never write the user's final proposal.",
+                text: "You detect startup proposal weaknesses and improve prompts. You never write final proposal content and you never score outputs.",
               },
             ],
           },
@@ -303,9 +290,18 @@ export async function POST(request: Request) {
   }
 
   try {
+    const geminiReview = parseGeminiReviewJson(text);
+
     return Response.json({
       model,
-      review: parseReviewJson(text),
+      review: {
+        frameworkChecks: deterministicScore.frameworkChecks,
+        frameworkTitle: deterministicScore.frameworkTitle,
+        improvedPrompt: geminiReview.improvedPrompt,
+        score: deterministicScore,
+        weaknesses: geminiReview.weaknesses,
+        whyBetter: geminiReview.whyBetter,
+      },
     });
   } catch {
     return Response.json(

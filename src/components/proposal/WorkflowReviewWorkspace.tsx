@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  BarChart3,
   Check,
   Copy,
+  History,
   Loader2,
   RefreshCw,
   Sparkles,
@@ -17,54 +19,75 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreditUsage } from "@/hooks/useCreditUsage";
 import {
+  intelligenceStorageKey,
+  parseIntelligenceEvents,
+  type IntelligenceEvent,
+  type IntelligenceEventType,
+} from "@/lib/product-intelligence";
+import {
   creditPlanStorageKey,
   parseCreditPlan,
   type CreditPlan,
 } from "@/lib/credit-policy";
+import {
+  proposalReviewFrameworks,
+  proposalSectionIds,
+  type ProposalSectionId,
+} from "@/lib/proposal-review";
 import { cn } from "@/lib/utils";
 
-type WorkflowSectionId =
-  | "problem"
-  | "customer"
-  | "validation"
-  | "revenue"
-  | "mvpScope";
-
 type WorkflowSection = {
-  id: WorkflowSectionId;
-  title: string;
+  id: ProposalSectionId;
   objective: string;
   promptFocus: string;
+  title: string;
+};
+
+type ScoreDimensionResult = {
+  reason: string;
+  score: number;
 };
 
 type OutputReview = {
+  frameworkChecks: readonly string[];
+  frameworkTitle: string;
+  improvedPrompt: string;
   score: {
-    total: number;
     breakdown: {
-      relevance: number;
-      specificity: number;
-      actionability: number;
-      clarity: number;
+      actionability: ScoreDimensionResult;
+      clarity: ScoreDimensionResult;
+      relevance: ScoreDimensionResult;
+      specificity: ScoreDimensionResult;
     };
     explanation: string;
+    total: number;
   };
   weaknesses: string[];
-  improvedPrompt: string;
   whyBetter: string;
+};
+
+type ReviewHistoryEntry = {
+  createdAt: string;
+  id: string;
+  kind: "original" | "retry";
+  label: string;
+  output: string;
+  prompt: string;
+  review: OutputReview;
 };
 
 type SectionState = {
   completed: boolean;
-  copiedPrompt: boolean;
   improvedPromptCopied: boolean;
   originalOutput: string;
   originalPrompt: string;
   originalReview: OutputReview | null;
   retryOutput: string;
   retryReview: OutputReview | null;
+  reviewHistory: ReviewHistoryEntry[];
 };
 
-type WorkspaceState = Partial<Record<WorkflowSectionId, SectionState>>;
+type WorkspaceState = Partial<Record<ProposalSectionId, SectionState>>;
 
 type WorkflowReviewWorkspaceProps = {
   context: {
@@ -78,23 +101,15 @@ type WorkflowReviewWorkspaceProps = {
   };
 };
 
-const sectionIds = [
-  "problem",
-  "customer",
-  "validation",
-  "revenue",
-  "mvpScope",
-] as const satisfies readonly WorkflowSectionId[];
-
 const emptySectionState: SectionState = {
   completed: false,
-  copiedPrompt: false,
   improvedPromptCopied: false,
   originalOutput: "",
   originalPrompt: "",
   originalReview: null,
   retryOutput: "",
   retryReview: null,
+  reviewHistory: [],
 };
 
 function getStorageKey(workflowRunId: string) {
@@ -121,7 +136,7 @@ function readWorkspaceState(workflowRunId: string): WorkspaceState {
 
     return Object.fromEntries(
       Object.entries(parsed).filter(([sectionId]) =>
-        sectionIds.includes(sectionId as WorkflowSectionId),
+        proposalSectionIds.includes(sectionId as ProposalSectionId),
       ),
     ) as WorkspaceState;
   } catch {
@@ -143,11 +158,12 @@ function readCreditPlan(): CreditPlan {
 
 function getSectionState(
   workspaceState: WorkspaceState,
-  sectionId: WorkflowSectionId,
+  sectionId: ProposalSectionId,
 ) {
   return {
     ...emptySectionState,
     ...(workspaceState[sectionId] ?? {}),
+    reviewHistory: workspaceState[sectionId]?.reviewHistory ?? [],
   };
 }
 
@@ -162,9 +178,10 @@ function createInitialPrompt({
     context.locale === "vi"
       ? "Write the output in Vietnamese."
       : "Write the output in English.";
+  const framework = proposalReviewFrameworks[section.id];
 
   return [
-    `I am working on the "${section.title}" part of a university startup proposal.`,
+    `I am working on the "${section.title}" proposal section.`,
     "",
     "Project context:",
     `- Startup idea: ${context.startupIdea}`,
@@ -175,9 +192,11 @@ function createInitialPrompt({
     `- Deadline urgency: ${context.deadlineUrgency}`,
     "",
     `Objective: ${section.objective}`,
+    `Business checks to satisfy: ${framework.checks.join(", ")}`,
     `Focus on: ${section.promptFocus}`,
     "",
-    "Please give me a structured working output, not a final essay.",
+    "Give me structured working material for this proposal section.",
+    "Do not write a final essay.",
     "Use bullets or a compact table if helpful.",
     "Mark uncertain facts or assumptions with [VERIFY].",
     languageInstruction,
@@ -196,6 +215,34 @@ function getScoreTone(score: number) {
   return "text-destructive";
 }
 
+function createEventId() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function readIntelligenceEvents() {
+  try {
+    return parseIntelligenceEvents(
+      window.localStorage.getItem(intelligenceStorageKey),
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeIntelligenceEvent(event: IntelligenceEvent) {
+  try {
+    const currentEvents = readIntelligenceEvents();
+    const nextEvents = [...currentEvents, event].slice(-250);
+
+    window.localStorage.setItem(
+      intelligenceStorageKey,
+      JSON.stringify(nextEvents),
+    );
+  } catch {
+    return;
+  }
+}
+
 export function WorkflowReviewWorkspace({
   context,
 }: WorkflowReviewWorkspaceProps) {
@@ -204,7 +251,7 @@ export function WorkflowReviewWorkspace({
     readWorkspaceState(context.workflowRunId),
   );
   const [activeSectionId, setActiveSectionId] =
-    useState<WorkflowSectionId>("problem");
+    useState<ProposalSectionId>("problem");
   const [isReviewing, setIsReviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<CreditPlan>(() => readCreditPlan());
@@ -213,11 +260,11 @@ export function WorkflowReviewWorkspace({
   const { canUse, getRemaining, recordUse, usage } = useCreditUsage(plan);
   const sections = useMemo<WorkflowSection[]>(
     () =>
-      sectionIds.map((sectionId) => ({
+      proposalSectionIds.map((sectionId) => ({
         id: sectionId,
-        title: t(`sections.${sectionId}.title`),
         objective: t(`sections.${sectionId}.objective`),
         promptFocus: t(`sections.${sectionId}.promptFocus`),
+        title: t(`sections.${sectionId}.title`),
       })),
     [t],
   );
@@ -240,6 +287,15 @@ export function WorkflowReviewWorkspace({
   const completionPercentage = Math.round(
     (completedCount / sections.length) * 100,
   );
+  const latestReview = activeState.retryReview ?? activeState.originalReview;
+  const improvedPrompt = latestReview?.improvedPrompt ?? "";
+  const oldScore = activeState.originalReview?.score.total;
+  const newScore = activeState.retryReview?.score.total;
+  const scoreTimeline = activeState.reviewHistory.map(
+    (entry) => entry.review.score.total,
+  );
+  const paidCreditRemaining =
+    plan === "free" ? null : getRemaining("review");
 
   useEffect(() => {
     try {
@@ -263,13 +319,43 @@ export function WorkflowReviewWorkspace({
   }, []);
 
   function updateSectionState(
-    sectionId: WorkflowSectionId,
+    sectionId: ProposalSectionId,
     createNextState: (sectionState: SectionState) => SectionState,
   ) {
     setWorkspaceState((currentState) => ({
       ...currentState,
       [sectionId]: createNextState(getSectionState(currentState, sectionId)),
     }));
+  }
+
+  function logIntelligenceEvent({
+    improvement,
+    previousScore,
+    promptLabel,
+    score,
+    type,
+    weaknesses,
+  }: {
+    improvement?: number;
+    previousScore?: number;
+    promptLabel?: string;
+    score?: number;
+    type: IntelligenceEventType;
+    weaknesses?: string[];
+  }) {
+    writeIntelligenceEvent({
+      createdAt: new Date().toISOString(),
+      id: createEventId(),
+      improvement,
+      previousScore,
+      promptLabel,
+      score,
+      sectionId: activeSection.id,
+      sectionTitle: activeSection.title,
+      type,
+      weaknesses,
+      workflowRunId: context.workflowRunId,
+    });
   }
 
   function generatePrompt() {
@@ -303,6 +389,9 @@ export function WorkflowReviewWorkspace({
       kind === "original"
         ? activeState.originalOutput.trim()
         : activeState.retryOutput.trim();
+    const promptForReview = kind === "retry" && improvedPrompt
+      ? improvedPrompt
+      : activePrompt;
 
     if (!output) {
       setError(t("errors.outputRequired"));
@@ -331,10 +420,11 @@ export function WorkflowReviewWorkspace({
             startupIdea: context.startupIdea,
             targetCustomer: context.targetCustomer,
           },
-          originalPrompt: activePrompt,
+          originalPrompt: promptForReview,
           output,
           previousScore: activeState.originalReview?.score.total,
           section: activeSection.title,
+          sectionId: activeSection.id,
         }),
       });
       const data = (await response.json()) as {
@@ -356,13 +446,37 @@ export function WorkflowReviewWorkspace({
         throw new Error(t("errors.reviewFailed"));
       }
 
+      const historyLabel = `v${activeState.reviewHistory.length + 1}`;
+      const historyEntry: ReviewHistoryEntry = {
+        createdAt: new Date().toISOString(),
+        id: createEventId(),
+        kind,
+        label: historyLabel,
+        output,
+        prompt: promptForReview,
+        review,
+      };
+
       recordUse("review");
       updateSectionState(activeSection.id, (sectionState) => ({
         ...sectionState,
         improvedPromptCopied: false,
-        originalReview: kind === "original" ? review : sectionState.originalReview,
+        originalReview:
+          kind === "original" ? review : sectionState.originalReview,
         retryReview: kind === "retry" ? review : sectionState.retryReview,
+        reviewHistory: [...sectionState.reviewHistory, historyEntry],
       }));
+      logIntelligenceEvent({
+        improvement:
+          kind === "retry" && activeState.originalReview
+            ? review.score.total - activeState.originalReview.score.total
+            : undefined,
+        previousScore: activeState.originalReview?.score.total,
+        promptLabel: historyLabel,
+        score: review.score.total,
+        type: kind === "retry" ? "retry_completed" : "review_completed",
+        weaknesses: review.weaknesses,
+      });
     } catch (reviewError) {
       setError(
         reviewError instanceof Error
@@ -375,16 +489,28 @@ export function WorkflowReviewWorkspace({
   }
 
   function handleOutputChange(kind: "original" | "retry", value: string) {
+    const wasEmpty =
+      kind === "original"
+        ? !activeState.originalOutput.trim()
+        : !activeState.retryOutput.trim();
+    const isNowFilled = value.trim().length > 0;
+
     updateSectionState(activeSection.id, (sectionState) => ({
       ...sectionState,
       completed: false,
       originalOutput:
         kind === "original" ? value : sectionState.originalOutput,
-      retryOutput: kind === "retry" ? value : sectionState.retryOutput,
-      retryReview: kind === "retry" ? null : sectionState.retryReview,
       originalReview:
         kind === "original" ? null : sectionState.originalReview,
+      retryOutput: kind === "retry" ? value : sectionState.retryOutput,
+      retryReview: kind === "retry" ? null : sectionState.retryReview,
     }));
+
+    if (wasEmpty && isNowFilled) {
+      logIntelligenceEvent({
+        type: "output_pasted",
+      });
+    }
   }
 
   function completeSection() {
@@ -392,6 +518,11 @@ export function WorkflowReviewWorkspace({
       ...sectionState,
       completed: true,
     }));
+    logIntelligenceEvent({
+      score: latestReview?.score.total,
+      type: "section_completed",
+      weaknesses: latestReview?.weaknesses,
+    });
 
     const nextSection = sections[currentIndex + 1];
 
@@ -424,6 +555,12 @@ export function WorkflowReviewWorkspace({
 
   function renderReview(review: OutputReview, label: string) {
     const score = review.score;
+    const dimensions = [
+      "relevance",
+      "specificity",
+      "clarity",
+      "actionability",
+    ] as const;
 
     return (
       <div className="grid gap-4 rounded-lg border border-border bg-background p-4">
@@ -444,22 +581,25 @@ export function WorkflowReviewWorkspace({
           </p>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-4">
-          {(["relevance", "specificity", "actionability", "clarity"] as const).map(
-            (dimension) => (
-              <div
-                key={dimension}
-                className="rounded-lg border border-border bg-muted/30 p-3"
-              >
+        <div className="grid gap-2 sm:grid-cols-2">
+          {dimensions.map((dimension) => (
+            <div
+              key={dimension}
+              className="rounded-lg border border-border bg-muted/30 p-3"
+            >
+              <div className="flex items-center justify-between gap-3">
                 <p className="text-xs font-medium uppercase text-muted-foreground">
                   {t(`review.dimensions.${dimension}`)}
                 </p>
-                <p className="mt-1 text-lg font-semibold text-foreground">
-                  {score.breakdown[dimension]}/10
+                <p className="text-lg font-semibold text-foreground">
+                  {score.breakdown[dimension].score}/10
                 </p>
               </div>
-            ),
-          )}
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {score.breakdown[dimension].reason}
+              </p>
+            </div>
+          ))}
         </div>
 
         <div className="rounded-lg border border-border bg-muted/30 p-3">
@@ -477,11 +617,6 @@ export function WorkflowReviewWorkspace({
       </div>
     );
   }
-
-  const latestReview = activeState.retryReview ?? activeState.originalReview;
-  const improvedPrompt = latestReview?.improvedPrompt ?? "";
-  const oldScore = activeState.originalReview?.score.total;
-  const newScore = activeState.retryReview?.score.total;
 
   return (
     <>
@@ -511,44 +646,59 @@ export function WorkflowReviewWorkspace({
               {t("credits.plan")}
             </p>
             <p className="mt-1 text-lg font-semibold text-foreground">
-              {plan === "pro" ? t("credits.pro") : t("credits.free")}
+              {t(`credits.${plan}`)}
             </p>
           </div>
-          <div>
-            <p className="text-xs font-medium uppercase text-muted-foreground">
-              {t("credits.promptGenerations")}
-            </p>
-            <p className="mt-1 text-lg font-semibold text-foreground">
-              {getRemaining("generation")}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-medium uppercase text-muted-foreground">
-              {t("credits.outputReviews")}
-            </p>
-            <p className="mt-1 text-lg font-semibold text-foreground">
-              {getRemaining("review")}
-            </p>
-          </div>
-          <div className="flex items-end justify-between gap-3">
-            <div>
+          {plan === "free" ? (
+            <>
+              <div>
+                <p className="text-xs font-medium uppercase text-muted-foreground">
+                  {t("credits.outputReviews")}
+                </p>
+                <p className="mt-1 text-lg font-semibold text-foreground">
+                  {getRemaining("review")}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase text-muted-foreground">
+                  {t("credits.improvedPrompts")}
+                </p>
+                <p className="mt-1 text-lg font-semibold text-foreground">
+                  {getRemaining("improvement")}
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="sm:col-span-2">
               <p className="text-xs font-medium uppercase text-muted-foreground">
-                {t("credits.improvedPrompts")}
+                {t("credits.paidCredits")}
               </p>
               <p className="mt-1 text-lg font-semibold text-foreground">
-                {getRemaining("improvement")}
+                {paidCreditRemaining}
               </p>
             </div>
-            {plan === "free" ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsUpgradeOpen(true)}
-              >
-                {t("credits.upgrade")}
-              </Button>
-            ) : null}
+          )}
+          <div className="flex items-end justify-between gap-3">
+            <Button
+              asChild
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="hover:bg-muted"
+            >
+              <Link href="/dashboard">
+                <BarChart3 aria-hidden="true" />
+                {t("credits.dashboard")}
+              </Link>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsUpgradeOpen(true)}
+            >
+              {t("credits.upgrade")}
+            </Button>
           </div>
         </div>
       </section>
@@ -680,10 +830,29 @@ export function WorkflowReviewWorkspace({
                   </Button>
                 </div>
               </div>
-              <pre className="max-h-80 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm leading-6 text-muted-foreground">
+              <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm leading-6 text-muted-foreground">
                 {activePrompt}
               </pre>
             </div>
+
+            <details className="rounded-lg border border-border bg-background p-3">
+              <summary className="cursor-pointer text-sm font-medium text-foreground">
+                {t("learn.title")}
+              </summary>
+              <div className="mt-3 grid gap-3 text-sm leading-6 text-muted-foreground">
+                <p>{t("learn.whyPromptWorks")}</p>
+                <p>
+                  {t("learn.toolReason", {
+                    tool: context.aiModel,
+                  })}
+                </p>
+                <p>
+                  {latestReview
+                    ? t("learn.comparisonAfterReview")
+                    : t("learn.comparisonBeforeReview")}
+                </p>
+              </div>
+            </details>
 
             <div className="grid gap-2">
               <label
@@ -704,174 +873,207 @@ export function WorkflowReviewWorkspace({
             </div>
           </section>
 
-          <section
-            className={cn(
-              "grid gap-4 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5",
-              !activeState.originalOutput.trim() && "opacity-70",
-            )}
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div className="space-y-2">
-                <Badge variant="outline">{t("review.layer")}</Badge>
-                <h2 className="text-xl font-semibold text-foreground">
-                  {t("review.title")}
-                </h2>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {activeState.originalOutput.trim()
-                    ? t("review.description")
-                    : t("review.locked")}
-                </p>
+          {activeState.originalOutput.trim() ? (
+            <section className="grid gap-4 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-2">
+                  <Badge variant="outline">{t("review.layer")}</Badge>
+                  <h2 className="text-xl font-semibold text-foreground">
+                    {t("review.title")}
+                  </h2>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    {t("review.description")}
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  className="h-10 w-full justify-center sm:w-auto"
+                  disabled={isReviewing}
+                  onClick={() => reviewOutput("original")}
+                >
+                  {isReviewing ? (
+                    <Loader2 aria-hidden="true" className="animate-spin" />
+                  ) : (
+                    <RefreshCw aria-hidden="true" />
+                  )}
+                  {t("review.action")}
+                </Button>
               </div>
-              <Button
-                type="button"
-                className="h-10 w-full justify-center sm:w-auto"
-                disabled={isReviewing || !activeState.originalOutput.trim()}
-                onClick={() => reviewOutput("original")}
-              >
-                {isReviewing ? (
-                  <Loader2 aria-hidden="true" className="animate-spin" />
-                ) : (
-                  <RefreshCw aria-hidden="true" />
-                )}
-                {t("review.action")}
-              </Button>
-            </div>
 
-            {activeState.originalReview
-              ? renderReview(activeState.originalReview, t("review.firstPass"))
-              : null}
+              {activeState.originalReview
+                ? renderReview(activeState.originalReview, t("review.firstPass"))
+                : null}
 
-            {latestReview ? (
-              <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
-                <p className="text-sm font-medium text-foreground">
-                  {t("improvement.title")}
-                </p>
-                <p className="text-sm leading-6 text-muted-foreground">
-                  {latestReview.whyBetter}
-                </p>
-                <pre className="max-h-80 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm leading-6 text-muted-foreground">
-                  {latestReview.improvedPrompt}
-                </pre>
-              </div>
-            ) : null}
-          </section>
+              {latestReview ? (
+                <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-sm font-medium text-foreground">
+                    {t("improvement.title")}
+                  </p>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    {latestReview.whyBetter}
+                  </p>
+                  <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm leading-6 text-muted-foreground">
+                    {latestReview.improvedPrompt}
+                  </pre>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 w-full justify-center sm:w-fit"
+                    disabled={!improvedPrompt}
+                    onClick={copyImprovedPrompt}
+                  >
+                    <Copy aria-hidden="true" />
+                    {copiedKey === `${activeSection.id}:improved-prompt`
+                      ? t("copied")
+                      : t("retry.copyImproved")}
+                  </Button>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
 
-          <section
-            className={cn(
-              "grid gap-4 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5",
-              !improvedPrompt && "opacity-70",
-            )}
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          {improvedPrompt ? (
+            <section className="grid gap-4 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5">
               <div className="space-y-2">
                 <Badge variant="outline">{t("retry.layer")}</Badge>
                 <h2 className="text-xl font-semibold text-foreground">
                   {t("retry.title")}
                 </h2>
                 <p className="text-sm leading-6 text-muted-foreground">
-                  {improvedPrompt ? t("retry.description") : t("retry.locked")}
+                  {t("retry.description")}
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 w-full justify-center sm:w-auto"
-                disabled={!improvedPrompt}
-                onClick={copyImprovedPrompt}
-              >
-                <Copy aria-hidden="true" />
-                {copiedKey === `${activeSection.id}:improved-prompt`
-                  ? t("copied")
-                  : t("retry.copyImproved")}
-              </Button>
-            </div>
 
-            <div className="grid gap-2">
-              <label
-                htmlFor="retry-output"
-                className="text-sm font-medium text-foreground"
-              >
-                {t("retry.pasteOutput")}
-              </label>
-              <Textarea
-                id="retry-output"
-                className="min-h-44 resize-y rounded-lg bg-muted/30 text-sm leading-6 text-foreground"
-                disabled={!improvedPrompt}
-                placeholder={t("retry.outputPlaceholder")}
-                value={activeState.retryOutput}
-                onChange={(event) =>
-                  handleOutputChange("retry", event.target.value)
-                }
-              />
-            </div>
+              <div className="grid gap-2">
+                <label
+                  htmlFor="retry-output"
+                  className="text-sm font-medium text-foreground"
+                >
+                  {t("retry.pasteOutput")}
+                </label>
+                <Textarea
+                  id="retry-output"
+                  className="min-h-44 resize-y rounded-lg bg-muted/30 text-sm leading-6 text-foreground"
+                  placeholder={t("retry.outputPlaceholder")}
+                  value={activeState.retryOutput}
+                  onChange={(event) =>
+                    handleOutputChange("retry", event.target.value)
+                  }
+                />
+              </div>
 
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-10 w-full justify-center sm:w-auto"
-                disabled={isReviewing || !activeState.retryOutput.trim()}
-                onClick={() => reviewOutput("retry")}
-              >
-                {isReviewing ? (
-                  <Loader2 aria-hidden="true" className="animate-spin" />
-                ) : (
-                  <RefreshCw aria-hidden="true" />
-                )}
-                {t("retry.rescore")}
-              </Button>
-              <Button
-                type="button"
-                className="h-10 w-full justify-center sm:w-auto"
-                disabled={!activeState.originalReview}
-                onClick={completeSection}
-              >
-                <Check aria-hidden="true" />
-                {t("retry.complete")}
-              </Button>
-            </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 w-full justify-center sm:w-auto"
+                  disabled={isReviewing || !activeState.retryOutput.trim()}
+                  onClick={() => reviewOutput("retry")}
+                >
+                  {isReviewing ? (
+                    <Loader2 aria-hidden="true" className="animate-spin" />
+                  ) : (
+                    <RefreshCw aria-hidden="true" />
+                  )}
+                  {t("retry.rescore")}
+                </Button>
+                <Button
+                  type="button"
+                  className="h-10 w-full justify-center sm:w-auto"
+                  disabled={!activeState.originalReview}
+                  onClick={completeSection}
+                >
+                  <Check aria-hidden="true" />
+                  {t("retry.complete")}
+                </Button>
+              </div>
 
-            {oldScore !== undefined && newScore !== undefined ? (
-              <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-3">
-                <div>
-                  <p className="text-xs font-medium uppercase text-muted-foreground">
-                    {t("retry.oldScore")}
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold text-foreground">
-                    {oldScore}/40
-                  </p>
+              {oldScore !== undefined && newScore !== undefined ? (
+                <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-3">
+                  <div>
+                    <p className="text-xs font-medium uppercase text-muted-foreground">
+                      {t("retry.oldScore")}
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-foreground">
+                      {oldScore}/40
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase text-muted-foreground">
+                      {t("retry.newScore")}
+                    </p>
+                    <p className="mt-1 text-2xl font-semibold text-foreground">
+                      {newScore}/40
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium uppercase text-muted-foreground">
+                      {t("retry.change")}
+                    </p>
+                    <p
+                      className={cn(
+                        "mt-1 text-2xl font-semibold",
+                        newScore >= oldScore
+                          ? "text-emerald-700 dark:text-emerald-300"
+                          : "text-destructive",
+                      )}
+                    >
+                      {newScore - oldScore >= 0 ? "+" : ""}
+                      {newScore - oldScore}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-muted-foreground">
-                    {t("retry.newScore")}
+              ) : null}
+
+              {activeState.retryReview
+                ? renderReview(activeState.retryReview, t("review.retryPass"))
+                : null}
+            </section>
+          ) : null}
+
+          {activeState.reviewHistory.length > 0 ? (
+            <section className="grid gap-4 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5">
+              <div className="flex items-center gap-2">
+                <History aria-hidden="true" className="size-4" />
+                <h2 className="text-lg font-semibold text-foreground">
+                  {t("history.title")}
+                </h2>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-sm font-medium text-foreground">
+                    {t("history.promptVersions")}
                   </p>
-                  <p className="mt-1 text-2xl font-semibold text-foreground">
-                    {newScore}/40
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium uppercase text-muted-foreground">
-                    {t("retry.change")}
-                  </p>
-                  <p
-                    className={cn(
-                      "mt-1 text-2xl font-semibold",
-                      newScore >= oldScore
-                        ? "text-emerald-700 dark:text-emerald-300"
-                        : "text-destructive",
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {["v1", ...activeState.reviewHistory.map((_, index) => `v${index + 2}`)].join(
+                      " -> ",
                     )}
-                  >
-                    {newScore - oldScore >= 0 ? "+" : ""}
-                    {newScore - oldScore}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-sm font-medium text-foreground">
+                    {t("history.outputHistory")}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {activeState.reviewHistory
+                      .map(
+                        (entry, index) =>
+                          `${t("history.output")} ${index + 1}: ${entry.review.score.total}/40`,
+                      )
+                      .join(" -> ")}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                  <p className="text-sm font-medium text-foreground">
+                    {t("history.timeline")}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {scoreTimeline.join(" -> ")}
                   </p>
                 </div>
               </div>
-            ) : null}
-
-            {activeState.retryReview
-              ? renderReview(activeState.retryReview, t("review.retryPass"))
-              : null}
-          </section>
+            </section>
+          ) : null}
         </div>
       </section>
 
@@ -899,7 +1101,6 @@ export function WorkflowReviewWorkspace({
               </Button>
             </div>
             <div className="mt-4 grid gap-2 rounded-lg border border-border bg-muted/30 p-3 text-sm leading-6 text-muted-foreground">
-              <p>{t("upgrade.promptUsage", { count: usage.generation })}</p>
               <p>{t("upgrade.reviewUsage", { count: usage.review })}</p>
               <p>{t("upgrade.improvementUsage", { count: usage.improvement })}</p>
               <p className="font-medium text-foreground">

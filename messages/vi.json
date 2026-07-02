@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "Root Access",
-    "description": "Cải thiện cách bạn dùng AI cho Startup Proposal."
+    "description": "Xây Startup Proposal tốt hơn với AI, từng bước một."
   },
   "LocaleSwitcher": {
     "ariaLabel": "Ngôn ngữ",
@@ -12,36 +12,36 @@
   },
   "Hero": {
     "brand": "Root Access",
-    "title": "Cải thiện cách bạn dùng AI cho Startup Proposal.",
-    "subtitle": "RootAccess giúp bạn tạo prompt tốt hơn, thử với AI, review output và cải thiện cho đến khi dùng được.",
-    "action": "Bắt đầu workflow",
+    "title": "Xây Startup Proposal tốt hơn với AI, từng bước một.",
+    "subtitle": "Generate prompts, test outputs, phát hiện điểm yếu và cải thiện cho đến khi proposal đủ mạnh.",
+    "action": "Bắt đầu review proposal",
     "workflowName": "Startup Proposal",
-    "guidedSteps": "Prompt review loop",
-    "badge": "AI workflow",
-    "stepLabel": "Bước {step}",
+    "guidedSteps": "AI Improvement Loop",
+    "badge": "Proposal Section",
+    "stepLabel": "Build Step {step}",
     "steps": {
-      "problemDiscovery": "Generate Prompt",
-      "targetCustomer": "Test với AI",
-      "valueProposition": "Get Feedback",
-      "proposalDraft": "Cải thiện và thử lại"
+      "problemDiscovery": "Tạo prompt",
+      "targetCustomer": "Test output",
+      "valueProposition": "Phát hiện điểm yếu",
+      "proposalDraft": "Cải thiện prompt"
     }
   },
   "HowItWorks": {
-    "eyebrow": "Cách hoạt động",
-    "title": "Generate Prompt -> Test với AI -> Get Feedback",
-    "stepLabel": "Bước {step}",
+    "eyebrow": "AI Improvement Loop",
+    "title": "Một hành động rõ ràng cho từng Proposal Section",
+    "stepLabel": "Build Step {step}",
     "steps": {
       "idea": {
-        "title": "Generate Prompt",
-        "description": "RootAccess biến bối cảnh startup của bạn thành một prompt tập trung cho từng phần proposal."
+        "title": "Tạo prompt",
+        "description": "RootAccess biến startup context của bạn thành prompt tập trung cho Proposal Section hiện tại."
       },
       "workflow": {
-        "title": "Test với AI",
-        "description": "Copy prompt sang ChatGPT hoặc Gemini, rồi paste output AI quay lại RootAccess."
+        "title": "Test output",
+        "description": "Copy prompt sang ChatGPT hoặc Gemini, rồi paste output quay lại RootAccess."
       },
       "proposal": {
-        "title": "Get Feedback",
-        "description": "RootAccess chấm điểm output, tìm hai điểm yếu quan trọng nhất và đề xuất prompt tốt hơn."
+        "title": "Cải thiện prompt",
+        "description": "RootAccess chấm điểm bằng rubric ổn định, phát hiện 2 điểm yếu và tạo prompt tốt hơn."
       }
     }
   },
@@ -72,11 +72,11 @@
     "home": "Về form khởi nghiệp"
   },
   "GoalForm": {
-    "eyebrow": "Bắt đầu workflow",
-    "title": "Bắt đầu với startup context",
-    "description": "RootAccess sẽ tạo prompt ban đầu, rồi giúp bạn review và cải thiện output từ AI.",
+    "eyebrow": "Startup Proposal",
+    "title": "Nhập context cho Proposal Section",
+    "description": "RootAccess chỉ tập trung vào Startup Proposal trong MVP này.",
     "cardTitle": "Startup context",
-    "cardDescription": "Giữ ngắn gọn. RootAccess review output từ công cụ AI bên ngoài, không viết proposal cuối thay bạn.",
+    "cardDescription": "Giữ ngắn gọn. Bạn sẽ test prompt bằng AI bên ngoài rồi paste output để review.",
     "fields": {
       "workflowMode": {
         "label": "Chọn chế độ workflow",
@@ -140,19 +140,19 @@
       }
     },
     "actions": {
-      "submit": "Bắt đầu prompt workflow",
-      "submitting": "Đang chuẩn bị workflow"
+      "submit": "Bắt đầu proposal review",
+      "submitting": "Đang chuẩn bị"
     },
     "workflowChoice": {
-      "title": "Workflow: Startup Proposal",
-      "description": "MVP này chỉ hỗ trợ Startup Proposal. Các workflow khác đang được cố ý loại khỏi scope."
+      "title": "Proposal type: Startup Proposal",
+      "description": "More workflows coming later."
     }
   },
   "ResultPage": {
     "emptyState": {
       "badge": "Root Access",
       "title": "Hãy thêm startup context trước",
-      "description": "RootAccess cần ý tưởng, lĩnh vực, mức độ gấp và AI model trước khi tạo prompt workflow hữu ích.",
+      "description": "RootAccess cần ý tưởng, lĩnh vực, mức độ gấp và AI model trước khi bắt đầu AI Improvement Loop.",
       "action": "Quay lại form startup"
     }
   },
@@ -265,22 +265,36 @@
     }
   },
   "CheckoutPage": {
-    "eyebrow": "Root Access Pro",
-    "title": "Fake checkout cho monetization flow CP3",
-    "description": "Màn hình này mô phỏng cách RootAccess có thể kiếm tiền từ prompt review loop mà chưa cần tích hợp thanh toán thật.",
+    "eyebrow": "Credit packs",
+    "title": "Mua credits cho AI Improvement Loop",
+    "description": "Checkout demo cho CP3. Không có thanh toán thật.",
     "card": {
-      "title": "Gói Pro",
-      "description": "Dành cho sinh viên cần nhiều lượt test prompt, review output và cải thiện prompt hơn.",
-      "features": {
-        "prompts": "Không giới hạn lượt tạo prompt",
-        "reviews": "Không giới hạn lượt review output",
-        "improvements": "Không giới hạn prompt cải thiện"
-      },
       "priceLabel": "Giá demo",
-      "price": "49,000 VND",
-      "fakePayment": "Không xử lý thanh toán thật. Nút này chỉ bật Pro demo mode trong localStorage.",
-      "action": "Activate Pro demo",
+      "fakePayment": "Nút này chỉ bật gói demo trong localStorage.",
+      "action": "Activate {plan}",
       "back": "Quay lại"
+    },
+    "plans": {
+      "starter": {
+        "title": "Starter",
+        "description": "Cho một vòng làm proposal ngắn.",
+        "price": "19,000 VND",
+        "features": {
+          "credits": "20 credits",
+          "reviews": "Dùng cho review output",
+          "improvements": "Dùng cho prompt improvements"
+        }
+      },
+      "pro": {
+        "title": "Pro",
+        "description": "Cho nhiều lần retry và so sánh.",
+        "price": "39,000 VND",
+        "features": {
+          "credits": "50 credits",
+          "reviews": "Dùng cho review output",
+          "improvements": "Dùng cho prompt improvements"
+        }
+      }
     }
   },
   "ProgressTracker": {
@@ -498,9 +512,9 @@
     "action": "Gửi phản hồi"
   },
   "WorkflowWorkspace": {
-    "badge": "AI Workflow + Output Review + Prompt Improvement",
-    "title": "Cải thiện từng phần startup proposal",
-    "description": "RootAccess tạo prompt, bạn test bằng công cụ AI bên ngoài, rồi RootAccess review output và cải thiện prompt.",
+    "badge": "AI Improvement Loop",
+    "title": "Xây Startup Proposal tốt hơn, từng Proposal Section",
+    "description": "Làm từng Build Step: tạo prompt, test output, review business logic, cải thiện prompt và retry.",
     "copied": "Đã copy",
     "context": {
       "title": "Startup context"
@@ -508,19 +522,21 @@
     "credits": {
       "plan": "Gói",
       "free": "Free",
+      "starter": "Starter",
       "pro": "Pro",
-      "promptGenerations": "Lượt tạo prompt còn lại",
-      "outputReviews": "Lượt review output còn lại",
-      "improvedPrompts": "Lượt prompt cải thiện còn lại",
-      "upgrade": "Upgrade",
+      "paidCredits": "Credits còn lại",
+      "outputReviews": "Reviews còn lại",
+      "improvedPrompts": "Improvements còn lại",
+      "dashboard": "Dashboard",
+      "upgrade": "Mua credits",
       "limits": {
-        "generation": "Đã hết lượt tạo prompt miễn phí.",
-        "review": "Đã hết lượt review output miễn phí.",
-        "improvement": "Đã hết lượt prompt cải thiện miễn phí."
+        "generation": "Không giới hạn tạo prompt.",
+        "review": "Đã hết lượt review miễn phí.",
+        "improvement": "Đã hết lượt improvement miễn phí."
       }
     },
     "progress": {
-      "title": "Tiến độ proposal",
+      "title": "Proposal Progress",
       "count": "Hoàn thành {completed}/{total}, còn {remaining}",
       "completed": "Hoàn thành",
       "current": "Đang làm",
@@ -528,88 +544,117 @@
     },
     "action": {
       "layer": "Action Layer",
-      "prompt": "Prompt ban đầu",
+      "prompt": "Generated prompt",
       "promptHint": "Copy prompt này sang ChatGPT hoặc Gemini. RootAccess không viết proposal cuối thay bạn.",
       "generatePrompt": "Generate prompt",
       "regeneratePrompt": "Generate lại prompt",
       "copyPrompt": "Copy prompt",
-      "pasteOutput": "Paste AI output",
+      "pasteOutput": "Paste output",
       "outputPlaceholder": "Paste output bạn nhận được từ ChatGPT hoặc Gemini..."
+    },
+    "learn": {
+      "title": "Learn Layer",
+      "whyPromptWorks": "Prompt này ép AI trả lời theo business checks của section hiện tại thay vì viết chung chung.",
+      "toolReason": "{tool} là công cụ bạn đã chọn để test output bên ngoài RootAccess.",
+      "comparisonBeforeReview": "Sau khi review, bạn sẽ thấy prompt mới khác gì so với prompt ban đầu.",
+      "comparisonAfterReview": "Prompt mới nhắm trực tiếp vào điểm yếu đã phát hiện trong output trước."
     },
     "review": {
       "layer": "Review Layer",
-      "title": "Chấm điểm và chẩn đoán output",
-      "description": "RootAccess gọi review API để chấm điểm output và tìm hai điểm yếu quan trọng nhất.",
-      "locked": "Paste AI output trước để mở khóa scoring, weakness detection và prompt improvement.",
+      "title": "Review business logic",
+      "description": "Score được tính bằng rubric ổn định. Gemini chỉ phát hiện weakness và cải thiện prompt.",
       "action": "Review output",
-      "firstPass": "Điểm output đầu tiên",
-      "retryPass": "Điểm output sau retry",
-      "weaknesses": "Top weaknesses",
+      "firstPass": "Output 1 score",
+      "retryPass": "Retry output score",
+      "weaknesses": "Top 2 weaknesses",
       "dimensions": {
-        "relevance": "Liên quan",
-        "specificity": "Cụ thể",
-        "actionability": "Hành động được",
-        "clarity": "Rõ ràng"
+        "relevance": "Relevance",
+        "specificity": "Specificity",
+        "clarity": "Clarity",
+        "actionability": "Actionability"
       }
     },
     "improvement": {
-      "title": "Prompt đã cải thiện"
+      "title": "Improved prompt"
     },
     "retry": {
       "layer": "Retry Layer",
-      "title": "Retry và so sánh",
-      "description": "Copy prompt đã cải thiện, chạy lại trong AI tool, paste output mới rồi so sánh điểm.",
-      "locked": "Review output đầu tiên trước để mở khóa prompt cải thiện.",
-      "copyImproved": "Copy prompt cải thiện",
+      "title": "Retry and compare",
+      "description": "Copy improved prompt, test lại bằng AI bên ngoài, paste output mới rồi so sánh score.",
+      "copyImproved": "Copy improved prompt",
       "pasteOutput": "Paste retry output",
-      "outputPlaceholder": "Paste output mới được tạo từ prompt cải thiện...",
-      "rescore": "Chấm lại retry",
-      "complete": "Hoàn thành phần này",
-      "oldScore": "Điểm cũ",
-      "newScore": "Điểm mới",
-      "change": "Thay đổi"
+      "outputPlaceholder": "Paste output mới được tạo từ improved prompt...",
+      "rescore": "Review retry",
+      "complete": "Complete Proposal Section",
+      "oldScore": "Old score",
+      "newScore": "New score",
+      "change": "Change"
+    },
+    "history": {
+      "title": "Version History",
+      "promptVersions": "Prompt versions",
+      "outputHistory": "Output history",
+      "output": "Output",
+      "timeline": "Improvement timeline"
     },
     "upgrade": {
-      "badge": "Pro preview",
-      "title": "Mở khóa thêm review loop",
-      "description": "Gói Free được giới hạn có chủ đích để MVP thể hiện business model rõ ràng.",
-      "promptUsage": "Đã dùng tạo prompt: {count}/5",
-      "reviewUsage": "Đã dùng review output: {count}/5",
-      "improvementUsage": "Đã dùng prompt cải thiện: {count}/3",
-      "proOffer": "Pro: không giới hạn tạo prompt, review output và prompt cải thiện.",
+      "badge": "Credit packs",
+      "title": "Mua thêm credits",
+      "description": "Free tập trung vào trải nghiệm thử. Starter và Pro là credit pack demo cho CP3 BMC.",
+      "reviewUsage": "Reviews đã dùng: {count}/5",
+      "improvementUsage": "Improvements đã dùng: {count}/3",
+      "proOffer": "Starter: 20 credits - 19k. Pro: 50 credits - 39k.",
       "checkout": "Mở checkout",
       "later": "Để sau"
     },
     "errors": {
-      "outputRequired": "Paste AI output trước khi review.",
+      "outputRequired": "Paste output trước khi review.",
       "reviewFailed": "RootAccess chưa review được output này lúc này."
     },
     "sections": {
       "problem": {
         "title": "Problem",
-        "objective": "Làm rõ vấn đề đau nhất mà startup nên giải quyết.",
-        "promptFocus": "Bối cảnh người dùng cụ thể, cách họ đang xử lý, mức độ đau, tính cấp bách và bằng chứng cần có."
+        "objective": "Làm rõ vấn đề cụ thể, cấp bách và có thể kiểm chứng.",
+        "promptFocus": "Specificity, urgency, frequency, validation ability."
       },
       "customer": {
         "title": "Customer",
-        "objective": "Xác định nhóm khách hàng đầu tiên.",
-        "promptFocus": "Phân khúc hẹp, bối cảnh, nhu cầu, hành vi sử dụng và vì sao nhóm này nên làm trước."
-      },
-      "validation": {
-        "title": "Validation",
-        "objective": "Lên kế hoạch kiểm chứng giả định về problem và solution.",
-        "promptFocus": "Interview, survey, prototype test, bằng chứng cần thu thập và tín hiệu thành công."
+        "objective": "Xác định nhóm khách hàng hẹp, đau rõ và có thể tiếp cận.",
+        "promptFocus": "Narrowness, pain intensity, reachability."
       },
       "revenue": {
         "title": "Revenue",
-        "objective": "Chọn mô hình doanh thu đầu tiên thực tế.",
-        "promptFocus": "Ai trả tiền, logic giá, giả định willingness-to-pay và một cách test đơn giản."
+        "objective": "Chọn revenue logic thực tế và có khả năng mở rộng.",
+        "promptFocus": "Realism, willingness to pay, scalability."
       },
-      "mvpScope": {
-        "title": "MVP Scope",
-        "objective": "Xác định MVP gồm gì và không gồm gì.",
-        "promptFocus": "Core value, tính năng bắt buộc, tính năng loại ra, giới hạn build và test đầu tiên."
+      "mvp": {
+        "title": "MVP",
+        "objective": "Giữ MVP rõ scope, khả thi và test được.",
+        "promptFocus": "Scope clarity, feasibility, testability."
+      },
+      "differentiation": {
+        "title": "Differentiation",
+        "objective": "Làm rõ điểm khác biệt có giá trị và có thể bảo vệ.",
+        "promptFocus": "Uniqueness, defensibility, user value clarity."
       }
+    }
+  },
+  "IntelligenceDashboard": {
+    "eyebrow": "Internal dashboard",
+    "title": "Product intelligence",
+    "description": "Theo dõi weakness, failed steps, improvement và retry từ localStorage.",
+    "back": "Về trang chủ",
+    "empty": "Chưa có dữ liệu.",
+    "cards": {
+      "events": "Events",
+      "reviews": "Reviews",
+      "averageImprovement": "Average improvement"
+    },
+    "sections": {
+      "weaknesses": "Most common weaknesses",
+      "failedSteps": "Most failed steps",
+      "dropOffs": "Drop-off points",
+      "retries": "Most retried prompts"
     }
   }
 }
