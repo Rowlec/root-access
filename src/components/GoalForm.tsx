@@ -275,13 +275,13 @@ export function GoalForm() {
   }
 
   return (
-    <section id="goal-form" className="w-full bg-muted/40 py-16 sm:py-24">
+    <section id="goal-form" className="w-full py-16 sm:py-24">
       <div className="mx-auto grid w-full max-w-6xl items-start gap-8 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12 lg:px-10">
         <div className="max-w-xl space-y-4">
           <p className="text-sm font-medium text-muted-foreground">
             {t("eyebrow")}
           </p>
-          <h2 className="text-3xl font-semibold leading-tight tracking-normal text-foreground sm:text-4xl sm:leading-[1.15]">
+          <h2 className="font-display text-3xl font-semibold leading-tight tracking-normal text-foreground sm:text-4xl sm:leading-[1.15]">
             {t("title")}
           </h2>
           <p className="text-base leading-7 text-muted-foreground">
@@ -289,7 +289,7 @@ export function GoalForm() {
           </p>
         </div>
 
-        <Card className="rounded-lg py-5 shadow-sm">
+        <Card className="glass rounded-3xl py-6 shadow-none">
           <CardHeader className="gap-2">
             <CardTitle className="text-xl">{t("cardTitle")}</CardTitle>
             <CardDescription className="leading-6">
@@ -298,7 +298,7 @@ export function GoalForm() {
             </CardHeader>
           <CardContent>
             <form className="grid gap-5" onSubmit={handleSubmit(onSubmit)}>
-              <div className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="rounded-2xl border border-border/70 bg-secondary/30 p-4">
                 <p className="text-sm font-medium text-foreground">
                   {t("workflowChoice.title")}
                 </p>
@@ -435,9 +435,9 @@ export function GoalForm() {
                             <label
                               key={toolPreference}
                               className={cn(
-                                "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-input bg-background px-3 py-2 text-sm transition-colors hover:bg-muted/50",
+                                "flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl border border-input bg-secondary/20 px-3 py-2 text-sm transition-colors hover:bg-secondary/40",
                                 isSelected &&
-                                  "border-foreground bg-muted text-foreground",
+                                  "border-primary bg-primary/20 text-foreground",
                               )}
                             >
                               <input
@@ -475,7 +475,7 @@ export function GoalForm() {
               <Button
                 type="submit"
                 size="lg"
-                className="mt-1 h-12 w-full text-base"
+                className="btn-liquid mt-1 h-12 w-full rounded-full text-base font-semibold text-primary-foreground"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

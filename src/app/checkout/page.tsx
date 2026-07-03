@@ -6,9 +6,9 @@ export default async function CheckoutPage() {
   const t = await getTranslations("CheckoutPage");
 
   return (
-    <main className="min-h-svh bg-background px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
+    <main className="min-h-svh px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
       <div className="mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-[1fr_22rem] lg:items-start">
-        <section className="space-y-4">
+        <section className="glass space-y-4 rounded-3xl p-6 sm:p-8">
           <p className="text-sm font-medium text-muted-foreground">
             {t("eyebrow")}
           </p>

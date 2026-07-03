@@ -6,7 +6,7 @@ import { GoalForm } from "@/components/GoalForm";
 
 export default function Page() {
   return (
-    <main className="flex min-h-svh flex-col bg-background">
+    <main className="flex min-h-svh flex-col">
       <LandingAnalytics />
       <Hero />
       <HowItWorks />

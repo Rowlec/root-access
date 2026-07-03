@@ -3,11 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeft,
-  BarChart3,
   Check,
   Copy,
-  CreditCard,
   Download,
   FileText,
   Lock,
@@ -19,8 +16,6 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { AuthControls } from "@/components/AuthControls";
-import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -370,8 +365,6 @@ export function WorkflowReviewWorkspace({
   const scoreTimeline = activeState.reviewHistory.map(
     (entry) => entry.review.score.total,
   );
-  const paidCreditRemaining =
-    plan === "free" ? null : getRemaining("review");
   const isVietnamese = context.locale === "vi";
   const headerCopy = {
     back: isVietnamese ? "Home" : "Home",
@@ -413,10 +406,6 @@ export function WorkflowReviewWorkspace({
       ? "Retry bị thấp điểm hơn. RootAccess đã tạo lại improved prompt để bạn test lại."
       : "The retry scored lower. RootAccess regenerated the improved prompt for another test.",
   };
-  const creditBadgeLabel =
-    plan === "free"
-      ? `${getRemaining("review")} review / ${getRemaining("improvement")} improve`
-      : `${paidCreditRemaining} credits`;
   const pendingRemaining = pendingCreditAction
     ? getRemaining(pendingCreditAction.action)
     : null;
@@ -985,7 +974,7 @@ export function WorkflowReviewWorkspace({
     ] as const;
 
     return (
-      <div className="grid gap-4 rounded-lg border border-border bg-background p-4">
+      <div className="grid gap-4 rounded-2xl border border-border/70 bg-background/35 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-medium text-foreground">{label}</p>
@@ -1010,7 +999,7 @@ export function WorkflowReviewWorkspace({
             return (
               <div
                 key={dimension}
-                className="rounded-lg border border-border bg-muted/30 p-3"
+                className="rounded-2xl border border-border/70 bg-secondary/30 p-3"
               >
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-medium uppercase text-muted-foreground">
@@ -1025,7 +1014,7 @@ export function WorkflowReviewWorkspace({
                     {dimensionScore}/10
                   </p>
                 </div>
-                <div className="mt-2 h-2 overflow-hidden rounded-full bg-background">
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/45">
                   <div
                     className={cn(
                       "h-full rounded-full transition-all duration-500",
@@ -1042,7 +1031,7 @@ export function WorkflowReviewWorkspace({
           })}
         </div>
 
-        <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
           <p className="text-sm font-medium text-foreground">
             {t("review.weaknesses")}
           </p>
@@ -1060,68 +1049,7 @@ export function WorkflowReviewWorkspace({
 
   return (
     <>
-      <header className="sticky top-0 z-30 -mx-5 border-b border-border bg-background/95 px-5 py-3 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <Button
-              asChild
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-9 shrink-0 hover:bg-muted"
-            >
-              <Link href="/">
-                <ArrowLeft aria-hidden="true" />
-                {headerCopy.back}
-              </Link>
-            </Button>
-            <div className="hidden h-6 w-px bg-border sm:block" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-foreground">
-                {headerCopy.proposalTitle}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {context.startupIdea}
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-            <LocaleSwitcher />
-            <Badge
-              className="h-9 gap-2 rounded-lg px-3"
-              title={headerCopy.creditTooltip}
-              variant="outline"
-            >
-              <CreditCard aria-hidden="true" className="size-4" />
-              {creditBadgeLabel}
-            </Badge>
-            <Button
-              asChild
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-9 hover:bg-muted"
-            >
-              <Link href="/dashboard">
-                <BarChart3 aria-hidden="true" />
-                {t("credits.dashboard")}
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-9"
-              onClick={() => setIsUpgradeOpen(true)}
-            >
-              {t("credits.upgrade")}
-            </Button>
-            <AuthControls locale={context.locale} />
-          </div>
-        </div>
-      </header>
-
-      <section className="space-y-5 border-b border-border pb-7">
+      <section className="space-y-5 pb-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-3xl space-y-3">
             <Badge variant="secondary">{t("badge")}</Badge>
@@ -1132,8 +1060,8 @@ export function WorkflowReviewWorkspace({
               {t("description")}
             </p>
           </div>
-          <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm leading-6 text-muted-foreground">
-            <p className="font-medium text-foreground">{t("context.title")}</p>
+          <div className="glass rounded-3xl p-4 text-sm leading-6 text-muted-foreground">
+            <p className="font-semibold text-foreground">{t("context.title")}</p>
             <p>{context.startupIdea}</p>
             <p>
               {context.industry} / {context.aiModel}
@@ -1144,7 +1072,7 @@ export function WorkflowReviewWorkspace({
 
       <section className="grid gap-6 lg:grid-cols-[18rem_1fr] lg:items-start">
         <aside className="lg:sticky lg:top-6">
-          <div className="space-y-4 rounded-lg border border-border bg-background p-4 shadow-sm">
+          <div className="glass space-y-4 rounded-3xl p-4">
             <div>
               <p className="text-sm font-medium text-foreground">
                 {t("progress.title")}
@@ -1157,9 +1085,9 @@ export function WorkflowReviewWorkspace({
                 })}
               </p>
             </div>
-            <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+            <div className="h-2.5 overflow-hidden rounded-full bg-secondary/45">
               <div
-                className="h-full rounded-full bg-primary transition-all"
+                className="h-full rounded-full bg-gradient-to-r from-primary to-accent transition-all"
                 style={{ width: `${completionPercentage}%` }}
               />
             </div>
@@ -1175,8 +1103,8 @@ export function WorkflowReviewWorkspace({
                       type="button"
                       disabled={isLocked}
                       className={cn(
-                        "flex w-full items-start gap-3 rounded-lg border border-transparent p-2 text-left text-sm transition-colors hover:bg-muted/50",
-                        isActive && "border-border bg-muted/50",
+                        "flex w-full items-start gap-3 rounded-2xl border border-transparent p-3 text-left text-sm transition-colors hover:bg-secondary/35",
+                        isActive && "border-primary/40 bg-primary/15",
                         isLocked &&
                           "cursor-not-allowed opacity-50 hover:bg-transparent",
                       )}
@@ -1193,10 +1121,10 @@ export function WorkflowReviewWorkspace({
                         className={cn(
                           "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border border-border text-xs",
                           sectionState.completed &&
-                            "border-emerald-600 bg-emerald-600 text-white",
+                            "border-primary bg-primary text-primary-foreground",
                           isActive &&
                             !sectionState.completed &&
-                            "border-foreground",
+                            "border-primary text-primary",
                         )}
                       >
                         {sectionState.completed ? (
@@ -1228,7 +1156,7 @@ export function WorkflowReviewWorkspace({
         </aside>
 
         <div className="grid gap-5">
-          <section className="grid gap-4 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5">
+          <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
             <div className="space-y-2">
               <Badge variant="outline">{t("action.layer")}</Badge>
               <h2 className="text-2xl font-semibold leading-tight text-foreground">
@@ -1240,12 +1168,12 @@ export function WorkflowReviewWorkspace({
             </div>
 
             {error ? (
-              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm leading-6 text-destructive">
+              <p className="rounded-2xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm leading-6 text-destructive">
                 {error}
               </p>
             ) : null}
 
-            <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
+            <div className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-medium text-foreground">
@@ -1259,7 +1187,7 @@ export function WorkflowReviewWorkspace({
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10 justify-center"
+                    className="btn-glass h-10 justify-center rounded-full px-4"
                     onClick={generatePrompt}
                   >
                     <Sparkles aria-hidden="true" />
@@ -1269,7 +1197,7 @@ export function WorkflowReviewWorkspace({
                   </Button>
                   <Button
                     type="button"
-                    className="h-10 justify-center"
+                    className="btn-liquid h-10 justify-center rounded-full px-4 text-primary-foreground"
                     onClick={() =>
                       copyToClipboard(activePrompt, `${activeSection.id}:prompt`)
                     }
@@ -1281,12 +1209,12 @@ export function WorkflowReviewWorkspace({
                   </Button>
                 </div>
               </div>
-              <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm leading-6 text-muted-foreground">
+              <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-border/70 bg-background/35 p-3 text-sm leading-6 text-muted-foreground">
                 {activePrompt}
               </pre>
             </div>
 
-            <details className="rounded-lg border border-border bg-background p-3">
+            <details className="rounded-2xl border border-border/70 bg-secondary/20 p-3">
               <summary className="cursor-pointer text-sm font-medium text-foreground">
                 {t("learn.title")}
               </summary>
@@ -1314,7 +1242,7 @@ export function WorkflowReviewWorkspace({
               </label>
               <Textarea
                 id="ai-output"
-                className="min-h-52 resize-y rounded-lg bg-muted/30 text-sm leading-6 text-foreground"
+                className="min-h-52 resize-y rounded-2xl bg-background/35 text-sm leading-6 text-foreground"
                 placeholder={t("action.outputPlaceholder")}
                 value={activeState.originalOutput}
                 onChange={(event) =>
@@ -1325,7 +1253,7 @@ export function WorkflowReviewWorkspace({
           </section>
 
           {activeState.originalOutput.trim() ? (
-            <section className="grid gap-4 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5">
+            <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-2">
                   <Badge variant="outline">{t("review.layer")}</Badge>
@@ -1338,7 +1266,7 @@ export function WorkflowReviewWorkspace({
                 </div>
                 <Button
                   type="button"
-                  className="h-10 w-full justify-center sm:w-auto"
+                  className="btn-liquid h-10 w-full justify-center rounded-full px-4 text-primary-foreground sm:w-auto"
                   disabled={isReviewing}
                   onClick={() =>
                     requestCreditAction({
@@ -1364,7 +1292,7 @@ export function WorkflowReviewWorkspace({
               {latestReview &&
               !improvedPrompt &&
               !activeState.improvementSkipped ? (
-                <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm font-medium text-foreground">
@@ -1377,7 +1305,7 @@ export function WorkflowReviewWorkspace({
                     <div className="flex flex-col gap-2 sm:flex-row">
                       <Button
                         type="button"
-                        className="h-10 justify-center"
+                        className="btn-liquid h-10 justify-center rounded-full px-4 text-primary-foreground"
                         disabled={isImproving}
                         onClick={() =>
                           requestCreditAction({
@@ -1400,7 +1328,7 @@ export function WorkflowReviewWorkspace({
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-10 justify-center"
+                        className="btn-glass h-10 justify-center rounded-full px-4"
                         onClick={() =>
                           updateSectionState(activeSection.id, (sectionState) => ({
                             ...sectionState,
@@ -1416,10 +1344,10 @@ export function WorkflowReviewWorkspace({
               ) : null}
 
               {latestReview && activeState.improvementSkipped ? (
-                <div className="flex justify-end rounded-lg border border-border bg-muted/30 p-3">
+                <div className="flex justify-end rounded-2xl border border-border/70 bg-secondary/30 p-3">
                   <Button
                     type="button"
-                    className="h-10 w-full justify-center sm:w-auto"
+                    className="btn-liquid h-10 w-full justify-center rounded-full px-4 text-primary-foreground sm:w-auto"
                     disabled={!activeState.originalReview}
                     onClick={completeSection}
                   >
@@ -1430,25 +1358,25 @@ export function WorkflowReviewWorkspace({
               ) : null}
 
               {latestReview && improvedPrompt ? (
-                <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                <div className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3">
                   <p className="text-sm font-medium text-foreground">
                     {t("improvement.title")}
                   </p>
                   {activeState.regressionNotice ? (
-                    <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                    <p className="rounded-2xl border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-sm leading-6 text-amber-100">
                       {activeState.regressionNotice}
                     </p>
                   ) : null}
                   <p className="text-sm leading-6 text-muted-foreground">
                     {latestReview.whyBetter}
                   </p>
-                  <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm leading-6 text-muted-foreground">
+                  <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-border/70 bg-background/35 p-3 text-sm leading-6 text-muted-foreground">
                     {improvedPrompt}
                   </pre>
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10 w-full justify-center sm:w-fit"
+                    className="btn-glass h-10 w-full justify-center rounded-full px-4 sm:w-fit"
                     disabled={!improvedPrompt}
                     onClick={copyImprovedPrompt}
                   >
@@ -1457,7 +1385,7 @@ export function WorkflowReviewWorkspace({
                       ? t("copied")
                       : t("retry.copyImproved")}
                   </Button>
-                  <div className="grid gap-3 rounded-lg border border-border bg-background p-3 sm:grid-cols-3">
+                  <div className="grid gap-3 rounded-2xl border border-border/70 bg-background/35 p-3 sm:grid-cols-3">
                     <p className="text-sm font-medium text-foreground sm:col-span-3">
                       {headerCopy.comparisonTitle}
                     </p>
@@ -1510,7 +1438,7 @@ export function WorkflowReviewWorkspace({
           ) : null}
 
           {improvedPrompt ? (
-            <section className="grid gap-4 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5">
+            <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
               <div className="space-y-2">
                 <Badge variant="outline">{t("retry.layer")}</Badge>
                 <h2 className="text-xl font-semibold text-foreground">
@@ -1530,7 +1458,7 @@ export function WorkflowReviewWorkspace({
                 </label>
                 <Textarea
                   id="retry-output"
-                  className="min-h-44 resize-y rounded-lg bg-muted/30 text-sm leading-6 text-foreground"
+                  className="min-h-44 resize-y rounded-2xl bg-background/35 text-sm leading-6 text-foreground"
                   placeholder={t("retry.outputPlaceholder")}
                   value={activeState.retryOutput}
                   onChange={(event) =>
@@ -1543,7 +1471,7 @@ export function WorkflowReviewWorkspace({
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-10 w-full justify-center sm:w-auto"
+                  className="btn-glass h-10 w-full justify-center rounded-full px-4 sm:w-auto"
                   disabled={isReviewing || !activeState.retryOutput.trim()}
                   onClick={() =>
                     requestCreditAction({
@@ -1562,7 +1490,7 @@ export function WorkflowReviewWorkspace({
                 </Button>
                 <Button
                   type="button"
-                  className="h-10 w-full justify-center sm:w-auto"
+                  className="btn-liquid h-10 w-full justify-center rounded-full px-4 text-primary-foreground sm:w-auto"
                   disabled={!activeState.originalReview}
                   onClick={completeSection}
                 >
@@ -1572,7 +1500,7 @@ export function WorkflowReviewWorkspace({
               </div>
 
               {oldScore !== undefined && newScore !== undefined ? (
-                <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3 sm:grid-cols-3">
+                <div className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3 sm:grid-cols-3">
                   <div>
                     <p className="text-xs font-medium uppercase text-muted-foreground">
                       {t("retry.oldScore")}
@@ -1615,7 +1543,7 @@ export function WorkflowReviewWorkspace({
           ) : null}
 
           {activeState.reviewHistory.length > 0 ? (
-            <section className="grid gap-4 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5">
+            <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
               <div className="flex items-center gap-2">
                 <History aria-hidden="true" className="size-4" />
                 <h2 className="text-lg font-semibold text-foreground">
@@ -1623,7 +1551,7 @@ export function WorkflowReviewWorkspace({
                 </h2>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
                   <p className="text-sm font-medium text-foreground">
                     {t("history.promptVersions")}
                   </p>
@@ -1633,7 +1561,7 @@ export function WorkflowReviewWorkspace({
                     )}
                   </p>
                 </div>
-                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
                   <p className="text-sm font-medium text-foreground">
                     {t("history.outputHistory")}
                   </p>
@@ -1646,7 +1574,7 @@ export function WorkflowReviewWorkspace({
                       .join(" -> ")}
                   </p>
                 </div>
-                <div className="rounded-lg border border-border bg-muted/30 p-3">
+                <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
                   <p className="text-sm font-medium text-foreground">
                     {t("history.timeline")}
                   </p>
@@ -1658,7 +1586,7 @@ export function WorkflowReviewWorkspace({
             </section>
           ) : null}
 
-          <section className="grid gap-4 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5">
+          <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -1675,7 +1603,7 @@ export function WorkflowReviewWorkspace({
                 <Button
                   type="button"
                   variant="outline"
-                  className="h-10 justify-center"
+                  className="btn-glass h-10 justify-center rounded-full px-4"
                   onClick={() => copyToClipboard(proposalDraft, "proposal-draft")}
                 >
                   <Copy aria-hidden="true" />
@@ -1685,7 +1613,7 @@ export function WorkflowReviewWorkspace({
                 </Button>
                 <Button
                   type="button"
-                  className="h-10 justify-center"
+                  className="btn-liquid h-10 justify-center rounded-full px-4 text-primary-foreground"
                   onClick={downloadProposalDraft}
                 >
                   <Download aria-hidden="true" />
@@ -1693,7 +1621,7 @@ export function WorkflowReviewWorkspace({
                 </Button>
               </div>
             </div>
-            <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-muted/30 p-3 text-sm leading-6 text-muted-foreground">
+            <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-border/70 bg-secondary/30 p-3 text-sm leading-6 text-muted-foreground">
               {proposalDraft}
             </pre>
           </section>
@@ -1702,7 +1630,7 @@ export function WorkflowReviewWorkspace({
 
       {pendingCreditAction ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-lg border border-border bg-background p-5 shadow-lg">
+          <div className="glass w-full max-w-md rounded-3xl p-5">
             <div className="space-y-3">
               <Badge variant="secondary">{pendingCreditAction.label}</Badge>
               <h2 className="text-xl font-semibold leading-tight text-foreground">
@@ -1715,7 +1643,7 @@ export function WorkflowReviewWorkspace({
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
               <Button
                 type="button"
-                className="h-10 flex-1"
+                className="btn-liquid h-10 flex-1 rounded-full text-primary-foreground"
                 onClick={confirmCreditAction}
               >
                 {headerCopy.confirm}
@@ -1723,7 +1651,7 @@ export function WorkflowReviewWorkspace({
               <Button
                 type="button"
                 variant="outline"
-                className="h-10 flex-1"
+                className="btn-glass h-10 flex-1 rounded-full"
                 onClick={() => setPendingCreditAction(null)}
               >
                 {headerCopy.cancel}
@@ -1735,7 +1663,7 @@ export function WorkflowReviewWorkspace({
 
       {isUpgradeOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-lg border border-border bg-background p-5 shadow-lg">
+          <div className="glass w-full max-w-md rounded-3xl p-5">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">
                 <Badge variant="secondary">{t("upgrade.badge")}</Badge>
@@ -1750,13 +1678,13 @@ export function WorkflowReviewWorkspace({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="hover:bg-muted"
+                className="rounded-full hover:bg-secondary/45"
                 onClick={() => setIsUpgradeOpen(false)}
               >
                 <X aria-hidden="true" />
               </Button>
             </div>
-            <div className="mt-4 grid gap-2 rounded-lg border border-border bg-muted/30 p-3 text-sm leading-6 text-muted-foreground">
+            <div className="mt-4 grid gap-2 rounded-2xl border border-border/70 bg-secondary/30 p-3 text-sm leading-6 text-muted-foreground">
               <p>{t("upgrade.reviewUsage", { count: usage.review })}</p>
               <p>{t("upgrade.improvementUsage", { count: usage.improvement })}</p>
               <p className="font-medium text-foreground">
@@ -1764,13 +1692,13 @@ export function WorkflowReviewWorkspace({
               </p>
             </div>
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-              <Button asChild className="h-10 flex-1">
+              <Button asChild className="btn-liquid h-10 flex-1 rounded-full text-primary-foreground">
                 <Link href="/checkout">{t("upgrade.checkout")}</Link>
               </Button>
               <Button
                 type="button"
                 variant="outline"
-                className="h-10 flex-1"
+                className="btn-glass h-10 flex-1 rounded-full"
                 onClick={() => setIsUpgradeOpen(false)}
               >
                 {t("upgrade.later")}

@@ -8,9 +8,9 @@ export default async function DashboardPage() {
   const t = await getTranslations("IntelligenceDashboard");
 
   return (
-    <main className="min-h-svh bg-background px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
+    <main className="min-h-svh px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
       <div className="mx-auto grid w-full max-w-6xl gap-8">
-        <section className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <section className="glass flex flex-col gap-4 rounded-3xl p-6 sm:flex-row sm:items-end sm:justify-between sm:p-8">
           <div className="max-w-3xl space-y-3">
             <p className="text-sm font-medium text-muted-foreground">
               {t("eyebrow")}

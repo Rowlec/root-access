@@ -60,8 +60,13 @@ function ConfiguredAuthControls({ locale }: AuthControlsProps) {
     return (
       <div className="flex items-center gap-2">
         <UserButton />
-        <SignOutButton>
-          <Button type="button" variant="ghost" size="sm" className="h-9">
+        <SignOutButton redirectUrl="/">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="btn-glass h-9 rounded-full px-3"
+          >
             <LogOut aria-hidden="true" />
             {isVietnamese ? "Đăng xuất" : "Sign out"}
           </Button>
@@ -76,7 +81,7 @@ function ConfiguredAuthControls({ locale }: AuthControlsProps) {
         type="button"
         variant="outline"
         size="sm"
-        className="h-9"
+        className="btn-glass h-9 rounded-full px-3 font-semibold"
         disabled={!isSignInReady}
         onClick={handleGoogleSignIn}
       >
@@ -86,13 +91,23 @@ function ConfiguredAuthControls({ locale }: AuthControlsProps) {
         Google
       </Button>
       <SignInButton mode="modal">
-        <Button type="button" variant="ghost" size="sm" className="h-9">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="btn-glass h-9 rounded-full px-3"
+        >
           <LogIn aria-hidden="true" />
           {isVietnamese ? "Email" : "Email"}
         </Button>
       </SignInButton>
       <SignUpButton mode="modal">
-        <Button type="button" variant="outline" size="sm" className="h-9">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="btn-liquid h-9 rounded-full px-3 text-primary-foreground"
+        >
           <UserPlus aria-hidden="true" />
           {isVietnamese ? "Đăng ký" : "Sign up"}
         </Button>
