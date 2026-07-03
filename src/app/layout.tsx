@@ -5,6 +5,8 @@ import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { FooterDisclaimer } from "@/components/FooterDisclaimer";
+import { LiquidBackground } from "@/components/LiquidBackground";
+import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
 const inter = Inter({
@@ -84,15 +86,19 @@ export default async function RootLayout({
   const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const content = (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      {children}
-      <FooterDisclaimer />
+      <LiquidBackground />
+      <div className="relative z-10 flex min-h-full flex-col">
+        <SiteHeader locale={locale} />
+        {children}
+        <FooterDisclaimer />
+      </div>
     </NextIntlClientProvider>
   );
 
   return (
     <html
       lang={locale}
-      className={`${inter.variable} h-full scroll-smooth antialiased`}
+      className={`${inter.variable} dark h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         {clerkPublishableKey ? (

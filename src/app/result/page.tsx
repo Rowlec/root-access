@@ -114,9 +114,9 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
     !selectedAiModel
   ) {
     return (
-      <main className="min-h-svh bg-background px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
+      <main className="min-h-svh px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-          <section className="rounded-lg border border-border bg-muted/40 p-6 shadow-sm sm:p-8">
+          <section className="glass rounded-3xl p-6 sm:p-8">
             <div className="max-w-2xl space-y-4">
               <Badge variant="secondary">{t("emptyState.badge")}</Badge>
               <h1 className="text-3xl font-semibold leading-tight tracking-normal text-foreground sm:text-4xl">
@@ -147,7 +147,7 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
   });
 
   return (
-    <main className="min-h-svh bg-background px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
+    <main className="min-h-svh px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <WorkflowReviewWorkspace
           context={{

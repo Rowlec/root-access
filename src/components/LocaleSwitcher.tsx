@@ -82,7 +82,7 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
     <div
       aria-label={t("ariaLabel")}
       className={cn(
-        "inline-flex h-9 items-center gap-1 rounded-lg border border-border bg-background p-1 shadow-sm",
+        "inline-flex h-9 items-center gap-1 rounded-full border border-border/70 bg-secondary/35 p-1 shadow-sm backdrop-blur-xl",
         className,
       )}
       role="group"
@@ -97,7 +97,11 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
           type="button"
           variant={option === locale ? "secondary" : "ghost"}
           size="xs"
-          className="h-7 min-w-9 rounded-md px-2"
+          className={cn(
+            "h-7 min-w-9 rounded-full px-2 font-semibold",
+            option === locale &&
+              "bg-primary text-primary-foreground shadow-[0_0_18px_oklch(0.62_0.2_300/0.35)] hover:bg-primary/90",
+          )}
           aria-pressed={option === locale}
           onClick={() => handleLocaleChange(option)}
         >

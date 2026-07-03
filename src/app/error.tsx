@@ -22,8 +22,8 @@ export default function Error({
   }, [error]);
 
   return (
-    <main className="min-h-svh bg-background px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
-      <section className="mx-auto flex w-full max-w-6xl flex-col gap-5 rounded-lg border border-border bg-muted/40 p-6 shadow-sm sm:p-8">
+    <main className="min-h-svh px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
+      <section className="glass mx-auto flex w-full max-w-6xl flex-col gap-5 rounded-3xl p-6 sm:p-8">
         <div className="flex items-center gap-3">
           <Badge variant="secondary">{t("badge")}</Badge>
           <AlertTriangle
@@ -42,11 +42,19 @@ export default function Error({
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <Button type="button" className="h-10" onClick={unstable_retry}>
+          <Button
+            type="button"
+            className="btn-liquid h-10 rounded-full px-4 text-primary-foreground"
+            onClick={unstable_retry}
+          >
             <RefreshCcw aria-hidden="true" />
             {t("retry")}
           </Button>
-          <Button asChild variant="outline" className="h-10">
+          <Button
+            asChild
+            variant="outline"
+            className="btn-glass h-10 rounded-full px-4"
+          >
             <Link href="/">
               <Home aria-hidden="true" />
               {t("home")}
