@@ -8,21 +8,28 @@ import {
 } from "@/lib/proposal-review";
 
 const reviewRequestSchema = z.object({
+  baselineScore: z.number().int().min(0).max(40).optional(),
   context: z.object({
     deadlineUrgency: z.string().trim().max(120),
     industry: z.string().trim().max(200),
     startupIdea: z.string().trim().min(1).max(2000),
     targetCustomer: z.string().trim().max(500).optional(),
   }),
+  locale: z.enum(["en", "vi"]).default("en"),
+  mode: z.enum(["review", "improve"]).default("review"),
   originalPrompt: z.string().trim().min(1).max(12000),
   output: z.string().trim().min(1).max(20000),
   previousScore: z.number().int().min(0).max(40).optional(),
   section: z.string().trim().min(1).max(120),
   sectionId: z.enum(proposalSectionIds),
+  weaknesses: z.array(z.string().trim().min(1).max(1000)).max(5).optional(),
 });
 
-const geminiReviewSchema = z.object({
+const geminiWeaknessSchema = z.object({
   weaknesses: z.array(z.string().trim().min(1).max(1000)).min(0).max(5),
+});
+
+const geminiImprovementSchema = z.object({
   improvedPrompt: z.string().trim().min(1).max(16000),
   whyBetter: z.string().trim().min(1).max(1500),
 });
@@ -42,14 +49,21 @@ type GeminiResponse = {
   };
 };
 
-const defaultModel = "gemini-3.5-flash";
+const defaultModel = "gemini-3.1-flash-lite";
+const serviceUnavailableMessage = "AI service unavailable. Please retry.";
 
 function getApiKey() {
-  return process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+  return process.env.GEMINI_API_KEY;
 }
 
 function getModel() {
   return process.env.GEMINI_MODEL ?? defaultModel;
+}
+
+function getLanguageInstruction(locale: "en" | "vi") {
+  return locale === "vi"
+    ? "Return all responses in Vietnamese."
+    : "Return all responses in English.";
 }
 
 function extractGeminiText(data: GeminiResponse) {
@@ -67,7 +81,7 @@ async function readGeminiResponse(response: Response) {
   } catch {
     return {
       error: {
-        message: "Gemini returned an unreadable response. Try again later.",
+        message: serviceUnavailableMessage,
       },
     } satisfies GeminiResponse;
   }
@@ -100,20 +114,30 @@ function truncateReviewText(value: string, maxLength: number) {
   return `${value.slice(0, maxLength - 3).trimEnd()}...`;
 }
 
-function parseGeminiReviewJson(value: string) {
+function parseWeaknessJson(value: string) {
   const parsed: unknown = JSON.parse(extractJsonObject(value));
-  const review = geminiReviewSchema.parse(parsed);
+  const review = geminiWeaknessSchema.parse(parsed);
 
   return {
-    ...review,
     weaknesses: review.weaknesses
       .slice(0, 2)
       .map((weakness) => truncateReviewText(weakness, 240)),
   };
 }
 
-function createGeminiReviewPrompt({
+function parseImprovementJson(value: string) {
+  const parsed: unknown = JSON.parse(extractJsonObject(value));
+  const improvement = geminiImprovementSchema.parse(parsed);
+
+  return {
+    improvedPrompt: improvement.improvedPrompt,
+    whyBetter: truncateReviewText(improvement.whyBetter, 500),
+  };
+}
+
+function createGeminiWeaknessPrompt({
   context,
+  locale,
   originalPrompt,
   output,
   previousScore,
@@ -127,17 +151,17 @@ function createGeminiReviewPrompt({
 
   return [
     "You are RootAccess, a domain-specific Startup Proposal reviewer for FPT University students.",
-    "The deterministic scoring engine has already scored the output. Do not change or invent scores.",
-    "Your job is only Weakness Detection and Prompt Improvement.",
+    "The deterministic scoring engine has already scored the output. Do not change, invent, or mention new scores.",
+    "Your job is only Weakness Detection.",
     "Do not write the final proposal section for the user.",
+    "Do not improve the prompt yet.",
     "Do not give generic writing feedback. Focus only on startup business logic.",
+    getLanguageInstruction(locale),
     "",
     "Return ONLY valid JSON matching this exact shape:",
     JSON.stringify(
       {
         weaknesses: ["top business weakness 1", "top business weakness 2"],
-        improvedPrompt: "better prompt the user can copy into ChatGPT/Gemini",
-        whyBetter: "short reason why the prompt is better",
       },
       null,
       2,
@@ -169,6 +193,150 @@ function createGeminiReviewPrompt({
   ].join("\n");
 }
 
+function createGeminiImprovementPrompt({
+  baselineScore,
+  context,
+  locale,
+  originalPrompt,
+  output,
+  score,
+  section,
+  sectionId,
+  weaknesses,
+}: z.infer<typeof reviewRequestSchema> & {
+  score: ReturnType<typeof scoreStartupProposalOutput>;
+}) {
+  const framework = proposalReviewFrameworks[sectionId];
+  const weaknessList =
+    weaknesses && weaknesses.length > 0
+      ? weaknesses.map((weakness) => `- ${weakness}`).join("\n")
+      : "- Use the deterministic score breakdown to target the weakest dimensions.";
+
+  return [
+    "You are RootAccess, a domain-specific Startup Proposal prompt coach for FPT University students.",
+    "Your job is only Prompt Improvement.",
+    "Do not write the final proposal section for the user.",
+    "Create a better prompt the user can copy into ChatGPT or Gemini.",
+    "The improved prompt must target relevance, specificity, clarity, and actionability.",
+    "If a baseline score is provided, the prompt must be designed to improve that baseline.",
+    "Before returning, internally validate: Does this improved prompt actually improve specificity, relevance, clarity, or actionability? If not, revise it before returning JSON.",
+    getLanguageInstruction(locale),
+    "",
+    "Return ONLY valid JSON matching this exact shape:",
+    JSON.stringify(
+      {
+        improvedPrompt: "better prompt the user can copy into ChatGPT/Gemini",
+        whyBetter: "short reason why the prompt is better",
+      },
+      null,
+      2,
+    ),
+    "",
+    `Proposal section: ${section}`,
+    `Review framework: ${framework.title}`,
+    `Framework checks: ${framework.checks.join(", ")}`,
+    `Baseline score before improvement: ${baselineScore ?? score.total}/40`,
+    "",
+    "Weaknesses to fix:",
+    weaknessList,
+    "",
+    "Deterministic score breakdown:",
+    `- Relevance: ${score.breakdown.relevance.score}/10. Why this score? ${score.breakdown.relevance.reason}`,
+    `- Specificity: ${score.breakdown.specificity.score}/10. Why this score? ${score.breakdown.specificity.reason}`,
+    `- Clarity: ${score.breakdown.clarity.score}/10. Why this score? ${score.breakdown.clarity.reason}`,
+    `- Actionability: ${score.breakdown.actionability.score}/10. Why this score? ${score.breakdown.actionability.reason}`,
+    `- Total: ${score.total}/40`,
+    "",
+    "Project context:",
+    `- Startup idea: ${context.startupIdea}`,
+    `- Industry: ${context.industry}`,
+    `- Target customer: ${context.targetCustomer || "not specified"}`,
+    `- Deadline urgency: ${context.deadlineUrgency}`,
+    "",
+    "Prompt to improve:",
+    originalPrompt,
+    "",
+    "AI output that exposed the weaknesses:",
+    output,
+  ].join("\n");
+}
+
+async function callGemini({
+  apiKey,
+  model,
+  prompt,
+  systemInstruction,
+}: {
+  apiKey: string;
+  model: string;
+  prompt: string;
+  systemInstruction: string;
+}) {
+  let response: Response;
+
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+          },
+          systemInstruction: {
+            parts: [
+              {
+                text: systemInstruction,
+              },
+            ],
+          },
+        }),
+      },
+    );
+  } catch {
+    return {
+      error: serviceUnavailableMessage,
+      status: 502,
+    };
+  }
+
+  const data = await readGeminiResponse(response);
+
+  if (!response.ok) {
+    return {
+      error: data.error?.message ?? serviceUnavailableMessage,
+      status: response.status,
+    };
+  }
+
+  const text = extractGeminiText(data);
+
+  if (!text) {
+    return {
+      error: serviceUnavailableMessage,
+      status: 502,
+    };
+  }
+
+  return {
+    status: 200,
+    text,
+  };
+}
+
 export async function POST(request: Request) {
   const apiKey = getApiKey();
 
@@ -176,8 +344,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         code: "missing_api_key",
-        message:
-          "Gemini API key is not configured. Set GEMINI_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY on the server.",
+        message: serviceUnavailableMessage,
       },
       { status: 503 },
     );
@@ -215,99 +382,60 @@ export async function POST(request: Request) {
     sectionId: parsedBody.data.sectionId,
   });
   const model = getModel();
-  let response: Response;
+  const prompt =
+    parsedBody.data.mode === "improve"
+      ? createGeminiImprovementPrompt({
+          ...parsedBody.data,
+          score: deterministicScore,
+        })
+      : createGeminiWeaknessPrompt({
+          ...parsedBody.data,
+          score: deterministicScore,
+        });
+  const geminiResult = await callGemini({
+    apiKey,
+    model,
+    prompt,
+    systemInstruction:
+      parsedBody.data.mode === "improve"
+        ? "You improve startup proposal prompts. You never write final proposal content and you never score outputs."
+        : "You detect startup proposal weaknesses. You never write final proposal content, improve prompts, or score outputs.",
+  });
 
-  try {
-    response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: createGeminiReviewPrompt({
-                    ...parsedBody.data,
-                    score: deterministicScore,
-                  }),
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            responseMimeType: "application/json",
-          },
-          systemInstruction: {
-            parts: [
-              {
-                text: "You detect startup proposal weaknesses and improve prompts. You never write final proposal content and you never score outputs.",
-              },
-            ],
-          },
-        }),
-      },
-    );
-  } catch {
-    return Response.json(
-      {
-        code: "gemini_unavailable",
-        message:
-          "Gemini could not be reached. Check server network access and try again.",
-      },
-      { status: 502 },
-    );
-  }
-
-  const data = await readGeminiResponse(response);
-
-  if (!response.ok) {
+  if ("error" in geminiResult) {
     return Response.json(
       {
         code: "gemini_error",
-        message:
-          data.error?.message ??
-          "Gemini could not review this output. Try again later.",
+        message: geminiResult.error,
       },
-      { status: response.status },
-    );
-  }
-
-  const text = extractGeminiText(data);
-
-  if (!text) {
-    return Response.json(
-      {
-        code: "empty_response",
-        message: "Gemini returned no review content.",
-      },
-      { status: 502 },
+      { status: geminiResult.status },
     );
   }
 
   try {
-    const geminiReview = parseGeminiReviewJson(text);
+    if (parsedBody.data.mode === "improve") {
+      return Response.json({
+        improvement: parseImprovementJson(geminiResult.text),
+        model,
+      });
+    }
+
+    const geminiReview = parseWeaknessJson(geminiResult.text);
 
     return Response.json({
       model,
       review: {
         frameworkChecks: deterministicScore.frameworkChecks,
         frameworkTitle: deterministicScore.frameworkTitle,
-        improvedPrompt: geminiReview.improvedPrompt,
         score: deterministicScore,
         weaknesses: geminiReview.weaknesses,
-        whyBetter: geminiReview.whyBetter,
       },
     });
   } catch {
     return Response.json(
       {
         code: "invalid_gemini_json",
-        message: "Gemini returned a review that could not be parsed.",
+        message: serviceUnavailableMessage,
       },
       { status: 502 },
     );

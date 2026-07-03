@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
@@ -8,7 +9,7 @@ import "./globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
+  subsets: ["latin", "vietnamese"],
 });
 
 function getSiteUrl() {
@@ -80,6 +81,13 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale();
   const messages = await getMessages();
+  const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const content = (
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      {children}
+      <FooterDisclaimer />
+    </NextIntlClientProvider>
+  );
 
   return (
     <html
@@ -87,10 +95,13 @@ export default async function RootLayout({
       className={`${inter.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
-          <FooterDisclaimer />
-        </NextIntlClientProvider>
+        {clerkPublishableKey ? (
+          <ClerkProvider publishableKey={clerkPublishableKey}>
+            {content}
+          </ClerkProvider>
+        ) : (
+          content
+        )}
         <Analytics />
       </body>
     </html>

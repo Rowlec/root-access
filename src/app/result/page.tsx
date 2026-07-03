@@ -2,7 +2,6 @@ import { getLocale, getTranslations } from "next-intl/server";
 import Link from "next/link";
 
 import { AcademicIntegrityNotice } from "@/components/AcademicIntegrityNotice";
-import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { WorkflowReviewWorkspace } from "@/components/proposal/WorkflowReviewWorkspace";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -150,9 +149,6 @@ export default async function ResultPage({ searchParams }: ResultPageProps) {
   return (
     <main className="min-h-svh bg-background px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-        <div className="flex justify-end">
-          <LocaleSwitcher />
-        </div>
         <WorkflowReviewWorkspace
           context={{
             aiModel: selectedAiModel,

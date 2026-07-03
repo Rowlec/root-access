@@ -3,9 +3,14 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeft,
   BarChart3,
   Check,
   Copy,
+  CreditCard,
+  Download,
+  FileText,
+  Lock,
   History,
   Loader2,
   RefreshCw,
@@ -14,6 +19,8 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { AuthControls } from "@/components/AuthControls";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -51,7 +58,7 @@ type ScoreDimensionResult = {
 type OutputReview = {
   frameworkChecks: readonly string[];
   frameworkTitle: string;
-  improvedPrompt: string;
+  improvedPrompt?: string;
   score: {
     breakdown: {
       actionability: ScoreDimensionResult;
@@ -63,7 +70,7 @@ type OutputReview = {
     total: number;
   };
   weaknesses: string[];
-  whyBetter: string;
+  whyBetter?: string;
 };
 
 type ReviewHistoryEntry = {
@@ -79,15 +86,23 @@ type ReviewHistoryEntry = {
 type SectionState = {
   completed: boolean;
   improvedPromptCopied: boolean;
+  improvementSkipped: boolean;
   originalOutput: string;
   originalPrompt: string;
   originalReview: OutputReview | null;
+  regressionNotice: string;
   retryOutput: string;
   retryReview: OutputReview | null;
   reviewHistory: ReviewHistoryEntry[];
 };
 
 type WorkspaceState = Partial<Record<ProposalSectionId, SectionState>>;
+
+type PendingCreditAction = {
+  action: "review" | "improvement";
+  label: string;
+  run: () => Promise<void> | void;
+};
 
 type WorkflowReviewWorkspaceProps = {
   context: {
@@ -104,9 +119,11 @@ type WorkflowReviewWorkspaceProps = {
 const emptySectionState: SectionState = {
   completed: false,
   improvedPromptCopied: false,
+  improvementSkipped: false,
   originalOutput: "",
   originalPrompt: "",
   originalReview: null,
+  regressionNotice: "",
   retryOutput: "",
   retryReview: null,
   reviewHistory: [],
@@ -167,6 +184,19 @@ function getSectionState(
   };
 }
 
+function getLatestSectionOutput(
+  workspaceState: WorkspaceState,
+  sectionId: ProposalSectionId,
+) {
+  const sectionState = getSectionState(workspaceState, sectionId);
+
+  return (
+    sectionState.retryOutput.trim() ||
+    sectionState.originalOutput.trim() ||
+    "[Not drafted yet]"
+  );
+}
+
 function createInitialPrompt({
   context,
   section,
@@ -215,6 +245,38 @@ function getScoreTone(score: number) {
   return "text-destructive";
 }
 
+function getDimensionScoreTone(score: number) {
+  if (score >= 9) {
+    return "text-emerald-700 dark:text-emerald-300";
+  }
+
+  if (score >= 7) {
+    return "text-yellow-700 dark:text-yellow-300";
+  }
+
+  if (score >= 4) {
+    return "text-orange-700 dark:text-orange-300";
+  }
+
+  return "text-destructive";
+}
+
+function getDimensionScoreBar(score: number) {
+  if (score >= 9) {
+    return "bg-emerald-600";
+  }
+
+  if (score >= 7) {
+    return "bg-yellow-500";
+  }
+
+  if (score >= 4) {
+    return "bg-orange-500";
+  }
+
+  return "bg-destructive";
+}
+
 function createEventId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -253,10 +315,13 @@ export function WorkflowReviewWorkspace({
   const [activeSectionId, setActiveSectionId] =
     useState<ProposalSectionId>("problem");
   const [isReviewing, setIsReviewing] = useState(false);
+  const [isImproving, setIsImproving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<CreditPlan>(() => readCreditPlan());
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [pendingCreditAction, setPendingCreditAction] =
+    useState<PendingCreditAction | null>(null);
   const { canUse, getRemaining, recordUse, usage } = useCreditUsage(plan);
   const sections = useMemo<WorkflowSection[]>(
     () =>
@@ -283,6 +348,17 @@ export function WorkflowReviewWorkspace({
   const currentIndex = sections.findIndex(
     (section) => section.id === activeSection.id,
   );
+  const firstIncompleteIndex = sections.findIndex(
+    (section) => !getSectionState(workspaceState, section.id).completed,
+  );
+  const activeUnlockState =
+    firstIncompleteIndex === -1
+      ? null
+      : getSectionState(workspaceState, sections[firstIncompleteIndex].id);
+  const unlockedSectionIndex =
+    firstIncompleteIndex === -1
+      ? sections.length - 1
+      : firstIncompleteIndex + (activeUnlockState?.originalOutput.trim() ? 1 : 0);
   const remainingCount = Math.max(sections.length - completedCount, 0);
   const completionPercentage = Math.round(
     (completedCount / sections.length) * 100,
@@ -296,6 +372,118 @@ export function WorkflowReviewWorkspace({
   );
   const paidCreditRemaining =
     plan === "free" ? null : getRemaining("review");
+  const isVietnamese = context.locale === "vi";
+  const headerCopy = {
+    back: isVietnamese ? "Home" : "Home",
+    creditTooltip: isVietnamese
+      ? "1 review = 1 credit / 1 improve = 1 credit"
+      : "1 review = 1 credit / 1 improve = 1 credit",
+    creditConfirm: isVietnamese
+      ? "Hành động này tốn 1 credit. Bạn muốn tiếp tục?"
+      : "This action costs 1 credit. Do you want to continue?",
+    creditRemainingAfter: isVietnamese
+      ? "Credit còn lại sau hành động"
+      : "Remaining after action",
+    cancel: isVietnamese ? "Hủy" : "Cancel",
+    comparisonAfter: isVietnamese ? "Sau" : "After",
+    comparisonBefore: isVietnamese ? "Trước" : "Before",
+    comparisonImproved: isVietnamese ? "Đã cải thiện" : "Improved",
+    comparisonStillWeak: isVietnamese ? "Vẫn yếu" : "Still weak",
+    comparisonTitle: isVietnamese
+      ? "So sánh prompt trước/sau"
+      : "Before/after prompt comparison",
+    comparisonWaiting: isVietnamese
+      ? "Paste output từ improved prompt để thấy điểm sau."
+      : "Paste output from the improved prompt to see the after score.",
+    confirm: isVietnamese ? "Xác nhận" : "Confirm",
+    copyAll: isVietnamese ? "Copy tất cả" : "Copy all",
+    downloadTxt: isVietnamese ? "Tải .txt" : "Download .txt",
+    exportDescription: isVietnamese
+      ? "Tổng hợp các output đã làm thành bản nháp proposal có thể chỉnh sửa."
+      : "Compile your section outputs into an editable proposal draft.",
+    exportTitle: isVietnamese ? "Xuất Startup Proposal Draft" : "Export Startup Proposal Draft",
+    improvePrompt: isVietnamese ? "Cải thiện prompt" : "Improve prompt",
+    improveQuestion: isVietnamese
+      ? "Bạn có muốn cải thiện prompt này không?"
+      : "Do you want to improve this prompt?",
+    locked: isVietnamese ? "Đang khóa" : "Locked",
+    noContinue: isVietnamese ? "Không, tiếp tục" : "No, continue",
+    proposalTitle: isVietnamese ? "Startup proposal" : "Startup proposal",
+    regressionNotice: isVietnamese
+      ? "Retry bị thấp điểm hơn. RootAccess đã tạo lại improved prompt để bạn test lại."
+      : "The retry scored lower. RootAccess regenerated the improved prompt for another test.",
+  };
+  const creditBadgeLabel =
+    plan === "free"
+      ? `${getRemaining("review")} review / ${getRemaining("improvement")} improve`
+      : `${paidCreditRemaining} credits`;
+  const pendingRemaining = pendingCreditAction
+    ? getRemaining(pendingCreditAction.action)
+    : null;
+  const pendingRemainingAfter =
+    typeof pendingRemaining === "number"
+      ? Math.max(pendingRemaining - 1, 0)
+      : pendingRemaining;
+  const proposalDraft = useMemo(() => {
+    const sectionTitleById = Object.fromEntries(
+      sections.map((section) => [section.id, section.title]),
+    ) as Record<ProposalSectionId, string>;
+    const problem = getLatestSectionOutput(workspaceState, "problem");
+    const customer = getLatestSectionOutput(workspaceState, "customer");
+    const revenue = getLatestSectionOutput(workspaceState, "revenue");
+    const mvp = getLatestSectionOutput(workspaceState, "mvp");
+    const differentiation = getLatestSectionOutput(
+      workspaceState,
+      "differentiation",
+    );
+
+    return [
+      "Startup Proposal Draft",
+      "",
+      "Project Context",
+      `Startup idea: ${context.startupIdea}`,
+      `Industry: ${context.industry}`,
+      `Target customer: ${context.targetCustomer || "[Not specified]"}`,
+      `Deadline urgency: ${context.deadlineUrgency}`,
+      "",
+      `1. ${sectionTitleById.problem}`,
+      problem,
+      "",
+      `2. ${sectionTitleById.customer}`,
+      customer,
+      "",
+      "3. Validation",
+      "[Add validation evidence: interviews, survey results, MVP test plan, or assumptions to verify.]",
+      "",
+      "4. Market Segment",
+      "[Add market category, beachhead niche, alternatives, and segment assumptions.]",
+      "",
+      `5. ${sectionTitleById.revenue}`,
+      revenue,
+      "",
+      `6. ${sectionTitleById.differentiation}`,
+      differentiation,
+      "",
+      `7. ${sectionTitleById.mvp}`,
+      mvp,
+      "",
+      "8. Proposal Outline",
+      "- Problem and urgency",
+      "- First customer segment",
+      "- Validation evidence and assumptions",
+      "- Market segment and beachhead",
+      "- Revenue logic",
+      "- Competitive differentiation",
+      "- MVP scope and next test",
+    ].join("\n");
+  }, [
+    context.deadlineUrgency,
+    context.industry,
+    context.startupIdea,
+    context.targetCustomer,
+    sections,
+    workspaceState,
+  ]);
 
   useEffect(() => {
     try {
@@ -358,6 +546,28 @@ export function WorkflowReviewWorkspace({
     });
   }
 
+  function requestCreditAction(pendingAction: PendingCreditAction) {
+    if (!canUse(pendingAction.action)) {
+      setError(t(`credits.limits.${pendingAction.action}`));
+      setIsUpgradeOpen(true);
+      return;
+    }
+
+    setError(null);
+    setPendingCreditAction(pendingAction);
+  }
+
+  async function confirmCreditAction() {
+    const actionToRun = pendingCreditAction;
+
+    if (!actionToRun) {
+      return;
+    }
+
+    setPendingCreditAction(null);
+    await actionToRun.run();
+  }
+
   function generatePrompt() {
     if (!canUse("generation")) {
       setError(t("credits.limits.generation"));
@@ -382,6 +592,19 @@ export function WorkflowReviewWorkspace({
     await navigator.clipboard.writeText(value);
     setCopiedKey(key);
     window.setTimeout(() => setCopiedKey(null), 1600);
+  }
+
+  function downloadProposalDraft() {
+    const blob = new Blob([proposalDraft], {
+      type: "text/plain;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = `startup-proposal-${context.workflowRunId}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   async function reviewOutput(kind: "original" | "retry") {
@@ -420,6 +643,8 @@ export function WorkflowReviewWorkspace({
             startupIdea: context.startupIdea,
             targetCustomer: context.targetCustomer,
           },
+          locale: context.locale === "vi" ? "vi" : "en",
+          mode: "review",
           originalPrompt: promptForReview,
           output,
           previousScore: activeState.originalReview?.score.total,
@@ -442,7 +667,7 @@ export function WorkflowReviewWorkspace({
 
       const review = data.review as OutputReview | undefined;
 
-      if (!review?.score || !review.improvedPrompt) {
+      if (!review?.score) {
         throw new Error(t("errors.reviewFailed"));
       }
 
@@ -461,6 +686,7 @@ export function WorkflowReviewWorkspace({
       updateSectionState(activeSection.id, (sectionState) => ({
         ...sectionState,
         improvedPromptCopied: false,
+        improvementSkipped: false,
         originalReview:
           kind === "original" ? review : sectionState.originalReview,
         retryReview: kind === "retry" ? review : sectionState.retryReview,
@@ -477,6 +703,14 @@ export function WorkflowReviewWorkspace({
         type: kind === "retry" ? "retry_completed" : "review_completed",
         weaknesses: review.weaknesses,
       });
+
+      if (
+        kind === "retry" &&
+        activeState.originalReview &&
+        review.score.total < activeState.originalReview.score.total
+      ) {
+        await repairRegressedPrompt(review);
+      }
     } catch (reviewError) {
       setError(
         reviewError instanceof Error
@@ -485,6 +719,196 @@ export function WorkflowReviewWorkspace({
       );
     } finally {
       setIsReviewing(false);
+    }
+  }
+
+  async function fetchPromptImprovement({
+    baselineScore,
+    promptToImprove,
+    reviewToImprove,
+    sourceOutput,
+  }: {
+    baselineScore: number;
+    promptToImprove: string;
+    reviewToImprove: OutputReview;
+    sourceOutput: string;
+  }) {
+    const response = await fetch("/api/gemini/review", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        baselineScore,
+        context: {
+          deadlineUrgency: context.deadlineUrgency,
+          industry: context.industry,
+          startupIdea: context.startupIdea,
+          targetCustomer: context.targetCustomer,
+        },
+        locale: context.locale === "vi" ? "vi" : "en",
+        mode: "improve",
+        originalPrompt: promptToImprove,
+        output: sourceOutput,
+        previousScore: activeState.originalReview?.score.total,
+        section: activeSection.title,
+        sectionId: activeSection.id,
+        weaknesses: reviewToImprove.weaknesses,
+      }),
+    });
+    const data = (await response.json()) as {
+      improvement?: {
+        improvedPrompt?: unknown;
+        whyBetter?: unknown;
+      };
+      message?: unknown;
+    };
+
+    if (!response.ok) {
+      throw new Error(
+        typeof data.message === "string"
+          ? data.message
+          : t("errors.reviewFailed"),
+      );
+    }
+
+    const improvement = data.improvement;
+
+    if (
+      typeof improvement?.improvedPrompt !== "string" ||
+      typeof improvement.whyBetter !== "string"
+    ) {
+      throw new Error(t("errors.reviewFailed"));
+    }
+
+    return {
+      improvedPrompt: improvement.improvedPrompt,
+      whyBetter: improvement.whyBetter,
+    };
+  }
+
+  async function improvePrompt() {
+    const reviewToImprove = activeState.retryReview ?? activeState.originalReview;
+    const sourceOutput = activeState.retryReview
+      ? activeState.retryOutput.trim()
+      : activeState.originalOutput.trim();
+    const promptToImprove =
+      activeState.retryReview && improvedPrompt ? improvedPrompt : activePrompt;
+
+    if (!reviewToImprove || !sourceOutput) {
+      setError(t("errors.reviewFailed"));
+      return;
+    }
+
+    if (!canUse("improvement")) {
+      setError(t("credits.limits.improvement"));
+      setIsUpgradeOpen(true);
+      return;
+    }
+
+    setError(null);
+    setIsImproving(true);
+
+    try {
+      const improvement = await fetchPromptImprovement({
+        baselineScore: reviewToImprove.score.total,
+        promptToImprove,
+        reviewToImprove,
+        sourceOutput,
+      });
+
+      recordUse("improvement");
+      updateSectionState(activeSection.id, (sectionState) => {
+        const currentReview =
+          sectionState.retryReview ?? sectionState.originalReview;
+        const nextReview = currentReview
+          ? {
+              ...currentReview,
+              improvedPrompt: improvement.improvedPrompt,
+              whyBetter: improvement.whyBetter,
+            }
+          : currentReview;
+
+        return {
+          ...sectionState,
+          improvedPromptCopied: false,
+          improvementSkipped: false,
+          originalReview: sectionState.retryReview
+            ? sectionState.originalReview
+            : nextReview,
+          regressionNotice: "",
+          retryReview: sectionState.retryReview ? nextReview : null,
+        };
+      });
+    } catch (improvementError) {
+      setError(
+        improvementError instanceof Error
+          ? improvementError.message
+          : t("errors.reviewFailed"),
+      );
+    } finally {
+      setIsImproving(false);
+    }
+  }
+
+  async function repairRegressedPrompt(regressedReview: OutputReview) {
+    const baselineScore = activeState.originalReview?.score.total;
+    const sourceOutput = activeState.retryOutput.trim();
+
+    if (
+      baselineScore === undefined ||
+      regressedReview.score.total >= baselineScore ||
+      !sourceOutput ||
+      !improvedPrompt
+    ) {
+      return;
+    }
+
+    setIsImproving(true);
+
+    try {
+      let nextPrompt = improvedPrompt;
+      let nextImprovement: {
+        improvedPrompt: string;
+        whyBetter: string;
+      } | null = null;
+
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        nextImprovement = await fetchPromptImprovement({
+          baselineScore,
+          promptToImprove: nextPrompt,
+          reviewToImprove: regressedReview,
+          sourceOutput,
+        });
+        nextPrompt = nextImprovement.improvedPrompt;
+      }
+
+      if (!nextImprovement) {
+        return;
+      }
+
+      updateSectionState(activeSection.id, (sectionState) => ({
+        ...sectionState,
+        improvedPromptCopied: false,
+        originalReview: sectionState.originalReview
+          ? {
+              ...sectionState.originalReview,
+              improvedPrompt: nextImprovement.improvedPrompt,
+              whyBetter: nextImprovement.whyBetter,
+            }
+          : sectionState.originalReview,
+        regressionNotice: headerCopy.regressionNotice,
+        retryOutput: "",
+        retryReview: null,
+      }));
+    } catch (regressionError) {
+      setError(
+        regressionError instanceof Error
+          ? regressionError.message
+          : t("errors.reviewFailed"),
+      );
+    } finally {
+      setIsImproving(false);
     }
   }
 
@@ -498,10 +922,15 @@ export function WorkflowReviewWorkspace({
     updateSectionState(activeSection.id, (sectionState) => ({
       ...sectionState,
       completed: false,
+      improvedPromptCopied:
+        kind === "original" ? false : sectionState.improvedPromptCopied,
+      improvementSkipped:
+        kind === "original" ? false : sectionState.improvementSkipped,
       originalOutput:
         kind === "original" ? value : sectionState.originalOutput,
       originalReview:
         kind === "original" ? null : sectionState.originalReview,
+      regressionNotice: "",
       retryOutput: kind === "retry" ? value : sectionState.retryOutput,
       retryReview: kind === "retry" ? null : sectionState.retryReview,
     }));
@@ -536,16 +965,9 @@ export function WorkflowReviewWorkspace({
       return;
     }
 
-    if (!activeState.improvedPromptCopied && !canUse("improvement")) {
-      setError(t("credits.limits.improvement"));
-      setIsUpgradeOpen(true);
-      return;
-    }
-
     await copyToClipboard(improvedPrompt, `${activeSection.id}:improved-prompt`);
 
     if (!activeState.improvedPromptCopied) {
-      recordUse("improvement");
       updateSectionState(activeSection.id, (sectionState) => ({
         ...sectionState,
         improvedPromptCopied: true,
@@ -582,24 +1004,42 @@ export function WorkflowReviewWorkspace({
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2">
-          {dimensions.map((dimension) => (
-            <div
-              key={dimension}
-              className="rounded-lg border border-border bg-muted/30 p-3"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-medium uppercase text-muted-foreground">
-                  {t(`review.dimensions.${dimension}`)}
-                </p>
-                <p className="text-lg font-semibold text-foreground">
-                  {score.breakdown[dimension].score}/10
+          {dimensions.map((dimension) => {
+            const dimensionScore = score.breakdown[dimension].score;
+
+            return (
+              <div
+                key={dimension}
+                className="rounded-lg border border-border bg-muted/30 p-3"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-medium uppercase text-muted-foreground">
+                    {t(`review.dimensions.${dimension}`)}
+                  </p>
+                  <p
+                    className={cn(
+                      "text-lg font-semibold",
+                      getDimensionScoreTone(dimensionScore),
+                    )}
+                  >
+                    {dimensionScore}/10
+                  </p>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-background">
+                  <div
+                    className={cn(
+                      "h-full rounded-full transition-all duration-500",
+                      getDimensionScoreBar(dimensionScore),
+                    )}
+                    style={{ width: `${dimensionScore * 10}%` }}
+                  />
+                </div>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {score.breakdown[dimension].reason}
                 </p>
               </div>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {score.breakdown[dimension].reason}
-              </p>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="rounded-lg border border-border bg-muted/30 p-3">
@@ -620,6 +1060,67 @@ export function WorkflowReviewWorkspace({
 
   return (
     <>
+      <header className="sticky top-0 z-30 -mx-5 border-b border-border bg-background/95 px-5 py-3 backdrop-blur sm:-mx-8 sm:px-8 lg:-mx-10 lg:px-10">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <Button
+              asChild
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-9 shrink-0 hover:bg-muted"
+            >
+              <Link href="/">
+                <ArrowLeft aria-hidden="true" />
+                {headerCopy.back}
+              </Link>
+            </Button>
+            <div className="hidden h-6 w-px bg-border sm:block" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-foreground">
+                {headerCopy.proposalTitle}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {context.startupIdea}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <LocaleSwitcher />
+            <Badge
+              className="h-9 gap-2 rounded-lg px-3"
+              title={headerCopy.creditTooltip}
+              variant="outline"
+            >
+              <CreditCard aria-hidden="true" className="size-4" />
+              {creditBadgeLabel}
+            </Badge>
+            <Button
+              asChild
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-9 hover:bg-muted"
+            >
+              <Link href="/dashboard">
+                <BarChart3 aria-hidden="true" />
+                {t("credits.dashboard")}
+              </Link>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9"
+              onClick={() => setIsUpgradeOpen(true)}
+            >
+              {t("credits.upgrade")}
+            </Button>
+            <AuthControls locale={context.locale} />
+          </div>
+        </div>
+      </header>
+
       <section className="space-y-5 border-b border-border pb-7">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-3xl space-y-3">
@@ -637,68 +1138,6 @@ export function WorkflowReviewWorkspace({
             <p>
               {context.industry} / {context.aiModel}
             </p>
-          </div>
-        </div>
-
-        <div className="grid gap-3 rounded-lg border border-border bg-background p-4 sm:grid-cols-4">
-          <div>
-            <p className="text-xs font-medium uppercase text-muted-foreground">
-              {t("credits.plan")}
-            </p>
-            <p className="mt-1 text-lg font-semibold text-foreground">
-              {t(`credits.${plan}`)}
-            </p>
-          </div>
-          {plan === "free" ? (
-            <>
-              <div>
-                <p className="text-xs font-medium uppercase text-muted-foreground">
-                  {t("credits.outputReviews")}
-                </p>
-                <p className="mt-1 text-lg font-semibold text-foreground">
-                  {getRemaining("review")}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium uppercase text-muted-foreground">
-                  {t("credits.improvedPrompts")}
-                </p>
-                <p className="mt-1 text-lg font-semibold text-foreground">
-                  {getRemaining("improvement")}
-                </p>
-              </div>
-            </>
-          ) : (
-            <div className="sm:col-span-2">
-              <p className="text-xs font-medium uppercase text-muted-foreground">
-                {t("credits.paidCredits")}
-              </p>
-              <p className="mt-1 text-lg font-semibold text-foreground">
-                {paidCreditRemaining}
-              </p>
-            </div>
-          )}
-          <div className="flex items-end justify-between gap-3">
-            <Button
-              asChild
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="hover:bg-muted"
-            >
-              <Link href="/dashboard">
-                <BarChart3 aria-hidden="true" />
-                {t("credits.dashboard")}
-              </Link>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setIsUpgradeOpen(true)}
-            >
-              {t("credits.upgrade")}
-            </Button>
           </div>
         </div>
       </section>
@@ -725,19 +1164,27 @@ export function WorkflowReviewWorkspace({
               />
             </div>
             <ol className="grid gap-2">
-              {sections.map((section) => {
+              {sections.map((section, sectionIndex) => {
                 const sectionState = getSectionState(workspaceState, section.id);
                 const isActive = section.id === activeSection.id;
+                const isLocked = sectionIndex > unlockedSectionIndex;
 
                 return (
                   <li key={section.id}>
                     <button
                       type="button"
+                      disabled={isLocked}
                       className={cn(
                         "flex w-full items-start gap-3 rounded-lg border border-transparent p-2 text-left text-sm transition-colors hover:bg-muted/50",
                         isActive && "border-border bg-muted/50",
+                        isLocked &&
+                          "cursor-not-allowed opacity-50 hover:bg-transparent",
                       )}
                       onClick={() => {
+                        if (isLocked) {
+                          return;
+                        }
+
                         setActiveSectionId(section.id);
                         setError(null);
                       }}
@@ -754,6 +1201,8 @@ export function WorkflowReviewWorkspace({
                       >
                         {sectionState.completed ? (
                           <Check aria-hidden="true" className="size-3" />
+                        ) : isLocked ? (
+                          <Lock aria-hidden="true" className="size-3" />
                         ) : null}
                       </span>
                       <span className="grid min-w-0 gap-0.5">
@@ -761,7 +1210,9 @@ export function WorkflowReviewWorkspace({
                           {section.title}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {sectionState.completed
+                          {isLocked
+                            ? headerCopy.locked
+                            : sectionState.completed
                             ? t("progress.completed")
                             : isActive
                               ? t("progress.current")
@@ -889,7 +1340,13 @@ export function WorkflowReviewWorkspace({
                   type="button"
                   className="h-10 w-full justify-center sm:w-auto"
                   disabled={isReviewing}
-                  onClick={() => reviewOutput("original")}
+                  onClick={() =>
+                    requestCreditAction({
+                      action: "review",
+                      label: t("review.action"),
+                      run: () => reviewOutput("original"),
+                    })
+                  }
                 >
                   {isReviewing ? (
                     <Loader2 aria-hidden="true" className="animate-spin" />
@@ -904,16 +1361,89 @@ export function WorkflowReviewWorkspace({
                 ? renderReview(activeState.originalReview, t("review.firstPass"))
                 : null}
 
-              {latestReview ? (
+              {latestReview &&
+              !improvedPrompt &&
+              !activeState.improvementSkipped ? (
+                <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {headerCopy.improveQuestion}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        {headerCopy.creditTooltip}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <Button
+                        type="button"
+                        className="h-10 justify-center"
+                        disabled={isImproving}
+                        onClick={() =>
+                          requestCreditAction({
+                            action: "improvement",
+                            label: headerCopy.improvePrompt,
+                            run: improvePrompt,
+                          })
+                        }
+                      >
+                        {isImproving ? (
+                          <Loader2
+                            aria-hidden="true"
+                            className="animate-spin"
+                          />
+                        ) : (
+                          <Sparkles aria-hidden="true" />
+                        )}
+                        {headerCopy.improvePrompt}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="h-10 justify-center"
+                        onClick={() =>
+                          updateSectionState(activeSection.id, (sectionState) => ({
+                            ...sectionState,
+                            improvementSkipped: true,
+                          }))
+                        }
+                      >
+                        {headerCopy.noContinue}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {latestReview && activeState.improvementSkipped ? (
+                <div className="flex justify-end rounded-lg border border-border bg-muted/30 p-3">
+                  <Button
+                    type="button"
+                    className="h-10 w-full justify-center sm:w-auto"
+                    disabled={!activeState.originalReview}
+                    onClick={completeSection}
+                  >
+                    <Check aria-hidden="true" />
+                    {t("retry.complete")}
+                  </Button>
+                </div>
+              ) : null}
+
+              {latestReview && improvedPrompt ? (
                 <div className="grid gap-3 rounded-lg border border-border bg-muted/30 p-3">
                   <p className="text-sm font-medium text-foreground">
                     {t("improvement.title")}
                   </p>
+                  {activeState.regressionNotice ? (
+                    <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                      {activeState.regressionNotice}
+                    </p>
+                  ) : null}
                   <p className="text-sm leading-6 text-muted-foreground">
                     {latestReview.whyBetter}
                   </p>
                   <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-background p-3 text-sm leading-6 text-muted-foreground">
-                    {latestReview.improvedPrompt}
+                    {improvedPrompt}
                   </pre>
                   <Button
                     type="button"
@@ -927,6 +1457,53 @@ export function WorkflowReviewWorkspace({
                       ? t("copied")
                       : t("retry.copyImproved")}
                   </Button>
+                  <div className="grid gap-3 rounded-lg border border-border bg-background p-3 sm:grid-cols-3">
+                    <p className="text-sm font-medium text-foreground sm:col-span-3">
+                      {headerCopy.comparisonTitle}
+                    </p>
+                    <div>
+                      <p className="text-xs font-medium uppercase text-muted-foreground">
+                        {headerCopy.comparisonBefore}
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold text-foreground">
+                        {activeState.originalReview?.score.total ?? "--"}/40
+                      </p>
+                      <ul className="mt-2 grid gap-1 text-sm leading-6 text-muted-foreground">
+                        {(activeState.originalReview?.weaknesses ?? []).map(
+                          (weakness) => (
+                            <li key={weakness}>- {weakness}</li>
+                          ),
+                        )}
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase text-muted-foreground">
+                        {headerCopy.comparisonAfter}
+                      </p>
+                      <p className="mt-1 text-2xl font-semibold text-foreground">
+                        {activeState.retryReview?.score.total !== undefined
+                          ? `${activeState.retryReview.score.total}/40`
+                          : "--/40"}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {activeState.retryReview
+                          ? `${activeState.originalReview?.score.total ?? "--"} -> ${activeState.retryReview.score.total}`
+                          : headerCopy.comparisonWaiting}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase text-muted-foreground">
+                        {activeState.retryReview
+                          ? headerCopy.comparisonStillWeak
+                          : headerCopy.comparisonImproved}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                        {activeState.retryReview
+                          ? activeState.retryReview.weaknesses.join("; ")
+                          : latestReview.whyBetter}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               ) : null}
             </section>
@@ -968,7 +1545,13 @@ export function WorkflowReviewWorkspace({
                   variant="outline"
                   className="h-10 w-full justify-center sm:w-auto"
                   disabled={isReviewing || !activeState.retryOutput.trim()}
-                  onClick={() => reviewOutput("retry")}
+                  onClick={() =>
+                    requestCreditAction({
+                      action: "review",
+                      label: t("retry.rescore"),
+                      run: () => reviewOutput("retry"),
+                    })
+                  }
                 >
                   {isReviewing ? (
                     <Loader2 aria-hidden="true" className="animate-spin" />
@@ -1074,8 +1657,81 @@ export function WorkflowReviewWorkspace({
               </div>
             </section>
           ) : null}
+
+          <section className="grid gap-4 rounded-lg border border-border bg-background p-4 shadow-sm sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <FileText aria-hidden="true" className="size-4" />
+                  <h2 className="text-lg font-semibold text-foreground">
+                    {headerCopy.exportTitle}
+                  </h2>
+                </div>
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {headerCopy.exportDescription}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-10 justify-center"
+                  onClick={() => copyToClipboard(proposalDraft, "proposal-draft")}
+                >
+                  <Copy aria-hidden="true" />
+                  {copiedKey === "proposal-draft"
+                    ? t("copied")
+                    : headerCopy.copyAll}
+                </Button>
+                <Button
+                  type="button"
+                  className="h-10 justify-center"
+                  onClick={downloadProposalDraft}
+                >
+                  <Download aria-hidden="true" />
+                  {headerCopy.downloadTxt}
+                </Button>
+              </div>
+            </div>
+            <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border border-border bg-muted/30 p-3 text-sm leading-6 text-muted-foreground">
+              {proposalDraft}
+            </pre>
+          </section>
         </div>
       </section>
+
+      {pendingCreditAction ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-lg border border-border bg-background p-5 shadow-lg">
+            <div className="space-y-3">
+              <Badge variant="secondary">{pendingCreditAction.label}</Badge>
+              <h2 className="text-xl font-semibold leading-tight text-foreground">
+                {headerCopy.creditConfirm}
+              </h2>
+              <p className="text-sm leading-6 text-muted-foreground">
+                {headerCopy.creditRemainingAfter}: {pendingRemainingAfter} credits
+              </p>
+            </div>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                className="h-10 flex-1"
+                onClick={confirmCreditAction}
+              >
+                {headerCopy.confirm}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 flex-1"
+                onClick={() => setPendingCreditAction(null)}
+              >
+                {headerCopy.cancel}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {isUpgradeOpen ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
