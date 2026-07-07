@@ -531,6 +531,12 @@ export function WorkflowReviewWorkspace({
       ? "Xuất bản proposal sạch, bỏ markdown và lời thoại AI để dùng như tài liệu nộp bài."
       : "Export a clean proposal without markdown or AI chatter, ready for submission formatting.",
     exportTitle: isVietnamese ? "Xuất Startup Proposal" : "Export Startup Proposal",
+    improveAgain: isVietnamese
+      ? "Cải thiện thêm prompt"
+      : "Improve Prompt Again",
+    improveAgainDescription: isVietnamese
+      ? "Dùng điểm và weakness của output vừa chấm để tạo prompt đầy đủ hơn cho lần retry tiếp theo."
+      : "Use the latest retry score and weaknesses to create a fuller prompt for the next retry.",
     improvePrompt: isVietnamese ? "Cải thiện prompt của tôi" : "Improve My Prompt",
     improveQuestion: isVietnamese
       ? "Bạn có muốn cải thiện prompt này không?"
@@ -1937,6 +1943,33 @@ export function WorkflowReviewWorkspace({
                     review: activeState.retryReview,
                   })
                 : null}
+
+              {activeState.retryReview ? (
+                <div className="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    {headerCopy.improveAgainDescription}
+                  </p>
+                  <Button
+                    type="button"
+                    className="btn-liquid h-10 w-full justify-center rounded-full px-4 text-primary-foreground sm:w-auto"
+                    disabled={isImproving}
+                    onClick={() =>
+                      requestCreditAction({
+                        action: "improvement",
+                        label: headerCopy.improveAgain,
+                        run: improvePrompt,
+                      })
+                    }
+                  >
+                    {isImproving ? (
+                      <Loader2 aria-hidden="true" className="animate-spin" />
+                    ) : (
+                      <Sparkles aria-hidden="true" />
+                    )}
+                    {headerCopy.improveAgain}
+                  </Button>
+                </div>
+              ) : null}
             </section>
           ) : null}
 

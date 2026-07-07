@@ -117,7 +117,7 @@
         "error": "Vui lòng nhập lĩnh vực."
       },
       "targetCustomer": {
-        "label": "Khách hàng mục tiêu (không bắt buộc)",
+        "label": "Khách hàng mục tiêu",
         "placeholder": "Sinh viên năm nhất đại học",
         "description": "Điền nếu bạn đã biết nhóm người mình muốn phục vụ."
       },
