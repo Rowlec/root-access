@@ -1,594 +1,583 @@
----
+Theo mình, sau khi theo dõi dự án của bạn từ CP1 đến bây giờ, **MVP đã đúng hướng nhưng vẫn chưa tạo được cảm giác "wow"**. Vấn đề không nằm ở số lượng tính năng, mà là **mỗi tính năng chưa hoàn thành trọn vẹn (complete experience)**.
 
-# RootAccess Final MVP Sprint Plan
+Hiện tại flow của bạn là:
 
-## Objective
+> Input → Prompt → AI → Paste → Review → Improve → Export
 
-Finalize RootAccess into a coherent, usable, monetizable MVP for CP3.
-
-Focus:
-
-* reduce friction
-* improve UX clarity
-* stabilize scoring loop
-* complete monetization flow
-* complete exportable proposal flow
-* support bilingual flow
-* deploy production-ready
-
-Do NOT refactor architecture unless necessary.
+Đây là flow hợp lý. Nhưng mỗi bước mới chỉ đạt khoảng **70–80%**. Mình sẽ ưu tiên các cải tiến theo ROI (Return on Investment), tức là làm ít nhưng tăng giá trị nhiều.
 
 ---
 
-# Phase 1 — Navigation + Layout Fixes
+# PHASE 1 — Make Review Actually Useful (Ưu tiên cao nhất)
 
-Priority: Critical
+## Vấn đề
 
-## Tasks
+Hiện Review chỉ giống:
 
-### 1. Add Back to Home button
-
-Requirement:
-
-When user enters build page:
-
-```text
-Home ← Build Flow
+```
+Specificity: 6
+Clarity: 8
 ```
 
-Persistent on top-left.
+Người dùng nhìn xong vẫn không biết:
 
-Purpose:
+* Mình làm tốt chỗ nào?
+* Sai ở đâu?
+* Prompt mới cải thiện gì?
 
-reduce navigation dead-end.
+Đây là phần đáng lẽ phải là "giá trị cốt lõi".
 
 ---
 
-### 2. Move Credit UI
+## Mục tiêu
 
-Current problem:
+Biến Review thành AI Coach.
 
-credit shown too aggressively.
+Không chỉ chấm điểm.
 
-Fix:
+Mà phải coaching.
 
-Move credit display into:
+---
 
-Option A:
+## Prompt
 
 ```text
-sticky footer section
-```
+Phase 1.
 
-Preferred.
-
-Or:
-
-Option B:
-
-```text
-header right compact badge
-```
-
-If header exists.
-
-Add tooltip:
-
-```text
-1 review = 1 credit
-1 improve = 1 credit
-```
-
-Must explain usage.
-
----
-
-### 3. Add proper top header
-
-Include:
-
-* back button
-* current proposal title
-* language switcher
-* credit badge
-* profile/avatar (if logged in)
-
-Goal:
-
-make product feel complete.
-
----
-
-Success criteria:
-
-navigation feels stable.
-
----
-
-# Phase 2 — Progress Lock System
-
-Priority: Critical
-
-## Tasks
-
-### Lock future steps
+Redesign the Review experience into an AI Coach instead of a simple scoring page.
 
 Current issue:
 
-users can jump everywhere.
+Users only see scores.
 
-Fix:
+They cannot understand:
 
-Only unlock:
+• why the score changed
+• what became better
+• what is still weak
 
-```text
-current step
-previous steps
-```
+Build a comparison-based review.
 
-Future steps:
+For every review, show:
 
-disabled.
+1. Previous output summary
 
-Visual:
+2. Current output summary
 
-```text
-opacity 50%
-lock icon
-```
-
-Rules:
-
-Unlock next only after:
-
-```text
-output submitted
-```
-
-Not after copy prompt.
-
----
-
-Success criteria:
-
-workflow becomes sequential.
-
----
-
-# Phase 3 — Credit Confirmation System
-
-Priority: Critical
-
-## Tasks
-
-Before any:
-
-* Review
-* Improve
-
-Show modal:
-
-```text
-This action costs 1 credit.
-Do you want to continue?
-```
-
-Buttons:
-
-* Confirm
-* Cancel
-
-Show remaining credits.
+3. Score comparison
 
 Example:
 
-```text
-Remaining after action: 4 credits
-```
+Specificity
 
-Do NOT deduct before API success.
+6 → 9 (+3)
 
-Only deduct after success.
+Clarity
 
-Important.
+7 → 8 (+1)
 
----
+Actionability
 
-Success criteria:
+5 → 8 (+3)
 
-user understands spending.
-
----
-
-# Phase 4 — Gemini Production Setup
-
-Priority: Critical
-
-## Tasks
-
-Move Gemini API key to Vercel env:
-
-Variable:
-
-```text
-GEMINI_API_KEY
-```
-
-Refactor all API calls:
-
-Use:
-
-```text
-process.env.GEMINI_API_KEY
-```
-
-No hardcoded keys.
-
-Add error fallback:
-
-```text
-AI service unavailable.
-Please retry.
-```
-
----
-
-Success criteria:
-
-production safe.
-
----
-
-# Phase 5 — Clerk Authentication
-
-Priority: High
-
-## Tasks
-
-Add Clerk auth.
-
-Required flows:
-
-* sign up
-* sign in
-* sign out
-
-Store:
-
-* credit balance
-* proposal history
-* prompt history
-* score history
-
-Guest mode optional.
-
-Recommended:
-
-Guest:
-
-```text
-3 free credits
-```
-
-Signed in:
-
-```text
-persistent credits
-```
-
-Purpose:
-
-unlock retention.
-
----
-
-Success criteria:
-
-users can persist progress.
-
----
-
-# Phase 6 — Full Vietnamese Response Support
-
-Priority: High
-
-## Tasks
-
-Current issue:
-
-UI may be VN but AI returns EN.
-
-Fix:
-
-Pass locale into all prompts.
+4. Strengths improved
 
 Example:
 
-If locale:
+✓ customer segment became narrower
 
-```text
-vi
+✓ validation became measurable
+
+✓ revenue assumption more realistic
+
+5. Remaining weaknesses
+
+Example:
+
+• customer pain still too broad
+
+• pricing evidence missing
+
+• MVP scope can be smaller
+
+6. AI Coach Recommendation
+
+Maximum three actionable suggestions.
+
+Do not repeat generic advice.
+
+Make the review feel like a mentor coaching the student.
 ```
-
-Append:
-
-```text
-Return all responses in Vietnamese.
-```
-
-If:
-
-```text
-en
-```
-
-Append:
-
-```text
-Return all responses in English.
-```
-
-Must affect:
-
-* review
-* weakness detection
-* prompt improvement
 
 ---
 
-Success criteria:
+# PHASE 2 — Professional Export
 
-language consistency.
+Đây là thứ mình nghĩ cô sẽ rất thích.
+
+Hiện export giống:
+
+```
+# Problem
 
 ---
 
-# Phase 7 — Score Visualization Upgrade
-
-Priority: High
-
-## Tasks
-
-Add score colors:
-
-Range:
-
-```text
-1–3 = red
-4–6 = orange
-7–8 = yellow
-9–10 = green
+**Customer**
 ```
 
-Apply to:
-
-* Relevance
-* Specificity
-* Clarity
-* Actionability
-
-Animated progress bar preferred.
+Điều này không giống một proposal.
 
 ---
 
-Success criteria:
+## Mục tiêu
 
-score easier to understand.
+Export là có thể nộp luôn.
 
 ---
 
-# Phase 8 — Improve Prompt Decision Gate
+## Prompt
 
-Priority: High
+```text
+Phase 2.
+
+Refactor the Proposal Export system.
+
+Current export still contains:
+
+- markdown syntax
+- ** symbols
+- ---
+- AI conversational text
+- unnecessary introductions
+- unnecessary conclusions
+
+Clean everything.
+
+The exported proposal should read like a human-written business proposal.
+
+Requirements:
+
+1.
+
+Remove all markdown.
+
+2.
+
+Remove AI phrases.
+
+Examples:
+
+"This is..."
+
+"Here is..."
+
+"I suggest..."
+
+"You can..."
+
+"Hope this helps..."
+
+3.
+
+Keep only useful proposal content.
+
+4.
+
+Automatically merge duplicated ideas.
+
+5.
+
+Normalize headings.
+
+Example:
+
+Problem Statement
+
+Customer Segment
+
+Validation
+
+Revenue Model
+
+Competitive Advantage
+
+MVP
+
+6.
+
+Export should require no manual editing.
+
+The document should be presentation-ready.
+```
+
+---
+
+# PHASE 3 — Multi Export
+
+## Prompt
+
+```text
+Phase 3.
+
+Upgrade Proposal Export.
+
+Support:
+
+• TXT
+
+• DOCX
+
+• PDF
+
+Generate all formats from one cleaned proposal.
+
+DOCX should preserve headings.
+
+PDF should have proper typography.
+
+Both should look like a university report instead of raw AI output.
+```
+
+---
+
+# PHASE 4 — Fix Workflow Logic
+
+Đây là vấn đề mình thấy nghiêm trọng nhất.
+
+Hiện tại flow của bạn là:
+
+```
+Idea
+
+↓
+
+Generate workflow
+
+↓
+
+Step 1
+
+Find problem
+```
+
+Nhưng startup không phải lúc nào cũng bắt đầu từ idea.
+
+Có người bắt đầu từ:
+
+* vấn đề
+* công nghệ
+* thị trường
+
+Nghĩa là Step 1 đang áp đặt.
+
+---
+
+## Đề xuất
+
+Thêm onboarding:
+
+```
+How are you starting today?
+
+○ I already have an idea
+
+○ I only know the problem
+
+○ I only know the target customer
+
+○ I'm still exploring
+```
+
+Sau đó workflow thay đổi.
+
+Ví dụ:
+
+Nếu:
+
+```
+I already have an idea
+```
+
+↓
+
+```
+Validate Problem
+```
+
+Nếu:
+
+```
+I only know the problem
+```
+
+↓
+
+```
+Validate Customer
+```
+
+Workflow dynamic.
+
+Đây là điểm rất mạnh.
+
+---
+
+## Prompt
+
+```text
+Phase 4.
+
+Redesign workflow generation.
 
 Current issue:
 
-system auto-improves immediately.
+All users receive the same Startup Proposal workflow.
 
-Bad.
+This is logically incorrect.
 
-Fix:
+Different users start from different situations.
 
-After scoring:
+Before generating workflow,
 
-Show:
+ask:
 
-```text
-Do you want to improve this prompt?
-```
+How are you starting today?
 
 Options:
 
-* Yes, improve (costs 1 credit)
-* No, continue
+• I already have an idea
 
-Only call improve after confirmation.
+• I already know the problem
 
----
+• I already know the customer
 
-Success criteria:
+• I am still exploring
 
-user controls improvement.
+Generate different first sections accordingly.
 
----
+Workflow must adapt.
 
-# Phase 9 — Prompt Comparison Engine
+Do not force Problem Discovery for every user.
 
-Priority: High
-
-## Tasks
-
-After improved output:
-
-Show comparison:
-
----
-
-Before:
-
-```text
-Prompt Score: 24
-Weaknesses:
-- customer too broad
-- pain too vague
+Make RootAccess feel personalized.
 ```
 
-After:
-
-```text
-Prompt Score: 33
-Improved:
-+ clearer customer segment
-+ stronger urgency
-```
-
-Visual:
-
-```text
-24 → 33
-```
-
-Must show:
-
-* what improved
-* what still weak
-
-Important for trust.
-
 ---
 
-Success criteria:
+# PHASE 5 — Fix Review UI Bug
 
-improvement feels visible.
+## Prompt
 
----
+```text
+Phase 5.
 
-# Phase 10 — Fix Regression Bug
-
-Priority: Critical
+Fix the review comparison UI.
 
 Current issue:
 
-Improved prompt sometimes scores lower.
+Only the previous score is shown.
 
-Fix logic:
+Build a side-by-side comparison.
 
-Before improvement:
+Display:
 
-store:
+Old Output
 
-```text
-baseline score
+↓
+
+Scores
+
+↓
+
+New Output
+
+↓
+
+Scores
+
+↓
+
+Improvement Summary
+
+Every score change should have:
+
+green if improved
+
+red if worse
+
+gray if unchanged
+
+Never replace old scores.
+
+Always compare.
 ```
-
-After improvement:
-
-If:
-
-```text
-new score < old score
-```
-
-Run validation:
-
-Ask Gemini:
-
-```text
-Does this improved prompt actually improve specificity, relevance, clarity, or actionability?
-```
-
-If not:
-
-retry improvement.
-
-Max:
-
-```text
-2 retries
-```
-
-Never show obviously worse improved prompts.
 
 ---
 
-Success criteria:
+# PHASE 6 — Proposal Timeline (Đây là ý tưởng mình rất thích)
 
-improvement should statistically trend upward.
+Hiện người dùng không biết:
 
----
-
-# Phase 11 — Proposal Export System
-
-Priority: Critical
-
-## Tasks
-
-Build final proposal compilation.
-
-Combine:
-
-* problem
-* customer
-* validation
-* market segment
-* revenue
-* differentiation
-* MVP scope
-* proposal outline
-
-Output:
-
-Option 1:
-
-TXT export
-
-Option 2:
-
-DOCX export (preferred)
-
-Option 3:
-
-Copy all
-
-Structure:
-
-```text
-Startup Proposal Draft
+```
+đang ở đâu
 ```
 
-Submission-ready.
+Thêm:
 
-This is mandatory.
+```
+Proposal Progress
 
-This is your “final product”.
+Problem
 
-Without this, RootAccess feels unfinished.
+✔
 
----
+Customer
 
-Success criteria:
+✔
 
-user can submit something real.
+Revenue
 
----
+○
 
-# Execution Order (STRICT)
+MVP
 
-Do in this order:
+○
 
-```text
-1. Navigation + layout
-2. Progress lock
-3. Credit modal
-4. Gemini env
-5. Clerk auth
-6. Language consistency
-7. Score UI
-8. Improve gate
-9. Comparison engine
-10. Regression fix
-11. Proposal export
+Finish
+
+○
 ```
 
-Do not change order.
+Vừa trực quan.
 
-This order minimizes breakage.
+Vừa đúng startup.
+
+---
+
+# PHASE 7 — AI Memory (Nếu còn thời gian)
+
+Mình thấy hiện tại:
+
+Improve Prompt
+
+↓
+
+Prompt mất.
+
+Nên thêm:
+
+```
+History
+
+Version 1
+
+Version 2
+
+Version 3
+
+Compare
+```
+
+Đây là tính năng rất "AI product".
+
+---
+
+# PHASE 8 — Mentor Mode (Mình đánh giá rất đáng làm)
+
+Đây là cái mình nghĩ sẽ khiến sản phẩm khác biệt hơn.
+
+Sau mỗi review.
+
+Thay vì:
+
+```
+Improve Prompt
+```
+
+Thêm:
+
+```
+Ask AI Mentor
+
+"Why is my customer too broad?"
+
+"What should I improve next?"
+
+"Is my pricing realistic?"
+```
+
+Không cần AI agent.
+
+Chỉ cần:
+
+Preset questions.
+
+Gemini trả lời.
+
+Rất đáng tiền.
+
+---
+
+# Thứ tự chạy cho Agent
+
+Mình sẽ **không khuyến khích chạy theo thứ tự bạn liệt kê**, mà nên chạy theo giá trị tạo ra cho người dùng:
+
+### Sprint 1 (Bắt buộc)
+
+1. AI Coach Review (so sánh output cũ vs mới)
+2. Export sạch (loại bỏ markdown, lời thoại AI)
+3. DOCX + PDF export
+4. Fix Review UI bug
+
+---
+
+### Sprint 2 (Tăng tính logic)
+
+5. Dynamic Workflow Generation
+6. Proposal Progress Timeline
+
+---
+
+### Sprint 3 (Tăng giá trị cảm nhận)
+
+7. Prompt History
+8. Mentor Mode
+
+---
+
+## Một đề xuất cuối cùng (đây là cái mình thích nhất)
+
+Hiện tên nút là:
+
+```
+Review
+Improve Prompt
+```
+
+Nghe khá "AI".
+
+Mình sẽ đổi thành:
+
+```
+Review My Work
+```
+
+↓
+
+```
+Improve My Prompt
+```
+
+↓
+
+```
+Generate Better Output
+```
+
+↓
+
+```
+Update My Proposal
+```
+
+Người dùng sẽ hiểu đây là **một vòng lặp cải thiện (improvement loop)**, chứ không phải các tính năng rời rạc. Điều này giúp MVP dễ hiểu hơn ngay từ lần sử dụng đầu tiên mà không cần thêm nhiều chức năng mới.

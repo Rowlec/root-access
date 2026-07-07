@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   Check,
   Copy,
@@ -27,6 +28,13 @@ import {
   type IntelligenceEventType,
 } from "@/lib/product-intelligence";
 import {
+  buildProposalExport,
+  createDocxBlob,
+  createTextBlob,
+  type ProposalExportDocument,
+  type ProposalExportSection,
+} from "@/lib/proposal-export";
+import {
   creditPlanStorageKey,
   parseCreditPlan,
   type CreditPlan,
@@ -50,7 +58,16 @@ type ScoreDimensionResult = {
   score: number;
 };
 
+type ReviewCoach = {
+  currentOutputSummary: string;
+  previousOutputSummary?: string;
+  recommendations: string[];
+  remainingWeaknesses: string[];
+  strengthsImproved: string[];
+};
+
 type OutputReview = {
+  coach?: ReviewCoach;
   frameworkChecks: readonly string[];
   frameworkTitle: string;
   improvedPrompt?: string;
@@ -124,6 +141,13 @@ const emptySectionState: SectionState = {
   reviewHistory: [],
 };
 
+const scoreDimensionIds = [
+  "relevance",
+  "specificity",
+  "clarity",
+  "actionability",
+] as const;
+
 function getStorageKey(workflowRunId: string) {
   return `root-access:workflow-review:${workflowRunId}`;
 }
@@ -179,7 +203,7 @@ function getSectionState(
   };
 }
 
-function getLatestSectionOutput(
+function getLatestSectionOutputForExport(
   workspaceState: WorkspaceState,
   sectionId: ProposalSectionId,
 ) {
@@ -188,8 +212,113 @@ function getLatestSectionOutput(
   return (
     sectionState.retryOutput.trim() ||
     sectionState.originalOutput.trim() ||
-    "[Not drafted yet]"
+    ""
   );
+}
+
+function extractValidationContent(values: string[]) {
+  const validationLines = values
+    .flatMap((value) => value.split(/\n+/))
+    .map((line) => line.trim())
+    .filter((line) =>
+      /\b(validate|validation|interview|survey|test|pilot|experiment|measure|evidence|verify|kiểm chứng|phỏng vấn|khảo sát|thử nghiệm|bằng chứng)\b/i.test(
+        line,
+      ),
+    )
+    .slice(0, 8);
+
+  return validationLines.join("\n");
+}
+
+function summarizeOutput(value: string, fallback: string) {
+  const cleanedValue = value
+    .replace(/[#*_`>-]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const words = cleanedValue.split(" ").filter(Boolean);
+
+  if (words.length === 0) {
+    return fallback;
+  }
+
+  return `${words.slice(0, 30).join(" ")}${words.length > 30 ? "..." : ""}`;
+}
+
+function getWeakestDimensions(review: OutputReview) {
+  return [...scoreDimensionIds]
+    .sort(
+      (left, right) =>
+        review.score.breakdown[left].score - review.score.breakdown[right].score,
+    )
+    .slice(0, 3);
+}
+
+function getFallbackCoach({
+  currentOutput,
+  isVietnamese,
+  previousOutput,
+  review,
+}: {
+  currentOutput: string;
+  isVietnamese: boolean;
+  previousOutput?: string;
+  review: OutputReview;
+}): ReviewCoach {
+  const weakestDimensions = getWeakestDimensions(review);
+  const fallbackCurrent = isVietnamese
+    ? "Chưa có đủ nội dung để tóm tắt output hiện tại."
+    : "There is not enough current output to summarize yet.";
+  const fallbackPrevious = isVietnamese
+    ? "Chưa có output trước đó để so sánh."
+    : "No previous output is available for comparison.";
+
+  return {
+    currentOutputSummary: summarizeOutput(currentOutput, fallbackCurrent),
+    previousOutputSummary: previousOutput
+      ? summarizeOutput(previousOutput, fallbackPrevious)
+      : fallbackPrevious,
+    recommendations: weakestDimensions.map((dimension) =>
+      isVietnamese
+        ? `Cải thiện ${dimension} bằng một bằng chứng, ví dụ hoặc quyết định cụ thể hơn.`
+        : `Improve ${dimension} with a clearer proof point, example, or decision.`,
+    ),
+    remainingWeaknesses:
+      review.weaknesses.length > 0
+        ? review.weaknesses.slice(0, 3)
+        : weakestDimensions.map((dimension) => review.score.breakdown[dimension].reason),
+    strengthsImproved:
+      review.score.total >= 24
+        ? [
+            isVietnamese
+              ? "Output đã có cấu trúc đủ rõ để tiếp tục chỉnh."
+              : "The output is structured enough to keep refining.",
+          ]
+        : [
+            isVietnamese
+              ? "Output đã tạo được bản nháp ban đầu để review."
+              : "The output gives an initial draft to review.",
+          ],
+  };
+}
+
+function getDeltaTone(delta: number) {
+  if (delta > 0) {
+    return "text-emerald-300";
+  }
+
+  if (delta < 0) {
+    return "text-destructive";
+  }
+
+  return "text-muted-foreground";
+}
+
+function getDeltaLabel(delta: number) {
+  if (delta > 0) {
+    return `+${delta}`;
+  }
+
+  return `${delta}`;
 }
 
 function createInitialPrompt({
@@ -315,6 +444,8 @@ export function WorkflowReviewWorkspace({
   const [plan, setPlan] = useState<CreditPlan>(() => readCreditPlan());
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [printDocument, setPrintDocument] =
+    useState<ProposalExportDocument | null>(null);
   const [pendingCreditAction, setPendingCreditAction] =
     useState<PendingCreditAction | null>(null);
   const { canUse, getRemaining, recordUse, usage } = useCreditUsage(plan);
@@ -359,7 +490,10 @@ export function WorkflowReviewWorkspace({
     (completedCount / sections.length) * 100,
   );
   const latestReview = activeState.retryReview ?? activeState.originalReview;
-  const improvedPrompt = latestReview?.improvedPrompt ?? "";
+  const improvedPrompt =
+    activeState.retryReview?.improvedPrompt ??
+    activeState.originalReview?.improvedPrompt ??
+    "";
   const oldScore = activeState.originalReview?.score.total;
   const newScore = activeState.retryReview?.score.total;
   const scoreTimeline = activeState.reviewHistory.map(
@@ -390,12 +524,14 @@ export function WorkflowReviewWorkspace({
       : "Paste output from the improved prompt to see the after score.",
     confirm: isVietnamese ? "Xác nhận" : "Confirm",
     copyAll: isVietnamese ? "Copy tất cả" : "Copy all",
+    downloadDocx: isVietnamese ? "Tải DOCX" : "Download DOCX",
+    downloadPdf: isVietnamese ? "Xuất PDF" : "Export PDF",
     downloadTxt: isVietnamese ? "Tải .txt" : "Download .txt",
     exportDescription: isVietnamese
-      ? "Tổng hợp các output đã làm thành bản nháp proposal có thể chỉnh sửa."
-      : "Compile your section outputs into an editable proposal draft.",
-    exportTitle: isVietnamese ? "Xuất Startup Proposal Draft" : "Export Startup Proposal Draft",
-    improvePrompt: isVietnamese ? "Cải thiện prompt" : "Improve prompt",
+      ? "Xuất bản proposal sạch, bỏ markdown và lời thoại AI để dùng như tài liệu nộp bài."
+      : "Export a clean proposal without markdown or AI chatter, ready for submission formatting.",
+    exportTitle: isVietnamese ? "Xuất Startup Proposal" : "Export Startup Proposal",
+    improvePrompt: isVietnamese ? "Cải thiện prompt của tôi" : "Improve My Prompt",
     improveQuestion: isVietnamese
       ? "Bạn có muốn cải thiện prompt này không?"
       : "Do you want to improve this prompt?",
@@ -405,6 +541,8 @@ export function WorkflowReviewWorkspace({
     regressionNotice: isVietnamese
       ? "Retry bị thấp điểm hơn. RootAccess đã tạo lại improved prompt để bạn test lại."
       : "The retry scored lower. RootAccess regenerated the improved prompt for another test.",
+    reviewMyWork: isVietnamese ? "Review bài của tôi" : "Review My Work",
+    updateProposal: isVietnamese ? "Hoàn thành bước này" : "Complete Step",
   };
   const pendingRemaining = pendingCreditAction
     ? getRemaining(pendingCreditAction.action)
@@ -413,64 +551,67 @@ export function WorkflowReviewWorkspace({
     typeof pendingRemaining === "number"
       ? Math.max(pendingRemaining - 1, 0)
       : pendingRemaining;
-  const proposalDraft = useMemo(() => {
-    const sectionTitleById = Object.fromEntries(
-      sections.map((section) => [section.id, section.title]),
-    ) as Record<ProposalSectionId, string>;
-    const problem = getLatestSectionOutput(workspaceState, "problem");
-    const customer = getLatestSectionOutput(workspaceState, "customer");
-    const revenue = getLatestSectionOutput(workspaceState, "revenue");
-    const mvp = getLatestSectionOutput(workspaceState, "mvp");
-    const differentiation = getLatestSectionOutput(
+  const proposalDocument = useMemo(() => {
+    const problem = getLatestSectionOutputForExport(workspaceState, "problem");
+    const customer = getLatestSectionOutputForExport(workspaceState, "customer");
+    const revenue = getLatestSectionOutputForExport(workspaceState, "revenue");
+    const mvp = getLatestSectionOutputForExport(workspaceState, "mvp");
+    const differentiation = getLatestSectionOutputForExport(
       workspaceState,
       "differentiation",
     );
-
-    return [
-      "Startup Proposal Draft",
-      "",
-      "Project Context",
-      `Startup idea: ${context.startupIdea}`,
-      `Industry: ${context.industry}`,
-      `Target customer: ${context.targetCustomer || "[Not specified]"}`,
-      `Deadline urgency: ${context.deadlineUrgency}`,
-      "",
-      `1. ${sectionTitleById.problem}`,
+    const validation = extractValidationContent([
       problem,
-      "",
-      `2. ${sectionTitleById.customer}`,
       customer,
-      "",
-      "3. Validation",
-      "[Add validation evidence: interviews, survey results, MVP test plan, or assumptions to verify.]",
-      "",
-      "4. Market Segment",
-      "[Add market category, beachhead niche, alternatives, and segment assumptions.]",
-      "",
-      `5. ${sectionTitleById.revenue}`,
       revenue,
-      "",
-      `6. ${sectionTitleById.differentiation}`,
-      differentiation,
-      "",
-      `7. ${sectionTitleById.mvp}`,
       mvp,
-      "",
-      "8. Proposal Outline",
-      "- Problem and urgency",
-      "- First customer segment",
-      "- Validation evidence and assumptions",
-      "- Market segment and beachhead",
-      "- Revenue logic",
-      "- Competitive differentiation",
-      "- MVP scope and next test",
-    ].join("\n");
+      differentiation,
+    ]);
+    const exportSections: ProposalExportSection[] = [
+      {
+        content: problem,
+        heading: "Problem Statement",
+      },
+      {
+        content: customer,
+        heading: "Customer Segment",
+      },
+      {
+        content: validation,
+        heading: "Validation Plan",
+      },
+      {
+        content: revenue,
+        heading: "Revenue Model",
+      },
+      {
+        content: differentiation,
+        heading: "Competitive Advantage",
+      },
+      {
+        content: mvp,
+        heading: "MVP Scope",
+      },
+    ];
+
+    return buildProposalExport({
+      contextLines: [
+        `Startup idea: ${context.startupIdea}`,
+        `Industry: ${context.industry}`,
+        `Target customer: ${
+          context.targetCustomer || (isVietnamese ? "Chưa xác định" : "Not specified")
+        }`,
+        `Deadline urgency: ${context.deadlineUrgency}`,
+      ],
+      sections: exportSections,
+      title: "Startup Proposal",
+    });
   }, [
     context.deadlineUrgency,
     context.industry,
     context.startupIdea,
     context.targetCustomer,
-    sections,
+    isVietnamese,
     workspaceState,
   ]);
 
@@ -494,6 +635,26 @@ export function WorkflowReviewWorkspace({
 
     return () => window.removeEventListener("storage", handleStorage);
   }, []);
+
+  useEffect(() => {
+    if (!printDocument) {
+      return;
+    }
+
+    const handleAfterPrint = () => {
+      setPrintDocument(null);
+    };
+    const printTimer = window.setTimeout(() => window.print(), 100);
+
+    document.body.classList.add("proposal-printing");
+    window.addEventListener("afterprint", handleAfterPrint);
+
+    return () => {
+      window.clearTimeout(printTimer);
+      document.body.classList.remove("proposal-printing");
+      window.removeEventListener("afterprint", handleAfterPrint);
+    };
+  }, [printDocument]);
 
   function updateSectionState(
     sectionId: ProposalSectionId,
@@ -583,17 +744,34 @@ export function WorkflowReviewWorkspace({
     window.setTimeout(() => setCopiedKey(null), 1600);
   }
 
-  function downloadProposalDraft() {
-    const blob = new Blob([proposalDraft], {
-      type: "text/plain;charset=utf-8",
-    });
+  function downloadBlob(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `startup-proposal-${context.workflowRunId}.txt`;
+    link.download = filename;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  function downloadProposalDraft(format: "docx" | "pdf" | "txt") {
+    const filename = `startup-proposal-${context.workflowRunId}`;
+
+    if (format === "docx") {
+      downloadBlob(createDocxBlob(proposalDocument), `${filename}.docx`);
+      return;
+    }
+
+    if (format === "pdf") {
+      setPrintDocument({
+        ...proposalDocument,
+        contextLines: [...proposalDocument.contextLines],
+        sections: proposalDocument.sections.map((section) => ({ ...section })),
+      });
+      return;
+    }
+
+    downloadBlob(createTextBlob(proposalDocument), `${filename}.txt`);
   }
 
   async function reviewOutput(kind: "original" | "retry") {
@@ -627,6 +805,7 @@ export function WorkflowReviewWorkspace({
         },
         body: JSON.stringify({
           context: {
+            aiModel: context.aiModel,
             deadlineUrgency: context.deadlineUrgency,
             industry: context.industry,
             startupIdea: context.startupIdea,
@@ -636,6 +815,8 @@ export function WorkflowReviewWorkspace({
           mode: "review",
           originalPrompt: promptForReview,
           output,
+          previousOutput:
+            kind === "retry" ? activeState.originalOutput.trim() : undefined,
           previousScore: activeState.originalReview?.score.total,
           section: activeSection.title,
           sectionId: activeSection.id,
@@ -672,15 +853,36 @@ export function WorkflowReviewWorkspace({
       };
 
       recordUse("review");
-      updateSectionState(activeSection.id, (sectionState) => ({
-        ...sectionState,
-        improvedPromptCopied: false,
-        improvementSkipped: false,
-        originalReview:
-          kind === "original" ? review : sectionState.originalReview,
-        retryReview: kind === "retry" ? review : sectionState.retryReview,
-        reviewHistory: [...sectionState.reviewHistory, historyEntry],
-      }));
+      updateSectionState(activeSection.id, (sectionState) => {
+        const preservedImprovedPrompt =
+          review.improvedPrompt ??
+          sectionState.retryReview?.improvedPrompt ??
+          sectionState.originalReview?.improvedPrompt;
+        const preservedWhyBetter =
+          review.whyBetter ??
+          sectionState.retryReview?.whyBetter ??
+          sectionState.originalReview?.whyBetter;
+        const retryReview =
+          kind === "retry"
+            ? {
+                ...review,
+                ...(preservedImprovedPrompt
+                  ? { improvedPrompt: preservedImprovedPrompt }
+                  : {}),
+                ...(preservedWhyBetter ? { whyBetter: preservedWhyBetter } : {}),
+              }
+            : sectionState.retryReview;
+
+        return {
+          ...sectionState,
+          improvedPromptCopied: false,
+          improvementSkipped: false,
+          originalReview:
+            kind === "original" ? review : sectionState.originalReview,
+          retryReview,
+          reviewHistory: [...sectionState.reviewHistory, historyEntry],
+        };
+      });
       logIntelligenceEvent({
         improvement:
           kind === "retry" && activeState.originalReview
@@ -730,6 +932,7 @@ export function WorkflowReviewWorkspace({
       body: JSON.stringify({
         baselineScore,
         context: {
+          aiModel: context.aiModel,
           deadlineUrgency: context.deadlineUrgency,
           industry: context.industry,
           startupIdea: context.startupIdea,
@@ -739,6 +942,7 @@ export function WorkflowReviewWorkspace({
         mode: "improve",
         originalPrompt: promptToImprove,
         output: sourceOutput,
+        previousOutput: activeState.originalOutput.trim() || undefined,
         previousScore: activeState.originalReview?.score.total,
         section: activeSection.title,
         sectionId: activeSection.id,
@@ -876,19 +1080,30 @@ export function WorkflowReviewWorkspace({
         return;
       }
 
+      const repairedImprovement = nextImprovement;
+
       updateSectionState(activeSection.id, (sectionState) => ({
         ...sectionState,
         improvedPromptCopied: false,
         originalReview: sectionState.originalReview
           ? {
               ...sectionState.originalReview,
-              improvedPrompt: nextImprovement.improvedPrompt,
-              whyBetter: nextImprovement.whyBetter,
+              improvedPrompt: repairedImprovement.improvedPrompt,
+              whyBetter: repairedImprovement.whyBetter,
             }
           : sectionState.originalReview,
         regressionNotice: headerCopy.regressionNotice,
-        retryOutput: "",
-        retryReview: null,
+        retryReview: sectionState.retryReview
+          ? {
+              ...sectionState.retryReview,
+              improvedPrompt: repairedImprovement.improvedPrompt,
+              whyBetter: repairedImprovement.whyBetter,
+            }
+          : {
+              ...regressedReview,
+              improvedPrompt: repairedImprovement.improvedPrompt,
+              whyBetter: repairedImprovement.whyBetter,
+            },
       }));
     } catch (regressionError) {
       setError(
@@ -946,6 +1161,12 @@ export function WorkflowReviewWorkspace({
 
     if (nextSection) {
       setActiveSectionId(nextSection.id);
+      window.requestAnimationFrame(() => {
+        window.scrollTo({
+          behavior: "smooth",
+          top: 0,
+        });
+      });
     }
   }
 
@@ -964,20 +1185,58 @@ export function WorkflowReviewWorkspace({
     }
   }
 
-  function renderReview(review: OutputReview, label: string) {
+  function renderReview({
+    currentOutput,
+    label,
+    previousOutput,
+    previousReview,
+    review,
+  }: {
+    currentOutput: string;
+    label: string;
+    previousOutput?: string;
+    previousReview?: OutputReview | null;
+    review: OutputReview;
+  }) {
     const score = review.score;
-    const dimensions = [
-      "relevance",
-      "specificity",
-      "clarity",
-      "actionability",
-    ] as const;
+    const fallbackCoach = getFallbackCoach({
+      currentOutput,
+      isVietnamese,
+      previousOutput,
+      review,
+    });
+    const coach: ReviewCoach = {
+      currentOutputSummary:
+        review.coach?.currentOutputSummary ||
+        fallbackCoach.currentOutputSummary,
+      previousOutputSummary:
+        review.coach?.previousOutputSummary ||
+        fallbackCoach.previousOutputSummary,
+      recommendations:
+        review.coach?.recommendations?.length
+          ? review.coach.recommendations.slice(0, 3)
+          : fallbackCoach.recommendations,
+      remainingWeaknesses:
+        review.coach?.remainingWeaknesses?.length
+          ? review.coach.remainingWeaknesses.slice(0, 3)
+          : fallbackCoach.remainingWeaknesses,
+      strengthsImproved:
+        review.coach?.strengthsImproved?.length
+          ? review.coach.strengthsImproved.slice(0, 3)
+          : fallbackCoach.strengthsImproved,
+    };
+    const hasPrevious = Boolean(previousReview);
 
     return (
       <div className="grid gap-4 rounded-2xl border border-border/70 bg-background/35 p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-foreground">{label}</p>
+            <p className="text-sm font-medium text-primary">
+              {isVietnamese ? "AI Coach Review" : "AI Coach Review"}
+            </p>
+            <p className="mt-1 text-lg font-semibold text-foreground">
+              {label}
+            </p>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
               {score.explanation}
             </p>
@@ -992,9 +1251,56 @@ export function WorkflowReviewWorkspace({
           </p>
         </div>
 
+        {hasPrevious ? (
+          <div className="grid gap-3 lg:grid-cols-2">
+            <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                {headerCopy.comparisonBefore}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {coach.previousOutputSummary}
+              </p>
+              {previousOutput ? (
+                <pre className="mt-3 max-h-36 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-border/60 bg-background/35 p-3 text-xs leading-5 text-muted-foreground">
+                  {previousOutput}
+                </pre>
+              ) : null}
+            </div>
+            <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3">
+              <p className="text-xs font-medium uppercase text-primary">
+                {headerCopy.comparisonAfter}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-foreground">
+                {coach.currentOutputSummary}
+              </p>
+              <pre className="mt-3 max-h-36 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-border/60 bg-background/35 p-3 text-xs leading-5 text-muted-foreground">
+                {currentOutput}
+              </pre>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3">
+            <p className="text-xs font-medium uppercase text-primary">
+              {isVietnamese ? "Tóm tắt output" : "Output summary"}
+            </p>
+            <p className="mt-2 text-sm leading-6 text-foreground">
+              {coach.currentOutputSummary}
+            </p>
+            <pre className="mt-3 max-h-36 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-border/60 bg-background/35 p-3 text-xs leading-5 text-muted-foreground">
+              {currentOutput}
+            </pre>
+          </div>
+        )}
+
         <div className="grid gap-2 sm:grid-cols-2">
-          {dimensions.map((dimension) => {
+          {scoreDimensionIds.map((dimension) => {
             const dimensionScore = score.breakdown[dimension].score;
+            const previousScore =
+              previousReview?.score.breakdown[dimension].score;
+            const delta =
+              typeof previousScore === "number"
+                ? dimensionScore - previousScore
+                : undefined;
 
             return (
               <div
@@ -1005,14 +1311,27 @@ export function WorkflowReviewWorkspace({
                   <p className="text-xs font-medium uppercase text-muted-foreground">
                     {t(`review.dimensions.${dimension}`)}
                   </p>
-                  <p
-                    className={cn(
-                      "text-lg font-semibold",
-                      getDimensionScoreTone(dimensionScore),
+                  <div className="text-right">
+                    {typeof previousScore === "number" ? (
+                      <p className="text-sm font-semibold text-foreground">
+                        {previousScore} → {dimensionScore}
+                      </p>
+                    ) : (
+                      <p
+                        className={cn(
+                          "text-lg font-semibold",
+                          getDimensionScoreTone(dimensionScore),
+                        )}
+                      >
+                        {dimensionScore}/10
+                      </p>
                     )}
-                  >
-                    {dimensionScore}/10
-                  </p>
+                    {typeof delta === "number" ? (
+                      <p className={cn("text-xs font-semibold", getDeltaTone(delta))}>
+                        {getDeltaLabel(delta)}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/45">
                   <div
@@ -1031,21 +1350,113 @@ export function WorkflowReviewWorkspace({
           })}
         </div>
 
-        <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
-          <p className="text-sm font-medium text-foreground">
-            {t("review.weaknesses")}
-          </p>
-          <ol className="mt-2 grid gap-2 text-sm leading-6 text-muted-foreground">
-            {review.weaknesses.map((weakness, index) => (
-              <li key={weakness}>
-                {index + 1}. {weakness}
-              </li>
-            ))}
-          </ol>
+        {hasPrevious ? (
+          <div className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3 sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                {headerCopy.comparisonBefore}
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">
+                {previousReview?.score.total ?? "--"}/40
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                {headerCopy.comparisonAfter}
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-foreground">
+                {score.total}/40
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                {t("retry.change")}
+              </p>
+              <p
+                className={cn(
+                  "mt-1 text-2xl font-semibold",
+                  getDeltaTone(score.total - (previousReview?.score.total ?? score.total)),
+                )}
+              >
+                {getDeltaLabel(
+                  score.total - (previousReview?.score.total ?? score.total),
+                )}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        <div className="grid gap-3 lg:grid-cols-3">
+          <div className="rounded-2xl border border-emerald-300/30 bg-emerald-300/10 p-3">
+            <p className="text-sm font-medium text-foreground">
+              {hasPrevious
+                ? isVietnamese
+                  ? "Điểm đã tốt hơn"
+                  : "Strengths improved"
+                : isVietnamese
+                  ? "Điểm mạnh hiện tại"
+                  : "Current strengths"}
+            </p>
+            <ul className="mt-2 grid gap-2 text-sm leading-6 text-muted-foreground">
+              {coach.strengthsImproved.map((strength) => (
+                <li key={strength}>✓ {strength}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3">
+            <p className="text-sm font-medium text-foreground">
+              {isVietnamese ? "Điểm vẫn yếu" : "Remaining weaknesses"}
+            </p>
+            <ul className="mt-2 grid gap-2 text-sm leading-6 text-muted-foreground">
+              {coach.remainingWeaknesses.map((weakness) => (
+                <li key={weakness}>• {weakness}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3">
+            <p className="text-sm font-medium text-foreground">
+              {isVietnamese ? "AI Coach gợi ý" : "AI Coach recommendation"}
+            </p>
+            <ol className="mt-2 grid gap-2 text-sm leading-6 text-muted-foreground">
+              {coach.recommendations.map((recommendation, index) => (
+                <li key={recommendation}>
+                  {index + 1}. {recommendation}
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
       </div>
     );
   }
+
+  const printableProposal =
+    printDocument && typeof document !== "undefined"
+      ? createPortal(
+          <article className="proposal-print-root">
+            <h1>{printDocument.title}</h1>
+            <div className="proposal-print-context">
+              {printDocument.contextLines.map((line) => (
+                <p key={line} className="proposal-print-context-line">
+                  {line}
+                </p>
+              ))}
+            </div>
+            {printDocument.sections.map((section) => (
+              <section key={section.heading} className="proposal-print-section">
+                <h2>{section.heading}</h2>
+                {section.content
+                  .split(/\n+/)
+                  .filter(Boolean)
+                  .map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+              </section>
+            ))}
+          </article>,
+          document.body,
+        )
+      : null;
 
   return (
     <>
@@ -1271,7 +1682,7 @@ export function WorkflowReviewWorkspace({
                   onClick={() =>
                     requestCreditAction({
                       action: "review",
-                      label: t("review.action"),
+                      label: headerCopy.reviewMyWork,
                       run: () => reviewOutput("original"),
                     })
                   }
@@ -1281,12 +1692,16 @@ export function WorkflowReviewWorkspace({
                   ) : (
                     <RefreshCw aria-hidden="true" />
                   )}
-                  {t("review.action")}
+                  {headerCopy.reviewMyWork}
                 </Button>
               </div>
 
               {activeState.originalReview
-                ? renderReview(activeState.originalReview, t("review.firstPass"))
+                ? renderReview({
+                    currentOutput: activeState.originalOutput,
+                    label: t("review.firstPass"),
+                    review: activeState.originalReview,
+                  })
                 : null}
 
               {latestReview &&
@@ -1340,20 +1755,6 @@ export function WorkflowReviewWorkspace({
                       </Button>
                     </div>
                   </div>
-                </div>
-              ) : null}
-
-              {latestReview && activeState.improvementSkipped ? (
-                <div className="flex justify-end rounded-2xl border border-border/70 bg-secondary/30 p-3">
-                  <Button
-                    type="button"
-                    className="btn-liquid h-10 w-full justify-center rounded-full px-4 text-primary-foreground sm:w-auto"
-                    disabled={!activeState.originalReview}
-                    onClick={completeSection}
-                  >
-                    <Check aria-hidden="true" />
-                    {t("retry.complete")}
-                  </Button>
                 </div>
               ) : null}
 
@@ -1467,7 +1868,7 @@ export function WorkflowReviewWorkspace({
                 />
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Button
                   type="button"
                   variant="outline"
@@ -1486,16 +1887,7 @@ export function WorkflowReviewWorkspace({
                   ) : (
                     <RefreshCw aria-hidden="true" />
                   )}
-                  {t("retry.rescore")}
-                </Button>
-                <Button
-                  type="button"
-                  className="btn-liquid h-10 w-full justify-center rounded-full px-4 text-primary-foreground sm:w-auto"
-                  disabled={!activeState.originalReview}
-                  onClick={completeSection}
-                >
-                  <Check aria-hidden="true" />
-                  {t("retry.complete")}
+                  {isVietnamese ? "Review output tốt hơn" : "Review Better Output"}
                 </Button>
               </div>
 
@@ -1537,12 +1929,32 @@ export function WorkflowReviewWorkspace({
               ) : null}
 
               {activeState.retryReview
-                ? renderReview(activeState.retryReview, t("review.retryPass"))
+                ? renderReview({
+                    currentOutput: activeState.retryOutput,
+                    label: t("review.retryPass"),
+                    previousOutput: activeState.originalOutput,
+                    previousReview: activeState.originalReview,
+                    review: activeState.retryReview,
+                  })
                 : null}
             </section>
           ) : null}
 
-          {activeState.reviewHistory.length > 0 ? (
+          {latestReview ? (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                className="btn-liquid h-11 w-full justify-center rounded-full px-5 text-primary-foreground sm:w-auto"
+                disabled={!activeState.originalReview}
+                onClick={completeSection}
+              >
+                <Check aria-hidden="true" />
+                {headerCopy.updateProposal}
+              </Button>
+            </div>
+          ) : null}
+
+          {activeState.reviewHistory.length > 1 ? (
             <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
               <div className="flex items-center gap-2">
                 <History aria-hidden="true" className="size-4" />
@@ -1556,9 +1968,9 @@ export function WorkflowReviewWorkspace({
                     {t("history.promptVersions")}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    {["v1", ...activeState.reviewHistory.map((_, index) => `v${index + 2}`)].join(
-                      " -> ",
-                    )}
+                    {activeState.reviewHistory
+                      .map((entry) => entry.label)
+                      .join(" -> ")}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
@@ -1604,7 +2016,9 @@ export function WorkflowReviewWorkspace({
                   type="button"
                   variant="outline"
                   className="btn-glass h-10 justify-center rounded-full px-4"
-                  onClick={() => copyToClipboard(proposalDraft, "proposal-draft")}
+                  onClick={() =>
+                    copyToClipboard(proposalDocument.text, "proposal-draft")
+                  }
                 >
                   <Copy aria-hidden="true" />
                   {copiedKey === "proposal-draft"
@@ -1614,19 +2028,39 @@ export function WorkflowReviewWorkspace({
                 <Button
                   type="button"
                   className="btn-liquid h-10 justify-center rounded-full px-4 text-primary-foreground"
-                  onClick={downloadProposalDraft}
+                  onClick={() => downloadProposalDraft("txt")}
                 >
                   <Download aria-hidden="true" />
                   {headerCopy.downloadTxt}
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="btn-glass h-10 justify-center rounded-full px-4"
+                  onClick={() => downloadProposalDraft("docx")}
+                >
+                  <Download aria-hidden="true" />
+                  {headerCopy.downloadDocx}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="btn-glass h-10 justify-center rounded-full px-4"
+                  onClick={() => downloadProposalDraft("pdf")}
+                >
+                  <Download aria-hidden="true" />
+                  {headerCopy.downloadPdf}
+                </Button>
               </div>
             </div>
             <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-border/70 bg-secondary/30 p-3 text-sm leading-6 text-muted-foreground">
-              {proposalDraft}
+              {proposalDocument.text}
             </pre>
           </section>
         </div>
       </section>
+
+      {printableProposal}
 
       {pendingCreditAction ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">

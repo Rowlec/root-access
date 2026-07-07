@@ -318,6 +318,80 @@
   animation: shimmer 2s linear infinite;
 }
 
+.proposal-print-root {
+  display: none;
+}
+
+@page {
+  margin: 20mm;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    color: #171321 !important;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body.proposal-printing > :not(.proposal-print-root) {
+    display: none !important;
+  }
+
+  .proposal-print-root {
+    background: #ffffff !important;
+    color: #171321 !important;
+    display: block !important;
+    font-family: Arial, "Helvetica Neue", sans-serif;
+    font-size: 11.5pt;
+    line-height: 1.55;
+    min-height: auto;
+    padding: 0;
+    position: static;
+  }
+
+  .proposal-print-root h1 {
+    border-bottom: 1px solid #d8d2e5;
+    color: #171321 !important;
+    font-size: 24pt;
+    line-height: 1.15;
+    margin: 0 0 14pt;
+    padding-bottom: 10pt;
+  }
+
+  .proposal-print-root h2 {
+    color: #4f2b83 !important;
+    font-size: 15pt;
+    line-height: 1.25;
+    margin: 22pt 0 8pt;
+  }
+
+  .proposal-print-root p {
+    color: #171321 !important;
+    margin: 0 0 8pt;
+  }
+
+  .proposal-print-context {
+    background: #f5f1fb !important;
+    border: 1px solid #ded4ee;
+    border-radius: 10px;
+    margin: 0 0 18pt;
+    padding: 10pt 12pt;
+  }
+
+  .proposal-print-context-line {
+    margin-bottom: 4pt !important;
+  }
+
+  .proposal-print-section {
+    break-inside: avoid;
+  }
+}
+
 html:root,
 html.dark {
   color-scheme: dark;
