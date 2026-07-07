@@ -1614,7 +1614,7 @@ export function WorkflowReviewWorkspace({
                   </Button>
                   <Button
                     type="button"
-                    className="btn-liquid h-10 justify-center rounded-full px-4 text-primary-foreground"
+                    className="btn-liquid btn-action h-11 justify-center rounded-full px-5 text-primary-foreground"
                     onClick={() =>
                       copyToClipboard(activePrompt, `${activeSection.id}:prompt`)
                     }
@@ -1782,8 +1782,7 @@ export function WorkflowReviewWorkspace({
                   </pre>
                   <Button
                     type="button"
-                    variant="outline"
-                    className="btn-glass h-10 w-full justify-center rounded-full px-4 sm:w-fit"
+                    className="btn-liquid btn-action h-11 w-full justify-center rounded-full px-5 text-primary-foreground sm:w-fit"
                     disabled={!improvedPrompt}
                     onClick={copyImprovedPrompt}
                   >
@@ -1877,8 +1876,7 @@ export function WorkflowReviewWorkspace({
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Button
                   type="button"
-                  variant="outline"
-                  className="btn-glass h-10 w-full justify-center rounded-full px-4 sm:w-auto"
+                  className="btn-liquid btn-action h-11 w-full justify-center rounded-full px-5 text-primary-foreground sm:w-auto"
                   disabled={isReviewing || !activeState.retryOutput.trim()}
                   onClick={() =>
                     requestCreditAction({

@@ -269,6 +269,31 @@
     transform: rotate(18deg) translateX(320%);
   }
 
+  .btn-action {
+    border: 1px solid oklch(0.9 0.1 300 / 52%) !important;
+    font-weight: 700;
+    letter-spacing: 0;
+    min-height: 2.75rem;
+    box-shadow:
+      0 0 0 1px oklch(1 0 0 / 16%) inset,
+      0 16px 36px -12px oklch(0.66 0.24 315 / 85%),
+      0 0 28px -12px oklch(0.8 0.18 300 / 90%) !important;
+  }
+
+  .btn-action:hover {
+    box-shadow:
+      0 0 0 1px oklch(1 0 0 / 22%) inset,
+      0 22px 46px -12px oklch(0.68 0.25 320 / 95%),
+      0 0 42px -10px oklch(0.82 0.2 300 / 95%) !important;
+  }
+
+  .btn-action:disabled {
+    box-shadow:
+      0 0 0 1px oklch(0.75 0.09 300 / 18%) inset !important;
+    filter: saturate(0.65);
+    transform: none;
+  }
+
   .btn-glass {
     background: oklch(0.3 0.05 300 / 35%) !important;
     backdrop-filter: blur(12px);
