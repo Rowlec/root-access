@@ -24,6 +24,7 @@ import {
 import { useTranslations } from "next-intl";
 
 import { ContextualHelper } from "@/components/onboarding/ContextualHelper";
+import { ProposalBuilder } from "@/components/proposal/ProposalBuilder";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -860,6 +861,52 @@ export function WorkflowReviewWorkspace({
     isVietnamese,
     workspaceState,
   ]);
+  const proposalBuilderSources = useMemo(
+    () => {
+      const problem = getLatestSectionOutputForExport(workspaceState, "problem");
+      const customer = getLatestSectionOutputForExport(workspaceState, "customer");
+      const revenue = getLatestSectionOutputForExport(workspaceState, "revenue");
+      const mvp = getLatestSectionOutputForExport(workspaceState, "mvp");
+      const differentiation = getLatestSectionOutputForExport(
+        workspaceState,
+        "differentiation",
+      );
+      const validation = extractValidationContent([
+        problem,
+        customer,
+        revenue,
+        mvp,
+        differentiation,
+      ]);
+
+      return {
+        idea: [
+          context.startupIdea,
+          context.targetCustomer
+            ? `${isVietnamese ? "Khách hàng đầu tiên" : "First customer"}: ${context.targetCustomer}`
+            : "",
+          `${isVietnamese ? "Lĩnh vực" : "Industry"}: ${context.industry}`,
+        ]
+          .filter(Boolean)
+          .join("\n\n"),
+        problem,
+        customer,
+        market: customer,
+        solution: mvp,
+        revenue,
+        competition: differentiation,
+        mvp,
+        validation,
+      };
+    },
+    [
+      context.industry,
+      context.startupIdea,
+      context.targetCustomer,
+      isVietnamese,
+      workspaceState,
+    ],
+  );
 
   useEffect(() => {
     const hydrationTimer = window.setTimeout(() => {
@@ -2740,6 +2787,11 @@ export function WorkflowReviewWorkspace({
               </div>
             </section>
           ) : null}
+
+          <ProposalBuilder
+            sources={proposalBuilderSources}
+            workflowRunId={context.workflowRunId}
+          />
 
           <section
             data-onboarding="export"

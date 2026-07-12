@@ -222,6 +222,42 @@
     "badge": "AI Startup Proposal Builder",
     "title": "Xây startup proposal của bạn",
     "description": "Chọn một phần, generate bản nháp, tinh chỉnh bằng feedback và lưu vào live proposal preview.",
+    "live": {
+      "badge": "Proposal đang xây",
+      "title": "Proposal Builder",
+      "description": "Các output workflow đã review sẽ tự điền vào proposal. Bạn có thể sửa bất kỳ phần nào để thành bản của mình.",
+      "progress": "Tiến độ proposal",
+      "jumpToIncomplete": "Đến phần chưa hoàn thành",
+      "sectionsLabel": "Các phần proposal",
+      "edited": "Đã sửa",
+      "autosaved": "Đã tự lưu",
+      "emptySection": "Hãy generate hoặc review output workflow liên quan để tự điền phần này, hoặc tự viết bản nháp.",
+      "manualHint": "Phần này có chỉnh sửa của bạn và sẽ không bị output workflow mới ghi đè.",
+      "syncedHint": "Phần này đang đồng bộ từ output workflow liên quan mới nhất.",
+      "useLatestOutput": "Dùng output workflow mới nhất",
+      "sections": {
+        "idea": "Ý tưởng",
+        "problem": "Vấn đề",
+        "customer": "Khách hàng",
+        "market": "Thị trường",
+        "solution": "Giải pháp",
+        "revenue": "Doanh thu",
+        "competition": "Cạnh tranh",
+        "mvp": "MVP",
+        "validation": "Kiểm chứng"
+      },
+      "sectionDescriptions": {
+        "idea": "Ý tưởng startup và giá trị dự định mang đến cho nhóm người dùng đầu tiên.",
+        "problem": "Nỗi đau cụ thể, mức độ cấp bách và bằng chứng cần kiểm chứng.",
+        "customer": "Phân khúc khách hàng đầu tiên, hành vi và khả năng tiếp cận.",
+        "market": "Bối cảnh thị trường có thể tiếp cận, lựa chọn thay thế và giả định cần xác minh.",
+        "solution": "Giải pháp đề xuất xử lý vấn đề đã xác định như thế nào.",
+        "revenue": "Ai trả tiền, lý do trả tiền và các giả định doanh thu cần kiểm chứng.",
+        "competition": "Lựa chọn thay thế, bối cảnh cạnh tranh và khác biệt có ý nghĩa.",
+        "mvp": "Phạm vi sản phẩm nhỏ nhất có thể kiểm thử và những gì chủ động không làm.",
+        "validation": "Bằng chứng, phỏng vấn, thử nghiệm và quyết định tiếp theo cần có trước khi phát triển thêm."
+      }
+    },
     "context": {
       "title": "Dự án"
     },

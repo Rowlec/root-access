@@ -222,6 +222,42 @@
     "badge": "AI Startup Proposal Builder",
     "title": "Build your startup proposal",
     "description": "Choose a section, generate a draft, refine it with feedback, and save it into your live proposal preview.",
+    "live": {
+      "badge": "Live proposal",
+      "title": "Proposal Builder",
+      "description": "Reviewed workflow outputs fill this document automatically. Edit any section to make it your own.",
+      "progress": "Proposal progress",
+      "jumpToIncomplete": "Go to incomplete section",
+      "sectionsLabel": "Proposal sections",
+      "edited": "Edited",
+      "autosaved": "Saved automatically",
+      "emptySection": "Generate or review the related workflow output to fill this section, or write your own draft.",
+      "manualHint": "This section has your edits and will not be overwritten by new workflow output.",
+      "syncedHint": "This section is synced from the latest related workflow output.",
+      "useLatestOutput": "Use latest workflow output",
+      "sections": {
+        "idea": "Idea",
+        "problem": "Problem",
+        "customer": "Customer",
+        "market": "Market",
+        "solution": "Solution",
+        "revenue": "Revenue",
+        "competition": "Competition",
+        "mvp": "MVP",
+        "validation": "Validation"
+      },
+      "sectionDescriptions": {
+        "idea": "The startup idea and the intended value for its first users.",
+        "problem": "The specific customer pain, urgency, and evidence to validate.",
+        "customer": "The first customer segment, behavior, and reachability.",
+        "market": "The reachable market context, alternatives, and assumptions to verify.",
+        "solution": "How the proposed solution addresses the defined problem.",
+        "revenue": "Who pays, why they pay, and the revenue assumptions to validate.",
+        "competition": "Alternatives, competitive context, and meaningful differentiation.",
+        "mvp": "The smallest testable product scope and what is deliberately excluded.",
+        "validation": "Evidence, interviews, tests, and next decisions needed before building further."
+      }
+    },
     "context": {
       "title": "Project"
     },
