@@ -10,6 +10,67 @@
       "vi": "VI"
     }
   },
+  "Onboarding": {
+    "welcome": {
+      "badge": "45-second product tour",
+      "title": "Welcome to Root Access",
+      "description": "Root Access helps you improve how you use AI for a Startup Proposal, one focused section at a time. You stay in control of the thinking and final writing.",
+      "accomplishTitle": "What you will achieve",
+      "accomplishBody": "A stronger proposal section, clear weaknesses, and a better prompt for the next attempt.",
+      "timeTitle": "Estimated time",
+      "timeBody": "30–45 seconds for this tour, then about 8–12 minutes per proposal section.",
+      "workflowTitle": "Main workflow",
+      "workflowBody": "Add context → generate → review → improve → compare → export."
+    },
+    "tour": {
+      "progress": "Step {current} of {total}",
+      "steps": {
+        "projectForm": {
+          "title": "Start with useful project context",
+          "body": "Describe the startup idea, industry, target customer, deadline, and AI tool. Root Access uses these inputs throughout the workflow.",
+          "helper": "Specific context produces more relevant prompts and more accurate review feedback."
+        },
+        "generateWorkflow": {
+          "title": "Create your proposal workspace",
+          "body": "Submit the form to open a guided workspace for five proposal sections. The tour will continue automatically after you submit.",
+          "helper": "Your workflow stays rule-based and focused only on Startup Proposal work."
+        },
+        "workspace": {
+          "title": "Work on one section at a time",
+          "body": "The AI Workspace shows the current objective, a focused prompt, and the place where you bring back the AI output.",
+          "helper": "Finishing one focused section at a time keeps the proposal manageable."
+        },
+        "review": {
+          "title": "Review the AI output",
+          "body": "Add the generated output here. Root Access then evaluates the business logic and explains what is strong, weak, or missing.",
+          "helper": "Review turns an AI response into evidence you can inspect instead of content you accept blindly."
+        },
+        "improve": {
+          "title": "Improve the prompt with evidence",
+          "body": "After review, Root Access creates a fuller prompt that targets the exact weaknesses found in the previous output.",
+          "helper": "The improved prompt preserves the full task while adding the missing details and corrections."
+        },
+        "export": {
+          "title": "Export a clean working document",
+          "body": "When your sections are ready, export a cleaned proposal draft as TXT, DOCX, or PDF for your own final editing.",
+          "helper": "Always verify facts, add your reasoning, and rewrite the final submission in your own voice."
+        }
+      }
+    },
+    "waiting": {
+      "title": "Tour paused at the workspace step",
+      "body": "Complete the project form and create the workflow. The tour will resume automatically on the next screen."
+    },
+    "actions": {
+      "start": "Show me how it works",
+      "skip": "Skip tour",
+      "back": "Back",
+      "next": "Next",
+      "finish": "Finish tour",
+      "continueInForm": "Use the form",
+      "goToForm": "Go to form"
+    }
+  },
   "Hero": {
     "brand": "Root Access",
     "title": "Build better Startup Proposals with AI, step by step.",
@@ -37,7 +98,7 @@
       },
       "workflow": {
         "title": "Test output",
-        "description": "Copy the prompt into ChatGPT or Gemini, then paste the output back into RootAccess."
+        "description": "Edit the prompt and generate the output with Gemini directly inside Root Access."
       },
       "proposal": {
         "title": "Improve prompt",
@@ -76,7 +137,8 @@
     "title": "Add context for your Proposal Sections",
     "description": "RootAccess focuses only on Startup Proposal in this MVP.",
     "cardTitle": "Startup context",
-    "cardDescription": "Keep it short. You will test prompts externally, then paste the output for review.",
+    "cardDescription": "Keep it short. Root Access will use this context throughout the integrated Gemini workspace.",
+    "contextualTip": "These details become fixed context for every prompt, review, and improvement in this proposal.",
     "fields": {
       "workflowMode": {
         "label": "Choose workflow mode",
@@ -343,7 +405,7 @@
     "reviewLayer": {
       "title": "Review",
       "description": "Check the output before completing this micro-step.",
-      "waiting": "Paste an output above to unlock review and completion.",
+      "waiting": "Generate an output above to unlock review and completion.",
       "retrySuggestions": "Retry suggestions"
     },
     "lockedBadge": "Locked",
@@ -359,8 +421,8 @@
     },
     "outputDraft": {
       "title": "Step output",
-      "description": "Root Access writes the result here. You can still edit or paste revised notes.",
-      "placeholder": "Generate with Gemini or paste useful notes for this micro-step...",
+      "description": "Root Access writes the result here. You can edit it before review.",
+      "placeholder": "Generate this micro-step with Gemini...",
       "hint": "Exports will include this output when you add it.",
       "saved": "Output saved locally for export.",
       "reset": "Clear output"
@@ -516,6 +578,7 @@
     "title": "Build a better Startup Proposal, one Proposal Section at a time",
     "description": "Work one Build Step at a time: generate a prompt, test output, review business logic, improve the prompt, and retry.",
     "copied": "Copied",
+    "contextualTip": "You are working on {section}. Everything in this panel is used to generate, review, and improve this section only.",
     "context": {
       "title": "Startup context"
     },
@@ -543,47 +606,80 @@
       "remaining": "Remaining"
     },
     "action": {
-      "layer": "Action Layer",
-      "prompt": "Generated prompt",
-      "promptHint": "Copy this into ChatGPT or Gemini. RootAccess does not write the final proposal for you.",
-      "generatePrompt": "Generate prompt",
-      "regeneratePrompt": "Regenerate prompt",
+      "layer": "AI Workspace",
+      "prompt": "Prompt editor",
+      "promptHint": "Edit the instructions, then send them directly to Gemini without leaving Root Access.",
+      "generatePrompt": "Generate with Gemini",
+      "regeneratePrompt": "Regenerate",
+      "resetPrompt": "Reset prompt",
       "copyPrompt": "Copy prompt",
-      "pasteOutput": "Paste output",
-      "outputPlaceholder": "Paste the output you received from ChatGPT or Gemini..."
+      "pasteOutput": "Gemini output",
+      "outputPlaceholder": "Your generated section will appear here.",
+      "emptyOutput": "No output yet. Review the prompt above, then generate the first version.",
+      "generating": "Gemini is generating",
+      "editableOutput": "You can edit this output before reviewing it. Changes are saved locally."
     },
     "learn": {
       "title": "Learn Layer",
       "whyPromptWorks": "This prompt forces the AI to answer against the current section's business checks instead of writing generically.",
-      "toolReason": "{tool} is the external AI tool you selected for testing output.",
+      "toolReason": "Gemini generates each version inside Root Access; your selected model preference is {tool}.",
       "comparisonBeforeReview": "After review, you will see how the improved prompt differs from the starting prompt.",
       "comparisonAfterReview": "The improved prompt targets the weaknesses detected in the previous output."
     },
     "review": {
       "layer": "Review Layer",
       "title": "Review business logic",
-      "description": "Scores come from a stable rubric. Gemini only detects weaknesses and improves the prompt.",
+      "description": "Gemini evaluates six stable rubric dimensions and explains every score with output evidence.",
       "action": "Review output",
       "firstPass": "Output 1 score",
       "retryPass": "Retry output score",
-      "weaknesses": "Top 2 weaknesses",
+      "weaknesses": "Weaknesses",
+      "strengths": "Strengths",
+      "missingInformation": "Missing information",
+      "noMissingInformation": "No critical missing information was detected.",
+      "suggestions": "Suggestions",
+      "problematicSections": "Problematic output sections",
+      "highlightHelp": "Highlighted passages are linked to the specific review reasons below.",
+      "noProblematicSections": "No exact passage needs highlighting. Review the broader weaknesses below.",
+      "severity": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
       "dimensions": {
         "relevance": "Relevance",
         "specificity": "Specificity",
         "clarity": "Clarity",
-        "actionability": "Actionability"
+        "completeness": "Completeness",
+        "actionability": "Actionability",
+        "rubricAlignment": "Rubric alignment"
       }
     },
     "improvement": {
       "title": "Improved prompt"
     },
+    "comparison": {
+      "title": "Improvement comparison",
+      "description": "Both versions remain saved. Green output highlights indicate lines added or changed in the newer version.",
+      "before": "Before",
+      "after": "After",
+      "prompt": "Prompt",
+      "output": "Output",
+      "score": "Score",
+      "scoreChange": "Score change",
+      "improvedSections": "What improved",
+      "remainingProblems": "Still needs work",
+      "noImprovedSections": "The new version needs a clearer improvement claim after review.",
+      "noRemainingProblems": "No remaining problem was detected in this review."
+    },
     "retry": {
       "layer": "Retry Layer",
       "title": "Retry and compare",
-      "description": "Copy the improved prompt, test it externally, paste the new output, then compare scores.",
+      "description": "Edit the improved prompt if needed, generate the next output here, then compare scores.",
       "copyImproved": "Copy improved prompt",
-      "pasteOutput": "Paste retry output",
-      "outputPlaceholder": "Paste the new output generated from the improved prompt...",
+      "pasteOutput": "Improved Gemini output",
+      "outputPlaceholder": "The output generated from the improved prompt will appear here.",
+      "generate": "Generate improved output",
       "rescore": "Review retry",
       "complete": "Complete Proposal Section",
       "oldScore": "Old score",
@@ -592,10 +688,16 @@
     },
     "history": {
       "title": "Version History",
+      "description": "Every Gemini generation is preserved with its prompt, output, time, score, and review status.",
       "promptVersions": "Prompt versions",
       "outputHistory": "Output history",
       "output": "Output",
-      "timeline": "Improvement timeline"
+      "timeline": "Improvement timeline",
+      "prompt": "Prompt",
+      "generated": "Generated",
+      "notReviewed": "Not reviewed",
+      "originalVersion": "Original generation",
+      "retryVersion": "Improved retry"
     },
     "upgrade": {
       "badge": "Credit packs",
@@ -608,7 +710,9 @@
       "later": "Not now"
     },
     "errors": {
-      "outputRequired": "Paste output before reviewing.",
+      "outputRequired": "Generate an output before reviewing.",
+      "promptRequired": "Add a prompt before generating.",
+      "generateFailed": "RootAccess could not generate this section right now. Try again.",
       "reviewFailed": "RootAccess could not review this output right now."
     },
     "sections": {

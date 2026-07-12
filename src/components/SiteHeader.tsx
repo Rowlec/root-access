@@ -2,17 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Coins } from "lucide-react";
+import { CircleHelp, Coins } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { AuthControls } from "@/components/AuthControls";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { Button } from "@/components/ui/button";
 import { useCreditUsage } from "@/hooks/useCreditUsage";
 import {
   creditPlanStorageKey,
   parseCreditPlan,
   type CreditPlan,
 } from "@/lib/credit-policy";
+import { onboardingResetEvent } from "@/lib/onboarding";
 
 function readCreditPlan(): CreditPlan {
   if (typeof window === "undefined") {
@@ -26,9 +28,16 @@ function readCreditPlan(): CreditPlan {
   }
 }
 
-export function SiteHeader({ locale }: { locale: string }) {
+type SiteHeaderProps = {
+  locale: string;
+  isClerkConfigured: boolean;
+};
+
+export function SiteHeader({ locale, isClerkConfigured }: SiteHeaderProps) {
   const [plan, setPlan] = useState<CreditPlan>("free");
   const { getRemaining } = useCreditUsage(plan);
+  const tourLabel =
+    locale === "vi" ? "Xem hướng dẫn sử dụng" : "Open product tour";
   const creditLabel =
     plan === "free"
       ? `${getRemaining("review")}/${getRemaining("improvement")}`
@@ -54,7 +63,7 @@ export function SiteHeader({ locale }: { locale: string }) {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/45 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <Link href="/" className="flex min-w-0 items-center gap-2.5">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5">
           <Image
             src="/logo.png"
             alt="Root Access logo"
@@ -68,13 +77,24 @@ export function SiteHeader({ locale }: { locale: string }) {
           </span>
         </Link>
 
-        <nav className="flex items-center gap-2 sm:gap-3">
+        <nav className="flex min-w-0 items-center gap-1 sm:gap-3">
           <Link
             href="/dashboard"
-            className="hidden rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-block"
+            className="hidden rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground lg:inline-block"
           >
             Dashboard
           </Link>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-9 rounded-full text-muted-foreground hover:text-foreground"
+            aria-label={tourLabel}
+            title={tourLabel}
+            onClick={() => window.dispatchEvent(new Event(onboardingResetEvent))}
+          >
+            <CircleHelp aria-hidden="true" />
+          </Button>
           <Link
             href="/checkout"
             className="flex h-9 items-center gap-1.5 rounded-full border border-border/70 bg-secondary/40 px-3 text-sm font-semibold text-foreground"
@@ -84,7 +104,10 @@ export function SiteHeader({ locale }: { locale: string }) {
             <span>{creditLabel}</span>
           </Link>
           <LocaleSwitcher className="h-9 rounded-full bg-secondary/35 shadow-none" />
-          <AuthControls locale={locale} />
+          <AuthControls
+            locale={locale}
+            isClerkConfigured={isClerkConfigured}
+          />
         </nav>
       </div>
     </header>

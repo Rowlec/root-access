@@ -1,594 +1,580 @@
 ---
 
-# RootAccess Final MVP Sprint Plan
-
-## Objective
-
-Finalize RootAccess into a coherent, usable, monetizable MVP for CP3.
-
-Focus:
-
-* reduce friction
-* improve UX clarity
-* stabilize scoring loop
-* complete monetization flow
-* complete exportable proposal flow
-* support bilingual flow
-* deploy production-ready
-
-Do NOT refactor architecture unless necessary.
-
----
-
-# Phase 1 — Navigation + Layout Fixes
-
-Priority: Critical
-
-## Tasks
-
-### 1. Add Back to Home button
-
-Requirement:
-
-When user enters build page:
+# Phase 1 — Build an Interactive First-Time Experience
 
 ```text
-Home ← Build Flow
-```
+Goal
 
-Persistent on top-left.
+Completely redesign the first-time user experience of RootAccess.
 
-Purpose:
+Current problem
 
-reduce navigation dead-end.
+New users open the application and have no idea what RootAccess does or where to start.
 
----
+Build a complete onboarding experience inspired by Notion, Linear, and Duolingo.
 
-### 2. Move Credit UI
+Requirements
 
-Current problem:
+1. Detect first-time users.
 
-credit shown too aggressively.
+2. Show a welcome modal explaining:
+   - What RootAccess is.
+   - What users will accomplish.
+   - Estimated completion time.
+   - Main workflow.
 
-Fix:
+3. Build a guided tour with spotlight animations.
 
-Move credit display into:
+Guide users through:
 
-Option A:
+- Project information form
+- Generate Workflow
+- AI Workspace
+- Review
+- Improve
+- Export
 
-```text
-sticky footer section
-```
+Each step should:
 
-Preferred.
+- highlight the related UI
+- dim the background
+- explain why this step exists
+- have Next / Back buttons
+- allow Skip
 
-Or:
-
-Option B:
-
-```text
-header right compact badge
-```
-
-If header exists.
-
-Add tooltip:
-
-```text
-1 review = 1 credit
-1 improve = 1 credit
-```
-
-Must explain usage.
-
----
-
-### 3. Add proper top header
-
-Include:
-
-* back button
-* current proposal title
-* language switcher
-* credit badge
-* profile/avatar (if logged in)
-
-Goal:
-
-make product feel complete.
-
----
-
-Success criteria:
-
-navigation feels stable.
-
----
-
-# Phase 2 — Progress Lock System
-
-Priority: Critical
-
-## Tasks
-
-### Lock future steps
-
-Current issue:
-
-users can jump everywhere.
-
-Fix:
-
-Only unlock:
-
-```text
-current step
-previous steps
-```
-
-Future steps:
-
-disabled.
-
-Visual:
-
-```text
-opacity 50%
-lock icon
-```
-
-Rules:
-
-Unlock next only after:
-
-```text
-output submitted
-```
-
-Not after copy prompt.
-
----
-
-Success criteria:
-
-workflow becomes sequential.
-
----
-
-# Phase 3 — Credit Confirmation System
-
-Priority: Critical
-
-## Tasks
-
-Before any:
-
-* Review
-* Improve
-
-Show modal:
-
-```text
-This action costs 1 credit.
-Do you want to continue?
-```
-
-Buttons:
-
-* Confirm
-* Cancel
-
-Show remaining credits.
+4. Add contextual helper tips.
 
 Example:
 
-```text
-Remaining after action: 4 credits
-```
+"You are currently defining your customer segment."
 
-Do NOT deduct before API success.
+"This information will improve later AI suggestions."
 
-Only deduct after success.
+5. Save onboarding completion.
 
-Important.
+Do not show again unless reset.
 
----
+6. Add subtle animations.
 
-Success criteria:
+- fade
+- slide
+- pulse
+- progress transitions
 
-user understands spending.
+Goal
 
----
-
-# Phase 4 — Gemini Production Setup
-
-Priority: Critical
-
-## Tasks
-
-Move Gemini API key to Vercel env:
-
-Variable:
-
-```text
-GEMINI_API_KEY
-```
-
-Refactor all API calls:
-
-Use:
-
-```text
-process.env.GEMINI_API_KEY
-```
-
-No hardcoded keys.
-
-Add error fallback:
-
-```text
-AI service unavailable.
-Please retry.
+Users should fully understand the product within 30–45 seconds without reading documentation.
 ```
 
 ---
 
-Success criteria:
+# Phase 2 — Replace Copy/Paste with AI Workspace
 
-production safe.
+```text
+Goal
+
+Transform RootAccess from a prompt generator into an AI workspace.
+
+Current problem
+
+Users constantly switch between RootAccess and ChatGPT/Gemini.
+
+Remove this friction.
+
+Requirements
+
+Integrate Gemini API.
+
+Workflow becomes:
+
+User Input
+
+↓
+
+Generate
+
+↓
+
+Gemini API
+
+↓
+
+Output
+
+↓
+
+Review
+
+↓
+
+Improve
+
+↓
+
+Compare
+
+No manual copy/paste.
+
+Keep every generation inside the application.
+
+Create a clean chat-like interface.
+
+Each generation becomes a Version.
+
+Version contains:
+
+- prompt
+- output
+- timestamp
+- score
+- review
+
+Support regeneration.
+
+Support editing prompt before sending.
+
+Support retry.
+
+Maintain conversation history per proposal.
+
+Goal
+
+Users never leave RootAccess while working.
+```
 
 ---
 
-# Phase 5 — Clerk Authentication
-
-Priority: High
-
-## Tasks
-
-Add Clerk auth.
-
-Required flows:
-
-* sign up
-* sign in
-* sign out
-
-Store:
-
-* credit balance
-* proposal history
-* prompt history
-* score history
-
-Guest mode optional.
-
-Recommended:
-
-Guest:
+# Phase 3 — Build a Real AI Review System
 
 ```text
-3 free credits
+Goal
+
+Upgrade the Review system into a real AI quality evaluation engine.
+
+Current problem
+
+Current review only shows a score.
+
+Requirements
+
+Review should evaluate:
+
+- Relevance
+- Clarity
+- Specificity
+- Completeness
+- Actionability
+- Rubric Alignment
+
+Display
+
+Overall Score
+
+Strengths
+
+Weaknesses
+
+Missing Information
+
+Suggestions
+
+Highlight problematic sections inside the output.
+
+Do not only say
+
+"Specificity is low"
+
+Instead explain WHY.
+
+Example
+
+Pain point is too broad.
+
+Customer segment is unclear.
+
+Revenue model lacks validation.
+
+Add color-coded score bars.
+
+Green
+
+Yellow
+
+Red
+
+Goal
+
+Users immediately understand what is wrong.
 ```
-
-Signed in:
-
-```text
-persistent credits
-```
-
-Purpose:
-
-unlock retention.
 
 ---
 
-Success criteria:
+# Phase 4 — Intelligent Improve Loop
 
-users can persist progress.
+```text
+Goal
+
+Turn Improve into a continuous optimization loop.
+
+Workflow
+
+Generate
+
+↓
+
+Review
+
+↓
+
+Improve Prompt
+
+↓
+
+Generate Again
+
+↓
+
+Compare
+
+Requirements
+
+Show comparison between:
+
+Old Output
+
+New Output
+
+Old Prompt
+
+New Prompt
+
+Old Score
+
+New Score
+
+Highlight
+
+Improved Sections
+
+Remaining Problems
+
+Score Difference
+
+Add improvement animation.
+
+Example
+
+7.2
+
+↓
+
+8.9
+
+Never automatically replace old versions.
+
+Users must always keep history.
+
+Goal
+
+Users can visually see progress.
+```
 
 ---
 
-# Phase 6 — Full Vietnamese Response Support
-
-Priority: High
-
-## Tasks
-
-Current issue:
-
-UI may be VN but AI returns EN.
-
-Fix:
-
-Pass locale into all prompts.
-
-Example:
-
-If locale:
+# Phase 5 — Smart Proposal Builder
 
 ```text
-vi
+Goal
+
+Build a complete Proposal Builder.
+
+Requirements
+
+Every workflow step automatically fills proposal sections.
+
+Proposal Progress
+
+Idea
+
+Problem
+
+Customer
+
+Market
+
+Solution
+
+Revenue
+
+Competition
+
+MVP
+
+Validation
+
+Users can jump directly into incomplete sections.
+
+Display completion percentage.
+
+Support manual editing.
+
+Auto-save every change.
+
+Goal
+
+Proposal becomes a living document instead of scattered outputs.
 ```
-
-Append:
-
-```text
-Return all responses in Vietnamese.
-```
-
-If:
-
-```text
-en
-```
-
-Append:
-
-```text
-Return all responses in English.
-```
-
-Must affect:
-
-* review
-* weakness detection
-* prompt improvement
 
 ---
 
-Success criteria:
-
-language consistency.
-
----
-
-# Phase 7 — Score Visualization Upgrade
-
-Priority: High
-
-## Tasks
-
-Add score colors:
-
-Range:
+# Phase 6 — Export System 2.0
 
 ```text
-1–3 = red
-4–6 = orange
-7–8 = yellow
-9–10 = green
+Goal
+
+Produce submission-ready documents.
+
+Current problem
+
+AI outputs still contain markdown and conversational text.
+
+Requirements
+
+Before exporting:
+
+Remove:
+
+- markdown
+- ** **
+- ---
+- bullet artifacts
+- AI introductions
+- AI conclusions
+
+Normalize formatting.
+
+Support
+
+DOCX
+
+PDF
+
+TXT
+
+Professional layout.
+
+Cover page.
+
+Table of contents.
+
+Consistent headings.
+
+Readable spacing.
+
+No AI artifacts should remain.
+
+Export should require zero manual cleanup.
 ```
 
-Apply to:
-
-* Relevance
-* Specificity
-* Clarity
-* Actionability
-
-Animated progress bar preferred.
-
 ---
 
-Success criteria:
-
-score easier to understand.
-
----
-
-# Phase 8 — Improve Prompt Decision Gate
-
-Priority: High
-
-Current issue:
-
-system auto-improves immediately.
-
-Bad.
-
-Fix:
-
-After scoring:
-
-Show:
+# Phase 7 — Proposal Dashboard
 
 ```text
-Do you want to improve this prompt?
+Goal
+
+Create a dashboard.
+
+Users can:
+
+View all proposals.
+
+Continue unfinished proposals.
+
+Duplicate.
+
+Rename.
+
+Delete.
+
+Search.
+
+Filter.
+
+Display
+
+Progress
+
+Last edited
+
+Score
+
+Versions
+
+Credits used
+
+Goal
+
+Users manage multiple startup projects.
 ```
-
-Options:
-
-* Yes, improve (costs 1 credit)
-* No, continue
-
-Only call improve after confirmation.
 
 ---
 
-Success criteria:
+# Phase 8 — AI Coach
 
-user controls improvement.
+```text
+Goal
+
+Build an AI Coach.
+
+This is NOT another chatbot.
+
+The coach understands:
+
+Current workflow step.
+
+Proposal progress.
+
+Previous AI reviews.
+
+Current weaknesses.
+
+Capabilities
+
+Recommend next action.
+
+Warn users before making common mistakes.
+
+Suggest better customer segments.
+
+Detect inconsistent assumptions.
+
+Recommend whether to use ChatGPT or Gemini.
+
+Recommend additional validation.
+
+The coach should proactively guide users throughout the workflow.
+
+Goal
+
+RootAccess feels like an experienced startup mentor rather than a prompt generator.
+```
 
 ---
 
-# Phase 9 — Prompt Comparison Engine
+# Phase 9 — Polish Everything
 
-Priority: High
+```text
+Goal
 
-## Tasks
+Polish the entire application.
 
-After improved output:
+Improve:
 
-Show comparison:
+Animations
+
+Loading
+
+Skeletons
+
+Transitions
+
+Empty states
+
+Error handling
+
+Mobile responsiveness
+
+Accessibility
+
+Keyboard shortcuts
+
+Success notifications
+
+Micro interactions
+
+Every interaction should feel smooth and professional.
+
+Goal
+
+Deliver a production-quality MVP suitable for a startup pitch and final project demonstration.
+```
 
 ---
 
-Before:
+## Theo mình, **còn thiếu một Phase cuối cùng** mà rất nhiều nhóm bỏ qua nhưng lại gây ấn tượng mạnh khi demo:
+
+### **Phase 10 – Business & Monetization Experience**
+
+Đây là phần giúp **BMC khớp hoàn toàn với MVP**, đúng như giảng viên đã nhắc.
 
 ```text
-Prompt Score: 24
-Weaknesses:
-- customer too broad
-- pain too vague
+Goal
+
+Integrate the business model into the product.
+
+Requirements
+
+1. Implement Credit System.
+
+Every AI action consumes credits.
+
+Before using credits:
+
+Show confirmation dialog.
+
+Explain how many credits will be used.
+
+2. Pricing Page
+
+Implement:
+
+Free
+
+Pro
+
+Premium
+
+Clearly compare:
+
+Credits
+
+Features
+
+AI models
+
+Export formats
+
+Proposal history
+
+3. Subscription Flow
+
+Users can:
+
+Upgrade
+
+View remaining credits
+
+View usage history
+
+View billing status
+
+4. Payment Flow (Prototype)
+
+Implement complete checkout UI.
+
+Payment success page.
+
+Payment failed page.
+
+Subscription activated state.
+
+(Mock payment is acceptable.)
+
+Goal
+
+The MVP should demonstrate a complete product journey:
+Discover → Use → Consume Credits → Upgrade → Continue Using.
 ```
 
-After:
-
-```text
-Prompt Score: 33
-Improved:
-+ clearer customer segment
-+ stronger urgency
-```
-
-Visual:
-
-```text
-24 → 33
-```
-
-Must show:
-
-* what improved
-* what still weak
-
-Important for trust.
-
----
-
-Success criteria:
-
-improvement feels visible.
-
----
-
-# Phase 10 — Fix Regression Bug
-
-Priority: Critical
-
-Current issue:
-
-Improved prompt sometimes scores lower.
-
-Fix logic:
-
-Before improvement:
-
-store:
-
-```text
-baseline score
-```
-
-After improvement:
-
-If:
-
-```text
-new score < old score
-```
-
-Run validation:
-
-Ask Gemini:
-
-```text
-Does this improved prompt actually improve specificity, relevance, clarity, or actionability?
-```
-
-If not:
-
-retry improvement.
-
-Max:
-
-```text
-2 retries
-```
-
-Never show obviously worse improved prompts.
-
----
-
-Success criteria:
-
-improvement should statistically trend upward.
-
----
-
-# Phase 11 — Proposal Export System
-
-Priority: Critical
-
-## Tasks
-
-Build final proposal compilation.
-
-Combine:
-
-* problem
-* customer
-* validation
-* market segment
-* revenue
-* differentiation
-* MVP scope
-* proposal outline
-
-Output:
-
-Option 1:
-
-TXT export
-
-Option 2:
-
-DOCX export (preferred)
-
-Option 3:
-
-Copy all
-
-Structure:
-
-```text
-Startup Proposal Draft
-```
-
-Submission-ready.
-
-This is mandatory.
-
-This is your “final product”.
-
-Without this, RootAccess feels unfinished.
-
----
-
-Success criteria:
-
-user can submit something real.
-
----
-
-# Execution Order (STRICT)
-
-Do in this order:
-
-```text
-1. Navigation + layout
-2. Progress lock
-3. Credit modal
-4. Gemini env
-5. Clerk auth
-6. Language consistency
-7. Score UI
-8. Improve gate
-9. Comparison engine
-10. Regression fix
-11. Proposal export
-```
-
-Do not change order.
-
-This order minimizes breakage.
+**Nếu hoàn thành được 10 phase này**, RootAccess sẽ không còn giống một "website tạo prompt" nữa mà sẽ trở thành một **AI SaaS hoàn chỉnh**: có onboarding, AI workspace, review, cải thiện, quản lý proposal, export và mô hình thu phí nhất quán với BMC. Đây là mức hoàn thiện phù hợp cho một đồ án cuối kỳ và cũng đủ thuyết phục hơn khi demo.

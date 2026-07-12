@@ -64,10 +64,13 @@ The route calls Gemini for:
 
 Response rules:
 
-- Score relevance, specificity, actionability, and clarity from 0 to 10.
-- Total score is 0 to 40.
-- Return only the top two weaknesses.
-- Return a better prompt for the user's next external AI retry.
+- Score relevance, specificity, clarity, completeness, actionability, and rubric
+  alignment from 0 to 10.
+- Recompute the validated total as 0 to 60.
+- Explain every dimension with evidence from the output.
+- Return strengths, weaknesses, missing information, suggestions, and exact
+  problematic passages for UI highlighting.
+- Return a better prompt for the next integrated Gemini retry.
 - Do not write the final proposal section.
 
 ## Legacy Workflow Library

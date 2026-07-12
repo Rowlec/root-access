@@ -10,6 +10,67 @@
       "vi": "VI"
     }
   },
+  "Onboarding": {
+    "welcome": {
+      "badge": "Tour sản phẩm 45 giây",
+      "title": "Chào mừng bạn đến với Root Access",
+      "description": "Root Access giúp bạn sử dụng AI tốt hơn cho Startup Proposal, tập trung từng section một. Bạn vẫn là người kiểm soát tư duy và bài viết cuối cùng.",
+      "accomplishTitle": "Bạn sẽ đạt được gì",
+      "accomplishBody": "Một proposal section mạnh hơn, biết rõ điểm yếu và có prompt tốt hơn cho lần thử tiếp theo.",
+      "timeTitle": "Thời gian dự kiến",
+      "timeBody": "30–45 giây cho tour này, sau đó khoảng 8–12 phút cho mỗi proposal section.",
+      "workflowTitle": "Quy trình chính",
+      "workflowBody": "Nhập context → tạo → review → cải thiện → so sánh → export."
+    },
+    "tour": {
+      "progress": "Bước {current}/{total}",
+      "steps": {
+        "projectForm": {
+          "title": "Bắt đầu bằng project context hữu ích",
+          "body": "Mô tả ý tưởng startup, lĩnh vực, khách hàng mục tiêu, deadline và công cụ AI. Root Access dùng các thông tin này xuyên suốt workflow.",
+          "helper": "Context càng cụ thể thì prompt càng sát và feedback review càng chính xác."
+        },
+        "generateWorkflow": {
+          "title": "Tạo proposal workspace",
+          "body": "Gửi form để mở workspace gồm năm proposal section. Tour sẽ tự động tiếp tục sau khi bạn submit.",
+          "helper": "Workflow luôn theo quy tắc cố định và chỉ tập trung vào Startup Proposal."
+        },
+        "workspace": {
+          "title": "Làm từng section một",
+          "body": "AI Workspace hiển thị mục tiêu hiện tại, prompt tập trung và nơi đưa output AI trở lại Root Access.",
+          "helper": "Hoàn thành từng section giúp proposal dễ kiểm soát và không bị quá tải."
+        },
+        "review": {
+          "title": "Review output của AI",
+          "body": "Đưa output đã tạo vào đây. Root Access sẽ đánh giá business logic và giải thích phần mạnh, yếu hoặc còn thiếu.",
+          "helper": "Review giúp bạn kiểm tra output bằng bằng chứng thay vì chấp nhận câu trả lời AI một cách mù quáng."
+        },
+        "improve": {
+          "title": "Cải thiện prompt dựa trên feedback",
+          "body": "Sau review, Root Access tạo prompt đầy đủ hơn và nhắm đúng những weakness của output trước.",
+          "helper": "Prompt mới giữ nguyên nhiệm vụ đầy đủ, đồng thời bổ sung chi tiết thiếu và yêu cầu sửa lỗi."
+        },
+        "export": {
+          "title": "Export tài liệu làm việc sạch",
+          "body": "Khi các section đã sẵn sàng, export proposal draft sạch dưới dạng TXT, DOCX hoặc PDF để bạn tự chỉnh sửa cuối cùng.",
+          "helper": "Luôn kiểm chứng dữ kiện, thêm lập luận của bạn và viết lại bản nộp cuối bằng giọng văn của chính mình."
+        }
+      }
+    },
+    "waiting": {
+      "title": "Tour đang chờ ở bước workspace",
+      "body": "Hoàn thành form project và tạo workflow. Tour sẽ tự tiếp tục ở màn hình kế tiếp."
+    },
+    "actions": {
+      "start": "Chỉ tôi cách sử dụng",
+      "skip": "Bỏ qua tour",
+      "back": "Quay lại",
+      "next": "Tiếp theo",
+      "finish": "Hoàn thành tour",
+      "continueInForm": "Bắt đầu điền form",
+      "goToForm": "Đi tới form"
+    }
+  },
   "Hero": {
     "brand": "Root Access",
     "title": "Xây Startup Proposal tốt hơn với AI, từng bước một.",
@@ -37,7 +98,7 @@
       },
       "workflow": {
         "title": "Test output",
-        "description": "Copy prompt sang ChatGPT hoặc Gemini, rồi paste output quay lại RootAccess."
+        "description": "Chỉnh prompt và tạo output bằng Gemini ngay bên trong Root Access."
       },
       "proposal": {
         "title": "Cải thiện prompt",
@@ -76,7 +137,8 @@
     "title": "Nhập context cho Proposal Section",
     "description": "RootAccess chỉ tập trung vào Startup Proposal trong MVP này.",
     "cardTitle": "Startup context",
-    "cardDescription": "Giữ ngắn gọn. Bạn sẽ test prompt bằng AI bên ngoài rồi paste output để review.",
+    "cardDescription": "Giữ ngắn gọn. Root Access sẽ dùng context này xuyên suốt Gemini workspace tích hợp.",
+    "contextualTip": "Các thông tin này sẽ trở thành context cố định cho mọi prompt, review và lần cải thiện trong proposal.",
     "fields": {
       "workflowMode": {
         "label": "Chọn chế độ workflow",
@@ -117,7 +179,7 @@
         "error": "Vui lòng nhập lĩnh vực."
       },
       "targetCustomer": {
-        "label": "Khách hàng mục tiêu (không bắt buộc)",
+        "label": "Khách hàng mục tiêu",
         "placeholder": "Sinh viên năm nhất đại học",
         "description": "Điền nếu bạn đã biết nhóm người mình muốn phục vụ."
       },
@@ -135,7 +197,7 @@
       },
       "availableTools": {
         "label": "AI model",
-        "description": "Chọn công cụ AI bạn sẽ dùng để test prompt bên ngoài.",
+        "description": "Chọn phong cách model bạn muốn Root Access ưu tiên trong workflow.",
         "error": "Vui lòng chọn công cụ AI hợp lệ."
       }
     },
@@ -343,7 +405,7 @@
     "reviewLayer": {
       "title": "Kiểm tra",
       "description": "Kiểm tra đầu ra trước khi hoàn thành micro-step này.",
-      "waiting": "Dán output ở trên để mở phần review và hoàn thành.",
+      "waiting": "Tạo output ở trên để mở phần review và hoàn thành.",
       "retrySuggestions": "Gợi ý thử lại"
     },
     "lockedBadge": "Đang khóa",
@@ -359,8 +421,8 @@
     },
     "outputDraft": {
       "title": "Đầu ra của bước",
-      "description": "Root Access viết kết quả ở đây. Bạn vẫn có thể chỉnh hoặc dán ghi chú đã sửa.",
-      "placeholder": "Generate bằng Gemini hoặc dán ghi chú hữu ích cho micro-step này...",
+      "description": "Root Access viết kết quả ở đây. Bạn có thể chỉnh trước khi review.",
+      "placeholder": "Tạo micro-step này bằng Gemini...",
       "hint": "Bản export sẽ kèm đầu ra này khi bạn thêm nội dung.",
       "saved": "Đầu ra đã được lưu trên máy này để export.",
       "reset": "Xóa đầu ra"
@@ -516,6 +578,7 @@
     "title": "Xây Startup Proposal tốt hơn, từng Proposal Section",
     "description": "Làm từng Build Step: tạo prompt, test output, review business logic, cải thiện prompt và retry.",
     "copied": "Đã copy",
+    "contextualTip": "Bạn đang làm section {section}. Mọi nội dung trong panel này chỉ được dùng để tạo, review và cải thiện section hiện tại.",
     "context": {
       "title": "Startup context"
     },
@@ -543,47 +606,80 @@
       "remaining": "Còn lại"
     },
     "action": {
-      "layer": "Action Layer",
-      "prompt": "Generated prompt",
-      "promptHint": "Copy prompt này sang ChatGPT hoặc Gemini. RootAccess không viết proposal cuối thay bạn.",
-      "generatePrompt": "Generate prompt",
-      "regeneratePrompt": "Generate lại prompt",
+      "layer": "AI Workspace",
+      "prompt": "Chỉnh sửa prompt",
+      "promptHint": "Chỉnh hướng dẫn rồi gửi trực tiếp cho Gemini mà không cần rời Root Access.",
+      "generatePrompt": "Tạo bằng Gemini",
+      "regeneratePrompt": "Tạo lại",
+      "resetPrompt": "Khôi phục prompt",
       "copyPrompt": "Copy prompt",
-      "pasteOutput": "Paste output",
-      "outputPlaceholder": "Paste output bạn nhận được từ ChatGPT hoặc Gemini..."
+      "pasteOutput": "Output từ Gemini",
+      "outputPlaceholder": "Section được tạo sẽ xuất hiện tại đây.",
+      "emptyOutput": "Chưa có output. Kiểm tra prompt phía trên rồi tạo version đầu tiên.",
+      "generating": "Gemini đang tạo nội dung",
+      "editableOutput": "Bạn có thể sửa output trước khi review. Thay đổi được lưu trên thiết bị."
     },
     "learn": {
       "title": "Learn Layer",
       "whyPromptWorks": "Prompt này ép AI trả lời theo business checks của section hiện tại thay vì viết chung chung.",
-      "toolReason": "{tool} là công cụ bạn đã chọn để test output bên ngoài RootAccess.",
+      "toolReason": "Gemini tạo mọi version ngay trong Root Access; model preference của bạn là {tool}.",
       "comparisonBeforeReview": "Sau khi review, bạn sẽ thấy prompt mới khác gì so với prompt ban đầu.",
       "comparisonAfterReview": "Prompt mới nhắm trực tiếp vào điểm yếu đã phát hiện trong output trước."
     },
     "review": {
       "layer": "Review Layer",
       "title": "Review business logic",
-      "description": "Score được tính bằng rubric ổn định. Gemini chỉ phát hiện weakness và cải thiện prompt.",
+      "description": "Gemini đánh giá sáu tiêu chí rubric ổn định và giải thích từng điểm bằng dẫn chứng trong output.",
       "action": "Review output",
       "firstPass": "Output 1 score",
       "retryPass": "Retry output score",
-      "weaknesses": "Top 2 weaknesses",
+      "weaknesses": "Điểm yếu",
+      "strengths": "Điểm mạnh",
+      "missingInformation": "Thông tin còn thiếu",
+      "noMissingInformation": "Không phát hiện thông tin quan trọng nào còn thiếu.",
+      "suggestions": "Đề xuất sửa",
+      "problematicSections": "Đoạn output có vấn đề",
+      "highlightHelp": "Các đoạn được đánh dấu liên kết với lý do review cụ thể bên dưới.",
+      "noProblematicSections": "Không có đoạn chính xác cần đánh dấu. Hãy xem các điểm yếu tổng quát bên dưới.",
+      "severity": {
+        "high": "Cao",
+        "medium": "Trung bình",
+        "low": "Thấp"
+      },
       "dimensions": {
         "relevance": "Relevance",
         "specificity": "Specificity",
         "clarity": "Clarity",
-        "actionability": "Actionability"
+        "completeness": "Completeness",
+        "actionability": "Actionability",
+        "rubricAlignment": "Rubric alignment"
       }
     },
     "improvement": {
       "title": "Improved prompt"
     },
+    "comparison": {
+      "title": "So sánh lần cải thiện",
+      "description": "Cả hai version đều được giữ lại. Các dòng output xanh là nội dung mới hoặc đã thay đổi ở version sau.",
+      "before": "Trước",
+      "after": "Sau",
+      "prompt": "Prompt",
+      "output": "Output",
+      "score": "Điểm",
+      "scoreChange": "Chênh lệch điểm",
+      "improvedSections": "Điểm đã cải thiện",
+      "remainingProblems": "Vẫn cần cải thiện",
+      "noImprovedSections": "Version mới cần giải thích rõ hơn phần đã cải thiện sau review.",
+      "noRemainingProblems": "Review này chưa phát hiện vấn đề còn lại."
+    },
     "retry": {
       "layer": "Retry Layer",
       "title": "Retry and compare",
-      "description": "Copy improved prompt, test lại bằng AI bên ngoài, paste output mới rồi so sánh score.",
+      "description": "Chỉnh improved prompt nếu cần, tạo output mới ngay tại đây rồi so sánh score.",
       "copyImproved": "Copy improved prompt",
-      "pasteOutput": "Paste retry output",
-      "outputPlaceholder": "Paste output mới được tạo từ improved prompt...",
+      "pasteOutput": "Output cải thiện từ Gemini",
+      "outputPlaceholder": "Output tạo từ improved prompt sẽ xuất hiện tại đây.",
+      "generate": "Tạo output cải thiện",
       "rescore": "Review retry",
       "complete": "Complete Proposal Section",
       "oldScore": "Old score",
@@ -592,10 +688,16 @@
     },
     "history": {
       "title": "Version History",
+      "description": "Mỗi lần Gemini generate đều được lưu cùng prompt, output, thời gian, score và trạng thái review.",
       "promptVersions": "Prompt versions",
       "outputHistory": "Output history",
       "output": "Output",
-      "timeline": "Improvement timeline"
+      "timeline": "Improvement timeline",
+      "prompt": "Prompt",
+      "generated": "Đã tạo",
+      "notReviewed": "Chưa review",
+      "originalVersion": "Bản tạo ban đầu",
+      "retryVersion": "Bản retry cải thiện"
     },
     "upgrade": {
       "badge": "Credit packs",
@@ -608,7 +710,9 @@
       "later": "Để sau"
     },
     "errors": {
-      "outputRequired": "Paste output trước khi review.",
+      "outputRequired": "Hãy tạo output trước khi review.",
+      "promptRequired": "Hãy nhập prompt trước khi generate.",
+      "generateFailed": "RootAccess chưa tạo được section này. Hãy thử lại.",
       "reviewFailed": "RootAccess chưa review được output này lúc này."
     },
     "sections": {

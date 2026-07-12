@@ -88,10 +88,14 @@ are:
 
 - Relevance: 0-10
 - Specificity: 0-10
-- Actionability: 0-10
 - Clarity: 0-10
+- Completeness: 0-10
+- Actionability: 0-10
+- Rubric Alignment: 0-10
 
-Total score is recomputed server-side as 0-40.
+Gemini returns a reason for every dimension. The server validates each score and
+recomputes the total as 0-60. The same response includes strengths, weaknesses,
+missing information, suggestions, and exact output passages for highlighting.
 
 ## Proposal Progress
 

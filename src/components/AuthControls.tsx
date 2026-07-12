@@ -15,9 +15,10 @@ import { Button } from "@/components/ui/button";
 
 type AuthControlsProps = {
   locale: string;
+  isClerkConfigured: boolean;
 };
 
-function ConfiguredAuthControls({ locale }: AuthControlsProps) {
+function ConfiguredAuthControls({ locale }: Pick<AuthControlsProps, "locale">) {
   const isVietnamese = locale === "vi";
   const [authError, setAuthError] = useState<string | null>(null);
   const { isLoaded: isUserLoaded, isSignedIn } = useUser();
@@ -68,7 +69,9 @@ function ConfiguredAuthControls({ locale }: AuthControlsProps) {
             className="btn-glass h-9 rounded-full px-3"
           >
             <LogOut aria-hidden="true" />
-            {isVietnamese ? "Đăng xuất" : "Sign out"}
+            <span className="hidden lg:inline">
+              {isVietnamese ? "Đăng xuất" : "Sign out"}
+            </span>
           </Button>
         </SignOutButton>
       </div>
@@ -76,12 +79,12 @@ function ConfiguredAuthControls({ locale }: AuthControlsProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-nowrap items-center gap-1.5 sm:gap-2">
       <Button
         type="button"
         variant="outline"
         size="sm"
-        className="btn-glass h-9 rounded-full px-3 font-semibold"
+        className="btn-glass hidden h-9 rounded-full px-3 font-semibold lg:inline-flex"
         disabled={!isSignInReady}
         onClick={handleGoogleSignIn}
       >
@@ -96,9 +99,11 @@ function ConfiguredAuthControls({ locale }: AuthControlsProps) {
           variant="ghost"
           size="sm"
           className="btn-glass h-9 rounded-full px-3"
+          aria-label={isVietnamese ? "Đăng nhập" : "Sign in"}
+          title={isVietnamese ? "Đăng nhập" : "Sign in"}
         >
           <LogIn aria-hidden="true" />
-          {isVietnamese ? "Email" : "Email"}
+          <span className="hidden lg:inline">Email</span>
         </Button>
       </SignInButton>
       <SignUpButton mode="modal">
@@ -107,9 +112,13 @@ function ConfiguredAuthControls({ locale }: AuthControlsProps) {
           variant="outline"
           size="sm"
           className="btn-liquid h-9 rounded-full px-3 text-primary-foreground"
+          aria-label={isVietnamese ? "Đăng ký" : "Sign up"}
+          title={isVietnamese ? "Đăng ký" : "Sign up"}
         >
           <UserPlus aria-hidden="true" />
-          {isVietnamese ? "Đăng ký" : "Sign up"}
+          <span className="hidden lg:inline">
+            {isVietnamese ? "Đăng ký" : "Sign up"}
+          </span>
         </Button>
       </SignUpButton>
       {authError ? (
@@ -119,20 +128,20 @@ function ConfiguredAuthControls({ locale }: AuthControlsProps) {
   );
 }
 
-export function AuthControls({ locale }: AuthControlsProps) {
+export function AuthControls({
+  locale,
+  isClerkConfigured,
+}: AuthControlsProps) {
   const isVietnamese = locale === "vi";
-  const isClerkConfigured = Boolean(
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-  );
 
   if (!isClerkConfigured) {
     return (
       <div
-        className="flex h-9 items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 text-sm text-muted-foreground"
+        className="flex h-9 items-center gap-2 rounded-lg border border-border bg-muted/30 px-2 text-sm text-muted-foreground sm:px-3"
         title={isVietnamese ? "Chế độ khách" : "Guest mode"}
       >
         <UserCircle aria-hidden="true" className="size-4" />
-        Guest
+        <span className="hidden lg:inline">Guest</span>
       </div>
     );
   }

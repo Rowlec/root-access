@@ -89,7 +89,7 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
     >
       <Languages
         aria-hidden="true"
-        className="mx-1 size-4 text-muted-foreground"
+        className="mx-1 hidden size-4 text-muted-foreground lg:block"
       />
       {locales.map((option) => (
         <Button
@@ -98,7 +98,7 @@ export function LocaleSwitcher({ className }: LocaleSwitcherProps) {
           variant={option === locale ? "secondary" : "ghost"}
           size="xs"
           className={cn(
-            "h-7 min-w-9 rounded-full px-2 font-semibold",
+            "h-7 min-w-7 rounded-full px-1 font-semibold sm:min-w-9 sm:px-2",
             option === locale &&
               "bg-primary text-primary-foreground shadow-[0_0_18px_oklch(0.62_0.2_300/0.35)] hover:bg-primary/90",
           )}
