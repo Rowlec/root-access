@@ -9,6 +9,7 @@ import { useEffect, type ReactNode } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { ContextualHelper } from "@/components/onboarding/ContextualHelper";
 import {
   Card,
   CardContent,
@@ -290,7 +291,7 @@ export function GoalForm() {
         </div>
 
         <Card className="glass rounded-3xl py-6 shadow-none">
-          <CardHeader className="gap-2">
+          <CardHeader data-onboarding="project-form" className="gap-2">
             <CardTitle className="text-xl">{t("cardTitle")}</CardTitle>
             <CardDescription className="leading-6">
               {t("cardDescription")}
@@ -298,6 +299,8 @@ export function GoalForm() {
             </CardHeader>
           <CardContent>
             <form className="grid gap-5" onSubmit={handleSubmit(onSubmit)}>
+              <ContextualHelper>{t("contextualTip")}</ContextualHelper>
+
               <div className="rounded-2xl border border-border/70 bg-secondary/30 p-4">
                 <p className="text-sm font-medium text-foreground">
                   {t("workflowChoice.title")}
@@ -473,6 +476,7 @@ export function GoalForm() {
               </fieldset>
 
               <Button
+                data-onboarding="generate-workflow"
                 type="submit"
                 size="lg"
                 className="btn-liquid mt-1 h-12 w-full rounded-full text-base font-semibold text-primary-foreground"

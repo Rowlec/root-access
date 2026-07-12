@@ -3,7 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { motion } from "framer-motion";
 import {
+  ArrowRight,
+  Bot,
   Check,
   Copy,
   Download,
@@ -11,12 +14,16 @@ import {
   Lock,
   History,
   Loader2,
+  RotateCcw,
+  Send,
   RefreshCw,
   Sparkles,
+  UserRound,
   X,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { ContextualHelper } from "@/components/onboarding/ContextualHelper";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -70,19 +77,31 @@ type OutputReview = {
   coach?: ReviewCoach;
   frameworkChecks: readonly string[];
   frameworkTitle: string;
+  missingInformation: string[];
+  problematicPassages: ProblematicPassage[];
   improvedPrompt?: string;
   score: {
     breakdown: {
       actionability: ScoreDimensionResult;
       clarity: ScoreDimensionResult;
+      completeness: ScoreDimensionResult;
       relevance: ScoreDimensionResult;
+      rubricAlignment: ScoreDimensionResult;
       specificity: ScoreDimensionResult;
     };
     explanation: string;
     total: number;
   };
+  strengths: string[];
+  suggestions: string[];
   weaknesses: string[];
   whyBetter?: string;
+};
+
+type ProblematicPassage = {
+  quote: string;
+  reason: string;
+  severity: "high" | "medium" | "low";
 };
 
 type ReviewHistoryEntry = {
@@ -95,8 +114,27 @@ type ReviewHistoryEntry = {
   review: OutputReview;
 };
 
+type GenerationVersion = {
+  createdAt: string;
+  id: string;
+  kind: "original" | "retry";
+  label: string;
+  output: string;
+  prompt: string;
+  review?: OutputReview;
+};
+
+type ImprovementComparison = {
+  afterVersionId: string;
+  beforeVersionId: string;
+  createdAt: string;
+  id: string;
+};
+
 type SectionState = {
   completed: boolean;
+  generationVersions: GenerationVersion[];
+  improvementComparisons: ImprovementComparison[];
   improvedPromptCopied: boolean;
   improvementSkipped: boolean;
   originalOutput: string;
@@ -104,6 +142,7 @@ type SectionState = {
   originalReview: OutputReview | null;
   regressionNotice: string;
   retryOutput: string;
+  retryPrompt: string;
   retryReview: OutputReview | null;
   reviewHistory: ReviewHistoryEntry[];
 };
@@ -130,6 +169,8 @@ type WorkflowReviewWorkspaceProps = {
 
 const emptySectionState: SectionState = {
   completed: false,
+  generationVersions: [],
+  improvementComparisons: [],
   improvedPromptCopied: false,
   improvementSkipped: false,
   originalOutput: "",
@@ -137,16 +178,26 @@ const emptySectionState: SectionState = {
   originalReview: null,
   regressionNotice: "",
   retryOutput: "",
+  retryPrompt: "",
   retryReview: null,
   reviewHistory: [],
 };
 
 const scoreDimensionIds = [
   "relevance",
-  "specificity",
   "clarity",
+  "specificity",
+  "completeness",
   "actionability",
+  "rubricAlignment",
 ] as const;
+
+function isPhase3Review(review: OutputReview | null | undefined): review is OutputReview {
+  return Boolean(
+    review?.score?.breakdown?.completeness &&
+      review.score.breakdown.rubricAlignment,
+  );
+}
 
 function getStorageKey(workflowRunId: string) {
   return `root-access:workflow-review:${workflowRunId}`;
@@ -196,11 +247,87 @@ function getSectionState(
   workspaceState: WorkspaceState,
   sectionId: ProposalSectionId,
 ) {
+  const storedState = workspaceState[sectionId];
+  const reviewHistory = (storedState?.reviewHistory ?? []).filter((entry) =>
+    isPhase3Review(entry.review),
+  );
+  const generationVersions =
+    storedState?.generationVersions?.length
+      ? storedState.generationVersions
+      : (storedState?.reviewHistory ?? []).map((entry) => ({
+          createdAt: entry.createdAt,
+          id: `generation-${entry.id}`,
+          kind: entry.kind,
+          label: entry.label,
+          output: entry.output,
+          prompt: entry.prompt,
+          ...(isPhase3Review(entry.review) ? { review: entry.review } : {}),
+        }));
+
   return {
     ...emptySectionState,
-    ...(workspaceState[sectionId] ?? {}),
-    reviewHistory: workspaceState[sectionId]?.reviewHistory ?? [],
+    ...(storedState ?? {}),
+    generationVersions: generationVersions.map((version) => ({
+      ...version,
+      ...(isPhase3Review(version.review) ? { review: version.review } : { review: undefined }),
+    })),
+    improvementComparisons: storedState?.improvementComparisons ?? [],
+    originalReview: isPhase3Review(storedState?.originalReview)
+      ? storedState.originalReview
+      : null,
+    reviewHistory,
+    retryReview: isPhase3Review(storedState?.retryReview)
+      ? storedState.retryReview
+      : null,
   };
+}
+
+function attachReviewToLatestVersion({
+  kind,
+  output,
+  review,
+  versions,
+}: {
+  kind: GenerationVersion["kind"];
+  output: string;
+  review: OutputReview;
+  versions: GenerationVersion[];
+}) {
+  const matchingIndex = versions.findLastIndex(
+    (version) => version.kind === kind && version.output.trim() === output.trim(),
+  );
+
+  if (matchingIndex === -1) {
+    return versions;
+  }
+
+  return versions.map((version, index) =>
+    index === matchingIndex ? { ...version, review } : version,
+  );
+}
+
+function updateLatestVersionOutput({
+  kind,
+  output,
+  versions,
+}: {
+  kind: GenerationVersion["kind"];
+  output: string;
+  versions: GenerationVersion[];
+}) {
+  const matchingIndex = versions.findLastIndex(
+    (version) => version.kind === kind,
+  );
+
+  if (matchingIndex === -1) {
+    return versions;
+  }
+
+  return versions.map((version, index) =>
+    index === matchingIndex
+      ? { ...version, output, review: undefined }
+      : version,
+  );
 }
 
 function getLatestSectionOutputForExport(
@@ -287,7 +414,7 @@ function getFallbackCoach({
         ? review.weaknesses.slice(0, 3)
         : weakestDimensions.map((dimension) => review.score.breakdown[dimension].reason),
     strengthsImproved:
-      review.score.total >= 24
+      review.score.total >= 36
         ? [
             isVietnamese
               ? "Output đã có cấu trúc đủ rõ để tiếp tục chỉnh."
@@ -319,6 +446,118 @@ function getDeltaLabel(delta: number) {
   }
 
   return `${delta}`;
+}
+
+function formatVersionTime(value: string, locale: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(locale === "vi" ? "vi-VN" : "en-US", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function getPassageTone(severity: ProblematicPassage["severity"]) {
+  if (severity === "high") {
+    return "bg-red-400/25 text-foreground decoration-red-400";
+  }
+
+  if (severity === "medium") {
+    return "bg-amber-300/25 text-foreground decoration-amber-300";
+  }
+
+  return "bg-sky-300/20 text-foreground decoration-sky-300";
+}
+
+function renderHighlightedOutput(output: string, passages: ProblematicPassage[]) {
+  const normalizedOutput = output.toLocaleLowerCase();
+  const matches = passages
+    .map((passage) => {
+      const start = normalizedOutput.indexOf(passage.quote.toLocaleLowerCase());
+
+      return {
+        end: start + passage.quote.length,
+        passage,
+        start,
+      };
+    })
+    .filter((match) => match.start >= 0)
+    .sort((left, right) => left.start - right.start)
+    .filter((match, index, allMatches) =>
+      index === 0 ? true : match.start >= allMatches[index - 1].end,
+    );
+
+  if (matches.length === 0) {
+    return output;
+  }
+
+  const fragments: React.ReactNode[] = [];
+  let cursor = 0;
+
+  matches.forEach((match, index) => {
+    if (match.start > cursor) {
+      fragments.push(output.slice(cursor, match.start));
+    }
+
+    fragments.push(
+      <mark
+        key={`${match.start}-${index}`}
+        className={cn(
+          "rounded px-0.5 underline decoration-2 underline-offset-2",
+          getPassageTone(match.passage.severity),
+        )}
+        title={match.passage.reason}
+      >
+        {output.slice(match.start, match.end)}
+      </mark>,
+    );
+    cursor = match.end;
+  });
+
+  if (cursor < output.length) {
+    fragments.push(output.slice(cursor));
+  }
+
+  return fragments;
+}
+
+function renderImprovedOutput(previousOutput: string, currentOutput: string) {
+  const previousLines = new Set(
+    previousOutput
+      .split("\n")
+      .map((line) => line.trim().toLocaleLowerCase())
+      .filter(Boolean),
+  );
+  const lines = currentOutput.split("\n");
+  const changedLineCount = lines.filter(
+    (line) => line.trim() && !previousLines.has(line.trim().toLocaleLowerCase()),
+  ).length;
+
+  if (changedLineCount === 0) {
+    return currentOutput;
+  }
+
+  return lines.map((line, index) => {
+    const isChanged =
+      line.trim().length > 0 &&
+      !previousLines.has(line.trim().toLocaleLowerCase());
+
+    return isChanged ? (
+      <mark
+        key={`${line}-${index}`}
+        className="rounded bg-emerald-300/20 px-0.5 text-foreground"
+      >
+        {line}
+        {index < lines.length - 1 ? "\n" : ""}
+      </mark>
+    ) : (
+      `${line}${index < lines.length - 1 ? "\n" : ""}`
+    );
+  });
 }
 
 function createInitialPrompt({
@@ -358,11 +597,11 @@ function createInitialPrompt({
 }
 
 function getScoreTone(score: number) {
-  if (score >= 32) {
+  if (score >= 48) {
     return "text-emerald-700 dark:text-emerald-300";
   }
 
-  if (score >= 24) {
+  if (score >= 36) {
     return "text-amber-700 dark:text-amber-300";
   }
 
@@ -370,32 +609,24 @@ function getScoreTone(score: number) {
 }
 
 function getDimensionScoreTone(score: number) {
-  if (score >= 9) {
+  if (score >= 8) {
     return "text-emerald-700 dark:text-emerald-300";
   }
 
-  if (score >= 7) {
+  if (score >= 5) {
     return "text-yellow-700 dark:text-yellow-300";
-  }
-
-  if (score >= 4) {
-    return "text-orange-700 dark:text-orange-300";
   }
 
   return "text-destructive";
 }
 
 function getDimensionScoreBar(score: number) {
-  if (score >= 9) {
+  if (score >= 8) {
     return "bg-emerald-600";
   }
 
-  if (score >= 7) {
+  if (score >= 5) {
     return "bg-yellow-500";
-  }
-
-  if (score >= 4) {
-    return "bg-orange-500";
   }
 
   return "bg-destructive";
@@ -433,13 +664,15 @@ export function WorkflowReviewWorkspace({
   context,
 }: WorkflowReviewWorkspaceProps) {
   const t = useTranslations("WorkflowWorkspace");
-  const [workspaceState, setWorkspaceState] = useState<WorkspaceState>(() =>
-    readWorkspaceState(context.workflowRunId),
+  const [workspaceState, setWorkspaceState] = useState<WorkspaceState>({});
+  const [hydratedWorkflowRunId, setHydratedWorkflowRunId] = useState<string | null>(
+    null,
   );
   const [activeSectionId, setActiveSectionId] =
     useState<ProposalSectionId>("problem");
   const [isReviewing, setIsReviewing] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<CreditPlan>(() => readCreditPlan());
   const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
@@ -494,11 +727,23 @@ export function WorkflowReviewWorkspace({
     activeState.retryReview?.improvedPrompt ??
     activeState.originalReview?.improvedPrompt ??
     "";
-  const oldScore = activeState.originalReview?.score.total;
-  const newScore = activeState.retryReview?.score.total;
-  const scoreTimeline = activeState.reviewHistory.map(
-    (entry) => entry.review.score.total,
-  );
+  const retryPrompt = activeState.retryPrompt || improvedPrompt;
+  const latestComparison =
+    activeState.improvementComparisons[
+      activeState.improvementComparisons.length - 1
+    ];
+  const comparisonBeforeVersion = latestComparison
+    ? activeState.generationVersions.find(
+        (version) => version.id === latestComparison.beforeVersionId,
+      )
+    : undefined;
+  const comparisonAfterVersion = latestComparison
+    ? activeState.generationVersions.find(
+        (version) => version.id === latestComparison.afterVersionId,
+      )
+    : undefined;
+  const oldScore = comparisonBeforeVersion?.review?.score.total;
+  const newScore = comparisonAfterVersion?.review?.score.total;
   const isVietnamese = context.locale === "vi";
   const headerCopy = {
     back: isVietnamese ? "Home" : "Home",
@@ -514,14 +759,9 @@ export function WorkflowReviewWorkspace({
     cancel: isVietnamese ? "Hủy" : "Cancel",
     comparisonAfter: isVietnamese ? "Sau" : "After",
     comparisonBefore: isVietnamese ? "Trước" : "Before",
-    comparisonImproved: isVietnamese ? "Đã cải thiện" : "Improved",
-    comparisonStillWeak: isVietnamese ? "Vẫn yếu" : "Still weak",
-    comparisonTitle: isVietnamese
-      ? "So sánh prompt trước/sau"
-      : "Before/after prompt comparison",
     comparisonWaiting: isVietnamese
-      ? "Paste output từ improved prompt để thấy điểm sau."
-      : "Paste output from the improved prompt to see the after score.",
+      ? "Tạo output từ improved prompt để xem điểm sau."
+      : "Generate from the improved prompt to see the after score.",
     confirm: isVietnamese ? "Xác nhận" : "Confirm",
     copyAll: isVietnamese ? "Copy tất cả" : "Copy all",
     downloadDocx: isVietnamese ? "Tải DOCX" : "Download DOCX",
@@ -622,6 +862,19 @@ export function WorkflowReviewWorkspace({
   ]);
 
   useEffect(() => {
+    const hydrationTimer = window.setTimeout(() => {
+      setWorkspaceState(readWorkspaceState(context.workflowRunId));
+      setHydratedWorkflowRunId(context.workflowRunId);
+    }, 0);
+
+    return () => window.clearTimeout(hydrationTimer);
+  }, [context.workflowRunId]);
+
+  useEffect(() => {
+    if (hydratedWorkflowRunId !== context.workflowRunId) {
+      return;
+    }
+
     try {
       window.localStorage.setItem(
         getStorageKey(context.workflowRunId),
@@ -630,7 +883,7 @@ export function WorkflowReviewWorkspace({
     } catch {
       return;
     }
-  }, [context.workflowRunId, workspaceState]);
+  }, [context.workflowRunId, hydratedWorkflowRunId, workspaceState]);
 
   useEffect(() => {
     const handleStorage = () => {
@@ -724,24 +977,129 @@ export function WorkflowReviewWorkspace({
     await actionToRun.run();
   }
 
-  function generatePrompt() {
+  function resetPrompt() {
+    const prompt = createInitialPrompt({
+      context,
+      section: activeSection,
+    });
+
+    setError(null);
+    updateSectionState(activeSection.id, (sectionState) => ({
+      ...sectionState,
+      originalPrompt: prompt,
+    }));
+  }
+
+  function updatePrompt(kind: "original" | "retry", value: string) {
+    updateSectionState(activeSection.id, (sectionState) => ({
+      ...sectionState,
+      originalPrompt:
+        kind === "original" ? value : sectionState.originalPrompt,
+      retryPrompt: kind === "retry" ? value : sectionState.retryPrompt,
+    }));
+  }
+
+  async function generateWithGemini(kind: "original" | "retry") {
+    const prompt = (kind === "retry" ? retryPrompt : activePrompt).trim();
+
+    if (!prompt) {
+      setError(t("errors.promptRequired"));
+      return;
+    }
+
     if (!canUse("generation")) {
       setError(t("credits.limits.generation"));
       setIsUpgradeOpen(true);
       return;
     }
 
-    const prompt = createInitialPrompt({
-      context,
-      section: activeSection,
-    });
+    const history = Object.values(workspaceState)
+      .flatMap((sectionState) => sectionState?.generationVersions ?? [])
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+      .slice(-4)
+      .flatMap((version) => [
+        { role: "user" as const, text: version.prompt },
+        { role: "model" as const, text: version.output },
+      ]);
 
-    recordUse("generation");
     setError(null);
-    updateSectionState(activeSection.id, (sectionState) => ({
-      ...sectionState,
-      originalPrompt: prompt,
-    }));
+    setIsGenerating(true);
+
+    try {
+      const response = await fetch("/api/gemini/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          context: {
+            deadlineUrgency: context.deadlineUrgency,
+            industry: context.industry,
+            startupIdea: context.startupIdea,
+            targetCustomer: context.targetCustomer,
+          },
+          history,
+          locale: context.locale === "vi" ? "vi" : "en",
+          prompt,
+          section: activeSection.title,
+        }),
+      });
+      const data = (await response.json()) as {
+        message?: unknown;
+        output?: unknown;
+      };
+
+      if (!response.ok || typeof data.output !== "string" || !data.output.trim()) {
+        throw new Error(
+          typeof data.message === "string"
+            ? data.message
+            : t("errors.generateFailed"),
+        );
+      }
+
+      const output = data.output.trim();
+
+      recordUse("generation");
+      updateSectionState(activeSection.id, (sectionState) => {
+        const version: GenerationVersion = {
+          createdAt: new Date().toISOString(),
+          id: createEventId(),
+          kind,
+          label: `v${sectionState.generationVersions.length + 1}`,
+          output,
+          prompt,
+        };
+
+        return {
+          ...sectionState,
+          completed: false,
+          generationVersions: [...sectionState.generationVersions, version],
+          improvedPromptCopied: false,
+          improvementSkipped: false,
+          originalOutput:
+            kind === "original" ? output : sectionState.originalOutput,
+          originalPrompt:
+            kind === "original" ? prompt : sectionState.originalPrompt,
+          originalReview:
+            kind === "original" ? null : sectionState.originalReview,
+          regressionNotice: "",
+          retryOutput: kind === "retry" ? output : "",
+          retryPrompt: kind === "retry" ? prompt : sectionState.retryPrompt,
+          retryReview: null,
+        };
+      });
+      window.setTimeout(() => {
+        document
+          .querySelector('[data-generation-latest="true"]')
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 80);
+    } catch (generationError) {
+      setError(
+        generationError instanceof Error
+          ? generationError.message
+          : t("errors.generateFailed"),
+      );
+    } finally {
+      setIsGenerating(false);
+    }
   }
 
   async function copyToClipboard(value: string, key: string) {
@@ -785,9 +1143,24 @@ export function WorkflowReviewWorkspace({
       kind === "original"
         ? activeState.originalOutput.trim()
         : activeState.retryOutput.trim();
-    const promptForReview = kind === "retry" && improvedPrompt
-      ? improvedPrompt
-      : activePrompt;
+    const generatedVersion = [...activeState.generationVersions]
+      .reverse()
+      .find(
+        (version) =>
+          version.kind === kind && version.output.trim() === output,
+      );
+    const previousReviewedVersion =
+      kind === "retry"
+        ? [...activeState.generationVersions]
+            .reverse()
+            .find(
+              (version) =>
+                version.id !== generatedVersion?.id && Boolean(version.review),
+            )
+        : undefined;
+    const promptForReview =
+      generatedVersion?.prompt ??
+      (kind === "retry" && retryPrompt ? retryPrompt : activePrompt);
 
     if (!output) {
       setError(t("errors.outputRequired"));
@@ -822,8 +1195,11 @@ export function WorkflowReviewWorkspace({
           originalPrompt: promptForReview,
           output,
           previousOutput:
-            kind === "retry" ? activeState.originalOutput.trim() : undefined,
-          previousScore: activeState.originalReview?.score.total,
+            kind === "retry" ? previousReviewedVersion?.output : undefined,
+          previousScore:
+            kind === "retry"
+              ? previousReviewedVersion?.review?.score.total
+              : undefined,
           section: activeSection.title,
           sectionId: activeSection.id,
         }),
@@ -879,8 +1255,38 @@ export function WorkflowReviewWorkspace({
               }
             : sectionState.retryReview;
 
+        const generationVersions = attachReviewToLatestVersion({
+          kind,
+          output,
+          review,
+          versions: sectionState.generationVersions,
+        });
+        const comparisonBeforeVersion =
+          kind === "retry" && generatedVersion
+            ? [...sectionState.generationVersions]
+                .reverse()
+                .find(
+                  (version) =>
+                    version.id !== generatedVersion.id && Boolean(version.review),
+                )
+            : undefined;
+        const improvementComparisons =
+          kind === "retry" && generatedVersion && comparisonBeforeVersion
+            ? [
+                ...sectionState.improvementComparisons,
+                {
+                  afterVersionId: generatedVersion.id,
+                  beforeVersionId: comparisonBeforeVersion.id,
+                  createdAt: new Date().toISOString(),
+                  id: createEventId(),
+                },
+              ]
+            : sectionState.improvementComparisons;
+
         return {
           ...sectionState,
+          generationVersions,
+          improvementComparisons,
           improvedPromptCopied: false,
           improvementSkipped: false,
           originalReview:
@@ -891,10 +1297,10 @@ export function WorkflowReviewWorkspace({
       });
       logIntelligenceEvent({
         improvement:
-          kind === "retry" && activeState.originalReview
-            ? review.score.total - activeState.originalReview.score.total
+          kind === "retry" && previousReviewedVersion?.review
+            ? review.score.total - previousReviewedVersion.review.score.total
             : undefined,
-        previousScore: activeState.originalReview?.score.total,
+        previousScore: previousReviewedVersion?.review?.score.total,
         promptLabel: historyLabel,
         score: review.score.total,
         type: kind === "retry" ? "retry_completed" : "review_completed",
@@ -903,10 +1309,10 @@ export function WorkflowReviewWorkspace({
 
       if (
         kind === "retry" &&
-        activeState.originalReview &&
-        review.score.total < activeState.originalReview.score.total
+        previousReviewedVersion?.review &&
+        review.score.total < previousReviewedVersion.review.score.total
       ) {
-        await repairRegressedPrompt(review);
+        await repairRegressedPrompt(review, previousReviewedVersion.review.score.total);
       }
     } catch (reviewError) {
       setError(
@@ -950,9 +1356,11 @@ export function WorkflowReviewWorkspace({
         output: sourceOutput,
         previousOutput: activeState.originalOutput.trim() || undefined,
         previousScore: activeState.originalReview?.score.total,
-        section: activeSection.title,
-        sectionId: activeSection.id,
-        weaknesses: reviewToImprove.weaknesses,
+          section: activeSection.title,
+          sectionId: activeSection.id,
+          missingInformation: reviewToImprove.missingInformation,
+          suggestions: reviewToImprove.suggestions,
+          weaknesses: reviewToImprove.weaknesses,
       }),
     });
     const data = (await response.json()) as {
@@ -992,7 +1400,7 @@ export function WorkflowReviewWorkspace({
       ? activeState.retryOutput.trim()
       : activeState.originalOutput.trim();
     const promptToImprove =
-      activeState.retryReview && improvedPrompt ? improvedPrompt : activePrompt;
+      activeState.retryReview && retryPrompt ? retryPrompt : activePrompt;
 
     if (!reviewToImprove || !sourceOutput) {
       setError(t("errors.reviewFailed"));
@@ -1036,6 +1444,7 @@ export function WorkflowReviewWorkspace({
             ? sectionState.originalReview
             : nextReview,
           regressionNotice: "",
+          retryPrompt: improvement.improvedPrompt,
           retryReview: sectionState.retryReview ? nextReview : null,
         };
       });
@@ -1050,12 +1459,13 @@ export function WorkflowReviewWorkspace({
     }
   }
 
-  async function repairRegressedPrompt(regressedReview: OutputReview) {
-    const baselineScore = activeState.originalReview?.score.total;
+  async function repairRegressedPrompt(
+    regressedReview: OutputReview,
+    baselineScore: number,
+  ) {
     const sourceOutput = activeState.retryOutput.trim();
 
     if (
-      baselineScore === undefined ||
       regressedReview.score.total >= baselineScore ||
       !sourceOutput ||
       !improvedPrompt
@@ -1099,6 +1509,7 @@ export function WorkflowReviewWorkspace({
             }
           : sectionState.originalReview,
         regressionNotice: headerCopy.regressionNotice,
+        retryPrompt: repairedImprovement.improvedPrompt,
         retryReview: sectionState.retryReview
           ? {
               ...sectionState.retryReview,
@@ -1123,12 +1534,6 @@ export function WorkflowReviewWorkspace({
   }
 
   function handleOutputChange(kind: "original" | "retry", value: string) {
-    const wasEmpty =
-      kind === "original"
-        ? !activeState.originalOutput.trim()
-        : !activeState.retryOutput.trim();
-    const isNowFilled = value.trim().length > 0;
-
     updateSectionState(activeSection.id, (sectionState) => ({
       ...sectionState,
       completed: false,
@@ -1142,14 +1547,13 @@ export function WorkflowReviewWorkspace({
         kind === "original" ? null : sectionState.originalReview,
       regressionNotice: "",
       retryOutput: kind === "retry" ? value : sectionState.retryOutput,
+      generationVersions: updateLatestVersionOutput({
+        kind,
+        output: value,
+        versions: sectionState.generationVersions,
+      }),
       retryReview: kind === "retry" ? null : sectionState.retryReview,
     }));
-
-    if (wasEmpty && isNowFilled) {
-      logIntelligenceEvent({
-        type: "output_pasted",
-      });
-    }
   }
 
   function completeSection() {
@@ -1231,6 +1635,15 @@ export function WorkflowReviewWorkspace({
           ? review.coach.strengthsImproved.slice(0, 3)
           : fallbackCoach.strengthsImproved,
     };
+    const strengths = review.strengths.length
+      ? review.strengths
+      : coach.strengthsImproved;
+    const weaknesses = review.weaknesses.length
+      ? review.weaknesses
+      : coach.remainingWeaknesses;
+    const suggestions = review.suggestions.length
+      ? review.suggestions
+      : coach.recommendations;
     const hasPrevious = Boolean(previousReview);
 
     return (
@@ -1253,7 +1666,7 @@ export function WorkflowReviewWorkspace({
               getScoreTone(score.total),
             )}
           >
-            {score.total}/40
+            {score.total}/60
           </p>
         </div>
 
@@ -1279,9 +1692,6 @@ export function WorkflowReviewWorkspace({
               <p className="mt-2 text-sm leading-6 text-foreground">
                 {coach.currentOutputSummary}
               </p>
-              <pre className="mt-3 max-h-36 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-border/60 bg-background/35 p-3 text-xs leading-5 text-muted-foreground">
-                {currentOutput}
-              </pre>
             </div>
           </div>
         ) : (
@@ -1292,13 +1702,47 @@ export function WorkflowReviewWorkspace({
             <p className="mt-2 text-sm leading-6 text-foreground">
               {coach.currentOutputSummary}
             </p>
-            <pre className="mt-3 max-h-36 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-border/60 bg-background/35 p-3 text-xs leading-5 text-muted-foreground">
-              {currentOutput}
-            </pre>
           </div>
         )}
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div
+          data-review-highlights="true"
+          className="rounded-2xl border border-border/70 bg-secondary/25 p-3 sm:p-4"
+        >
+          <p className="text-sm font-semibold text-foreground">
+            {t("review.problematicSections")}
+          </p>
+          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+            {review.problematicPassages.length > 0
+              ? t("review.highlightHelp")
+              : t("review.noProblematicSections")}
+          </p>
+          <div className="mt-3 max-h-72 overflow-y-auto whitespace-pre-wrap rounded-xl border border-border/60 bg-background/40 p-3 text-sm leading-6 text-muted-foreground">
+            {renderHighlightedOutput(currentOutput, review.problematicPassages)}
+          </div>
+          {review.problematicPassages.length > 0 ? (
+            <ul className="mt-3 grid gap-2">
+              {review.problematicPassages.map((passage, index) => (
+                <li
+                  key={`${passage.quote}-${index}`}
+                  className="grid gap-1 border-l-2 border-primary/50 pl-3 text-sm leading-6"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline">
+                      {t(`review.severity.${passage.severity}`)}
+                    </Badge>
+                    <span className="font-medium text-foreground">
+                      “{passage.quote}”
+                    </span>
+                  </div>
+                  <span className="text-muted-foreground">{passage.reason}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+
+        <div data-review-scores="true" className="grid gap-2 sm:grid-cols-2">
           {scoreDimensionIds.map((dimension) => {
             const dimensionScore = score.breakdown[dimension].score;
             const previousScore =
@@ -1363,7 +1807,7 @@ export function WorkflowReviewWorkspace({
                 {headerCopy.comparisonBefore}
               </p>
               <p className="mt-1 text-2xl font-semibold text-foreground">
-                {previousReview?.score.total ?? "--"}/40
+                {previousReview?.score.total ?? "--"}/60
               </p>
             </div>
             <div>
@@ -1371,7 +1815,7 @@ export function WorkflowReviewWorkspace({
                 {headerCopy.comparisonAfter}
               </p>
               <p className="mt-1 text-2xl font-semibold text-foreground">
-                {score.total}/40
+                {score.total}/60
               </p>
             </div>
             <div>
@@ -1392,47 +1836,184 @@ export function WorkflowReviewWorkspace({
           </div>
         ) : null}
 
-        <div className="grid gap-3 lg:grid-cols-3">
+        <div data-review-diagnostics="true" className="grid gap-3 md:grid-cols-2">
           <div className="rounded-2xl border border-emerald-300/30 bg-emerald-300/10 p-3">
             <p className="text-sm font-medium text-foreground">
-              {hasPrevious
-                ? isVietnamese
-                  ? "Điểm đã tốt hơn"
-                  : "Strengths improved"
-                : isVietnamese
-                  ? "Điểm mạnh hiện tại"
-                  : "Current strengths"}
+              {t("review.strengths")}
             </p>
             <ul className="mt-2 grid gap-2 text-sm leading-6 text-muted-foreground">
-              {coach.strengthsImproved.map((strength) => (
-                <li key={strength}>✓ {strength}</li>
+              {strengths.map((strength) => (
+                <li key={strength}>+ {strength}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-red-300/30 bg-red-300/10 p-3">
+            <p className="text-sm font-medium text-foreground">
+              {t("review.weaknesses")}
+            </p>
+            <ul className="mt-2 grid gap-2 text-sm leading-6 text-muted-foreground">
+              {weaknesses.map((weakness) => (
+                <li key={weakness}>- {weakness}</li>
               ))}
             </ul>
           </div>
           <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3">
             <p className="text-sm font-medium text-foreground">
-              {isVietnamese ? "Điểm vẫn yếu" : "Remaining weaknesses"}
+              {t("review.missingInformation")}
             </p>
             <ul className="mt-2 grid gap-2 text-sm leading-6 text-muted-foreground">
-              {coach.remainingWeaknesses.map((weakness) => (
-                <li key={weakness}>• {weakness}</li>
+              {(review.missingInformation.length
+                ? review.missingInformation
+                : [t("review.noMissingInformation")]
+              ).map((item) => (
+                <li key={item}>- {item}</li>
               ))}
             </ul>
           </div>
           <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3">
             <p className="text-sm font-medium text-foreground">
-              {isVietnamese ? "AI Coach gợi ý" : "AI Coach recommendation"}
+              {t("review.suggestions")}
             </p>
             <ol className="mt-2 grid gap-2 text-sm leading-6 text-muted-foreground">
-              {coach.recommendations.map((recommendation, index) => (
-                <li key={recommendation}>
-                  {index + 1}. {recommendation}
-                </li>
+              {suggestions.map((suggestion, index) => (
+                <li key={suggestion}>{index + 1}. {suggestion}</li>
               ))}
             </ol>
           </div>
         </div>
       </div>
+    );
+  }
+
+  function renderImprovementComparison() {
+    const beforeVersion = comparisonBeforeVersion;
+    const afterVersion = comparisonAfterVersion;
+    const beforeReview = beforeVersion?.review;
+    const afterReview = afterVersion?.review;
+
+    if (!latestComparison || !beforeVersion || !afterVersion || !beforeReview || !afterReview) {
+      return null;
+    }
+
+    const scoreDelta = afterReview.score.total - beforeReview.score.total;
+    const improvedSections = afterReview.strengths.length
+      ? afterReview.strengths
+      : afterReview.coach?.strengthsImproved ?? [];
+    const remainingProblems = [
+      ...afterReview.weaknesses,
+      ...afterReview.missingInformation,
+    ].slice(0, 5);
+
+    return (
+      <motion.section
+        key={latestComparison.id}
+        data-improvement-comparison="true"
+        className="glass grid gap-4 rounded-3xl p-4 sm:p-5"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <Badge variant="secondary">{t("comparison.title")}</Badge>
+            <p className="mt-2 text-lg font-semibold text-foreground">
+              {beforeVersion.label} <ArrowRight aria-hidden="true" className="mx-1 inline size-4 text-primary" /> {afterVersion.label}
+            </p>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">
+              {t("comparison.description")}
+            </p>
+          </div>
+          <div className="grid min-w-36 grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-2xl border border-border/70 bg-secondary/30 p-3 text-center">
+            <div>
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                {t("comparison.before")}
+              </p>
+              <p className="mt-1 text-xl font-semibold text-foreground">
+                {beforeReview.score.total}/60
+              </p>
+            </div>
+            <ArrowRight aria-hidden="true" className="size-4 text-primary" />
+            <div>
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                {t("comparison.after")}
+              </p>
+              <p className={cn("mt-1 text-xl font-semibold", getScoreTone(afterReview.score.total))}>
+                {afterReview.score.total}/60
+              </p>
+              <p className={cn("text-xs font-semibold", getDeltaTone(scoreDelta))}>
+                {getDeltaLabel(scoreDelta)}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="rounded-2xl border border-border/70 bg-secondary/25 p-3">
+            <p className="text-xs font-medium uppercase text-muted-foreground">
+              {t("comparison.before")} {t("comparison.prompt")}
+            </p>
+            <pre className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-muted-foreground">
+              {beforeVersion.prompt}
+            </pre>
+          </div>
+          <div className="rounded-2xl border border-primary/30 bg-primary/10 p-3">
+            <p className="text-xs font-medium uppercase text-primary">
+              {t("comparison.after")} {t("comparison.prompt")}
+            </p>
+            <pre className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-foreground">
+              {afterVersion.prompt}
+            </pre>
+          </div>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="rounded-2xl border border-border/70 bg-secondary/25 p-3">
+            <p className="text-xs font-medium uppercase text-muted-foreground">
+              {t("comparison.before")} {t("comparison.output")}
+            </p>
+            <p className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+              {beforeVersion.output}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-emerald-300/30 bg-emerald-300/10 p-3">
+            <p className="text-xs font-medium uppercase text-emerald-700 dark:text-emerald-300">
+              {t("comparison.after")} {t("comparison.output")}
+            </p>
+            <p className="mt-2 max-h-64 overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-foreground">
+              {renderImprovedOutput(beforeVersion.output, afterVersion.output)}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-2xl border border-emerald-300/30 bg-emerald-300/10 p-3">
+            <p className="text-sm font-semibold text-foreground">
+              {t("comparison.improvedSections")}
+            </p>
+            <ul className="mt-2 grid gap-2 text-sm leading-6 text-muted-foreground">
+              {(improvedSections.length
+                ? improvedSections
+                : [t("comparison.noImprovedSections")]
+              ).map((item) => (
+                <li key={item}>+ {item}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3">
+            <p className="text-sm font-semibold text-foreground">
+              {t("comparison.remainingProblems")}
+            </p>
+            <ul className="mt-2 grid gap-2 text-sm leading-6 text-muted-foreground">
+              {(remainingProblems.length
+                ? remainingProblems
+                : [t("comparison.noRemainingProblems")]
+              ).map((item) => (
+                <li key={item}>- {item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </motion.section>
     );
   }
 
@@ -1574,7 +2155,7 @@ export function WorkflowReviewWorkspace({
 
         <div className="grid gap-5">
           <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
-            <div className="space-y-2">
+            <div data-onboarding="ai-workspace" className="space-y-2">
               <Badge variant="outline">{t("action.layer")}</Badge>
               <h2 className="text-2xl font-semibold leading-tight text-foreground">
                 {activeSection.title}
@@ -1584,54 +2165,94 @@ export function WorkflowReviewWorkspace({
               </p>
             </div>
 
+            <ContextualHelper>
+              {t("contextualTip", { section: activeSection.title })}
+            </ContextualHelper>
+
             {error ? (
               <p className="rounded-2xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm leading-6 text-destructive">
                 {error}
               </p>
             ) : null}
 
-            <div className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {t("action.prompt")}
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                    {t("action.promptHint")}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="btn-glass h-10 justify-center rounded-full px-4"
-                    onClick={generatePrompt}
-                  >
-                    <Sparkles aria-hidden="true" />
-                    {activeState.originalPrompt
-                      ? t("action.regeneratePrompt")
-                      : t("action.generatePrompt")}
-                  </Button>
-                  <Button
-                    type="button"
-                    className="btn-liquid btn-action h-11 justify-center rounded-full px-5 text-primary-foreground"
-                    onClick={() =>
-                      copyToClipboard(activePrompt, `${activeSection.id}:prompt`)
-                    }
-                  >
-                    <Copy aria-hidden="true" />
-                    {copiedKey === `${activeSection.id}:prompt`
-                      ? t("copied")
-                      : t("action.copyPrompt")}
-                  </Button>
+            <div className="grid gap-4 rounded-2xl border border-border/70 bg-secondary/30 p-3 sm:p-4">
+              <div className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                  <UserRound aria-hidden="true" className="size-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {t("action.prompt")}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                        {t("action.promptHint")}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="btn-glass rounded-full"
+                        onClick={resetPrompt}
+                      >
+                        <RotateCcw aria-hidden="true" />
+                        {t("action.resetPrompt")}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="btn-glass rounded-full"
+                        onClick={() =>
+                          copyToClipboard(activePrompt, `${activeSection.id}:prompt`)
+                        }
+                      >
+                        <Copy aria-hidden="true" />
+                        {copiedKey === `${activeSection.id}:prompt`
+                          ? t("copied")
+                          : t("action.copyPrompt")}
+                      </Button>
+                    </div>
+                  </div>
+                  <Textarea
+                    aria-label={t("action.prompt")}
+                    className="mt-3 min-h-52 resize-y rounded-2xl bg-background/45 font-mono text-sm leading-6 text-foreground"
+                    value={activePrompt}
+                    onChange={(event) => updatePrompt("original", event.target.value)}
+                  />
+                  <div className="mt-3 flex justify-end">
+                    <Button
+                      type="button"
+                      data-generation-action="original"
+                      className="btn-liquid btn-action h-11 w-full justify-center rounded-full px-5 text-primary-foreground sm:w-auto"
+                      disabled={isGenerating || !activePrompt.trim()}
+                      onClick={() => generateWithGemini("original")}
+                    >
+                      {isGenerating ? (
+                        <Loader2 aria-hidden="true" className="animate-spin" />
+                      ) : (
+                        <Send aria-hidden="true" />
+                      )}
+                      {isGenerating
+                        ? t("action.generating")
+                        : activeState.generationVersions.some(
+                              (version) => version.kind === "original",
+                            )
+                          ? t("action.regeneratePrompt")
+                          : t("action.generatePrompt")}
+                    </Button>
+                  </div>
                 </div>
               </div>
-              <pre className="max-h-72 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-border/70 bg-background/35 p-3 text-sm leading-6 text-muted-foreground">
-                {activePrompt}
-              </pre>
             </div>
 
-            <details className="rounded-2xl border border-border/70 bg-secondary/20 p-3">
+            <details
+              data-onboarding="improve-guide"
+              className="rounded-2xl border border-border/70 bg-secondary/20 p-3"
+            >
               <summary className="cursor-pointer text-sm font-medium text-foreground">
                 {t("learn.title")}
               </summary>
@@ -1650,22 +2271,47 @@ export function WorkflowReviewWorkspace({
               </div>
             </details>
 
-            <div className="grid gap-2">
-              <label
-                htmlFor="ai-output"
-                className="text-sm font-medium text-foreground"
-              >
-                {t("action.pasteOutput")}
-              </label>
-              <Textarea
-                id="ai-output"
-                className="min-h-52 resize-y rounded-2xl bg-background/35 text-sm leading-6 text-foreground"
-                placeholder={t("action.outputPlaceholder")}
-                value={activeState.originalOutput}
-                onChange={(event) =>
-                  handleOutputChange("original", event.target.value)
-                }
-              />
+            <div
+              data-onboarding="review-entry"
+              data-generation-latest={activeState.originalOutput ? "true" : undefined}
+              className="grid gap-3 rounded-2xl border border-primary/25 bg-primary/5 p-3 sm:p-4"
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                  <Bot aria-hidden="true" className="size-4" />
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    {t("action.pasteOutput")}
+                  </p>
+                  {activeState.originalOutput ? (
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      {t("action.editableOutput")}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+              {isGenerating && !activeState.originalOutput ? (
+                <div className="grid min-h-40 animate-pulse content-center gap-3 rounded-2xl border border-border/60 bg-background/35 p-4">
+                  <div className="h-3 w-4/5 rounded-full bg-muted" />
+                  <div className="h-3 w-full rounded-full bg-muted" />
+                  <div className="h-3 w-2/3 rounded-full bg-muted" />
+                </div>
+              ) : activeState.originalOutput ? (
+                <Textarea
+                  id="ai-output"
+                  className="min-h-64 resize-y rounded-2xl bg-background/45 text-sm leading-6 text-foreground"
+                  placeholder={t("action.outputPlaceholder")}
+                  value={activeState.originalOutput}
+                  onChange={(event) =>
+                    handleOutputChange("original", event.target.value)
+                  }
+                />
+              ) : (
+                <p className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm leading-6 text-muted-foreground">
+                  {t("action.emptyOutput")}
+                </p>
+              )}
             </div>
           </section>
 
@@ -1683,6 +2329,7 @@ export function WorkflowReviewWorkspace({
                 </div>
                 <Button
                   type="button"
+                  data-review-action="original"
                   className="btn-liquid h-10 w-full justify-center rounded-full px-4 text-primary-foreground sm:w-auto"
                   disabled={isReviewing}
                   onClick={() =>
@@ -1713,7 +2360,10 @@ export function WorkflowReviewWorkspace({
               {latestReview &&
               !improvedPrompt &&
               !activeState.improvementSkipped ? (
-                <div className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3">
+                <div
+                  data-onboarding="improve-result"
+                  className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3"
+                >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm font-medium text-foreground">
@@ -1765,7 +2415,10 @@ export function WorkflowReviewWorkspace({
               ) : null}
 
               {latestReview && improvedPrompt ? (
-                <div className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3">
+                <div
+                  data-onboarding="improve-result"
+                  className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3"
+                >
                   <p className="text-sm font-medium text-foreground">
                     {t("improvement.title")}
                   </p>
@@ -1791,52 +2444,29 @@ export function WorkflowReviewWorkspace({
                       ? t("copied")
                       : t("retry.copyImproved")}
                   </Button>
-                  <div className="grid gap-3 rounded-2xl border border-border/70 bg-background/35 p-3 sm:grid-cols-3">
-                    <p className="text-sm font-medium text-foreground sm:col-span-3">
-                      {headerCopy.comparisonTitle}
+                  <div className="grid gap-3 rounded-2xl border border-border/70 bg-background/35 p-3 sm:grid-cols-2">
+                    <p className="text-sm font-medium text-foreground sm:col-span-2">
+                      {t("comparison.title")}
                     </p>
                     <div>
                       <p className="text-xs font-medium uppercase text-muted-foreground">
-                        {headerCopy.comparisonBefore}
+                        {t("comparison.before")} {t("comparison.prompt")}
                       </p>
-                      <p className="mt-1 text-2xl font-semibold text-foreground">
-                        {activeState.originalReview?.score.total ?? "--"}/40
-                      </p>
-                      <ul className="mt-2 grid gap-1 text-sm leading-6 text-muted-foreground">
-                        {(activeState.originalReview?.weaknesses ?? []).map(
-                          (weakness) => (
-                            <li key={weakness}>- {weakness}</li>
-                          ),
-                        )}
-                      </ul>
+                      <pre className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-muted-foreground">
+                        {activePrompt}
+                      </pre>
                     </div>
                     <div>
-                      <p className="text-xs font-medium uppercase text-muted-foreground">
-                        {headerCopy.comparisonAfter}
+                      <p className="text-xs font-medium uppercase text-primary">
+                        {t("comparison.after")} {t("comparison.prompt")}
                       </p>
-                      <p className="mt-1 text-2xl font-semibold text-foreground">
-                        {activeState.retryReview?.score.total !== undefined
-                          ? `${activeState.retryReview.score.total}/40`
-                          : "--/40"}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {activeState.retryReview
-                          ? `${activeState.originalReview?.score.total ?? "--"} -> ${activeState.retryReview.score.total}`
-                          : headerCopy.comparisonWaiting}
-                      </p>
+                      <pre className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-foreground">
+                        {retryPrompt}
+                      </pre>
                     </div>
-                    <div>
-                      <p className="text-xs font-medium uppercase text-muted-foreground">
-                        {activeState.retryReview
-                          ? headerCopy.comparisonStillWeak
-                          : headerCopy.comparisonImproved}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {activeState.retryReview
-                          ? activeState.retryReview.weaknesses.join("; ")
-                          : latestReview.whyBetter}
-                      </p>
-                    </div>
+                    <p className="text-sm leading-6 text-muted-foreground sm:col-span-2">
+                      {headerCopy.comparisonWaiting}
+                    </p>
                   </div>
                 </div>
               ) : null}
@@ -1855,27 +2485,75 @@ export function WorkflowReviewWorkspace({
                 </p>
               </div>
 
-              <div className="grid gap-2">
-                <label
-                  htmlFor="retry-output"
-                  className="text-sm font-medium text-foreground"
-                >
-                  {t("retry.pasteOutput")}
-                </label>
+              <div className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                    <UserRound aria-hidden="true" className="size-4" />
+                  </span>
+                  <p className="text-sm font-medium text-foreground">
+                    {t("action.prompt")}
+                  </p>
+                </div>
                 <Textarea
-                  id="retry-output"
-                  className="min-h-44 resize-y rounded-2xl bg-background/35 text-sm leading-6 text-foreground"
-                  placeholder={t("retry.outputPlaceholder")}
-                  value={activeState.retryOutput}
-                  onChange={(event) =>
-                    handleOutputChange("retry", event.target.value)
-                  }
+                  aria-label={t("action.prompt")}
+                  className="min-h-52 resize-y rounded-2xl bg-background/45 font-mono text-sm leading-6 text-foreground"
+                  value={retryPrompt}
+                  onChange={(event) => updatePrompt("retry", event.target.value)}
                 />
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    data-generation-action="retry"
+                    className="btn-liquid btn-action h-11 w-full justify-center rounded-full px-5 text-primary-foreground sm:w-auto"
+                    disabled={isGenerating || !retryPrompt.trim()}
+                    onClick={() => generateWithGemini("retry")}
+                  >
+                    {isGenerating ? (
+                      <Loader2 aria-hidden="true" className="animate-spin" />
+                    ) : (
+                      <Send aria-hidden="true" />
+                    )}
+                    {isGenerating ? t("action.generating") : t("retry.generate")}
+                  </Button>
+                </div>
+              </div>
+
+              <div
+                data-generation-latest={activeState.retryOutput ? "true" : undefined}
+                className="grid gap-3 rounded-2xl border border-primary/25 bg-primary/5 p-3"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Bot aria-hidden="true" className="size-4" />
+                  </span>
+                  <label
+                    htmlFor="retry-output"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    {t("retry.pasteOutput")}
+                  </label>
+                </div>
+                {activeState.retryOutput ? (
+                  <Textarea
+                    id="retry-output"
+                    className="min-h-56 resize-y rounded-2xl bg-background/45 text-sm leading-6 text-foreground"
+                    placeholder={t("retry.outputPlaceholder")}
+                    value={activeState.retryOutput}
+                    onChange={(event) =>
+                      handleOutputChange("retry", event.target.value)
+                    }
+                  />
+                ) : (
+                  <p className="rounded-2xl border border-dashed border-border px-4 py-8 text-center text-sm leading-6 text-muted-foreground">
+                    {t("retry.outputPlaceholder")}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <Button
                   type="button"
+                  data-review-action="retry"
                   className="btn-liquid btn-action h-11 w-full justify-center rounded-full px-5 text-primary-foreground sm:w-auto"
                   disabled={isReviewing || !activeState.retryOutput.trim()}
                   onClick={() =>
@@ -1902,7 +2580,7 @@ export function WorkflowReviewWorkspace({
                       {t("retry.oldScore")}
                     </p>
                     <p className="mt-1 text-2xl font-semibold text-foreground">
-                      {oldScore}/40
+                      {oldScore}/60
                     </p>
                   </div>
                   <div>
@@ -1910,7 +2588,7 @@ export function WorkflowReviewWorkspace({
                       {t("retry.newScore")}
                     </p>
                     <p className="mt-1 text-2xl font-semibold text-foreground">
-                      {newScore}/40
+                      {newScore}/60
                     </p>
                   </div>
                   <div>
@@ -1936,11 +2614,17 @@ export function WorkflowReviewWorkspace({
                 ? renderReview({
                     currentOutput: activeState.retryOutput,
                     label: t("review.retryPass"),
-                    previousOutput: activeState.originalOutput,
-                    previousReview: activeState.originalReview,
+                    previousOutput:
+                      comparisonBeforeVersion?.output ??
+                      activeState.originalOutput,
+                    previousReview:
+                      comparisonBeforeVersion?.review ??
+                      activeState.originalReview,
                     review: activeState.retryReview,
                   })
                 : null}
+
+              {activeState.retryReview ? renderImprovementComparison() : null}
 
               {activeState.retryReview ? (
                 <div className="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1985,51 +2669,82 @@ export function WorkflowReviewWorkspace({
             </div>
           ) : null}
 
-          {activeState.reviewHistory.length > 1 ? (
+          {activeState.generationVersions.length > 0 ? (
             <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
-              <div className="flex items-center gap-2">
-                <History aria-hidden="true" className="size-4" />
-                <h2 className="text-lg font-semibold text-foreground">
-                  {t("history.title")}
-                </h2>
+              <div className="flex items-start gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                  <History aria-hidden="true" className="size-4" />
+                </span>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    {t("history.title")}
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                    {t("history.description")}
+                  </p>
+                </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
-                  <p className="text-sm font-medium text-foreground">
-                    {t("history.promptVersions")}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    {activeState.reviewHistory
-                      .map((entry) => entry.label)
-                      .join(" -> ")}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
-                  <p className="text-sm font-medium text-foreground">
-                    {t("history.outputHistory")}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    {activeState.reviewHistory
-                      .map(
-                        (entry, index) =>
-                          `${t("history.output")} ${index + 1}: ${entry.review.score.total}/40`,
-                      )
-                      .join(" -> ")}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
-                  <p className="text-sm font-medium text-foreground">
-                    {t("history.timeline")}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    {scoreTimeline.join(" -> ")}
-                  </p>
-                </div>
+              <div className="grid gap-3">
+                {[...activeState.generationVersions]
+                  .reverse()
+                  .map((version, index) => (
+                    <article
+                      key={version.id}
+                      className="rounded-2xl border border-border/70 bg-secondary/25 p-3 sm:p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant={index === 0 ? "default" : "outline"}>
+                            {version.label}
+                          </Badge>
+                          <Badge variant="secondary">
+                            {version.kind === "retry"
+                              ? t("history.retryVersion")
+                              : t("history.originalVersion")}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {t("history.generated")} {formatVersionTime(version.createdAt, context.locale)}
+                          </span>
+                        </div>
+                        <span
+                          className={cn(
+                            "text-sm font-semibold",
+                            version.review
+                              ? getScoreTone(version.review.score.total)
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          {version.review
+                            ? `${version.review.score.total}/60`
+                            : t("history.notReviewed")}
+                        </span>
+                      </div>
+                      <details className="mt-3 border-t border-border/60 pt-3">
+                        <summary className="cursor-pointer text-sm font-medium text-foreground">
+                          {t("history.prompt")}
+                        </summary>
+                        <pre className="mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-xs leading-5 text-muted-foreground">
+                          {version.prompt}
+                        </pre>
+                      </details>
+                      <div className="mt-3 border-t border-border/60 pt-3">
+                        <p className="text-sm font-medium text-foreground">
+                          {t("history.output")}
+                        </p>
+                        <p className="mt-2 max-h-56 overflow-y-auto whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                          {version.output}
+                        </p>
+                      </div>
+                    </article>
+                  ))}
               </div>
             </section>
           ) : null}
 
-          <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
+          <section
+            data-onboarding="export"
+            className="glass grid gap-4 rounded-3xl p-4 sm:p-5"
+          >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -2108,6 +2823,7 @@ export function WorkflowReviewWorkspace({
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
               <Button
                 type="button"
+                data-credit-confirm="true"
                 className="btn-liquid h-10 flex-1 rounded-full text-primary-foreground"
                 onClick={confirmCreditAction}
               >

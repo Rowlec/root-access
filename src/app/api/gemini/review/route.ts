@@ -8,7 +8,7 @@ import {
 } from "@/lib/proposal-review";
 
 const reviewRequestSchema = z.object({
-  baselineScore: z.number().int().min(0).max(40).optional(),
+  baselineScore: z.number().int().min(0).max(60).optional(),
   context: z.object({
     aiModel: z.enum(["ChatGPT", "Gemini"]).optional(),
     deadlineUrgency: z.string().trim().max(120),
@@ -21,14 +21,39 @@ const reviewRequestSchema = z.object({
   originalPrompt: z.string().trim().min(1).max(12000),
   output: z.string().trim().min(1).max(20000),
   previousOutput: z.string().trim().max(20000).optional(),
-  previousScore: z.number().int().min(0).max(40).optional(),
+  previousScore: z.number().int().min(0).max(60).optional(),
   section: z.string().trim().min(1).max(120),
   sectionId: z.enum(proposalSectionIds),
+  missingInformation: z
+    .array(z.string().trim().min(1).max(1000))
+    .max(5)
+    .optional(),
+  suggestions: z.array(z.string().trim().min(1).max(1000)).max(5).optional(),
   weaknesses: z.array(z.string().trim().min(1).max(1000)).max(5).optional(),
+});
+
+const geminiDimensionSchema = z.object({
+  reason: z.string().trim().min(1).max(1000),
+  score: z.number().int().min(0).max(10),
 });
 
 const geminiReviewSchema = z.object({
   currentOutputSummary: z.string().trim().min(1).max(1000),
+  explanation: z.string().trim().min(1).max(1500),
+  missingInformation: z
+    .array(z.string().trim().min(1).max(1000))
+    .min(0)
+    .max(5),
+  problematicPassages: z
+    .array(
+      z.object({
+        quote: z.string().trim().min(1).max(1000),
+        reason: z.string().trim().min(1).max(1000),
+        severity: z.enum(["high", "medium", "low"]),
+      }),
+    )
+    .min(1)
+    .max(5),
   previousOutputSummary: z.string().trim().min(1).max(1000).optional(),
   recommendations: z.array(z.string().trim().min(1).max(1000)).min(1).max(3),
   remainingWeaknesses: z
@@ -39,7 +64,17 @@ const geminiReviewSchema = z.object({
     .array(z.string().trim().min(1).max(1000))
     .min(0)
     .max(3),
+  strengths: z.array(z.string().trim().min(1).max(1000)).min(0).max(5),
+  suggestions: z.array(z.string().trim().min(1).max(1000)).min(1).max(5),
   weaknesses: z.array(z.string().trim().min(1).max(1000)).min(0).max(5),
+  scores: z.object({
+    actionability: geminiDimensionSchema,
+    clarity: geminiDimensionSchema,
+    completeness: geminiDimensionSchema,
+    relevance: geminiDimensionSchema,
+    rubricAlignment: geminiDimensionSchema,
+    specificity: geminiDimensionSchema,
+  }),
 });
 
 const geminiImprovementSchema = z.object({
@@ -127,9 +162,48 @@ function truncateReviewText(value: string, maxLength: number) {
   return `${value.slice(0, maxLength - 3).trimEnd()}...`;
 }
 
-function parseReviewJson(value: string) {
+function getQuoteTokens(value: string) {
+  return (
+    value
+      .toLocaleLowerCase()
+      .match(/[\p{L}\p{N}]+/gu) ?? []
+  );
+}
+
+function resolvePassageQuote(quote: string, output: string) {
+  const exactIndex = output.toLocaleLowerCase().indexOf(quote.toLocaleLowerCase());
+
+  if (exactIndex >= 0) {
+    return output.slice(exactIndex, exactIndex + quote.length);
+  }
+
+  const quoteTokens = new Set(getQuoteTokens(quote));
+  const sentences = output.match(/[^.!?\n]+[.!?]?/g) ?? [];
+  let bestMatch = sentences[0]?.trim() ?? "";
+  let bestScore = -1;
+
+  sentences.forEach((sentence) => {
+    const sentenceTokens = new Set(getQuoteTokens(sentence));
+    const overlap = [...quoteTokens].filter((token) => sentenceTokens.has(token)).length;
+    const score = quoteTokens.size > 0 ? overlap / quoteTokens.size : 0;
+
+    if (score > bestScore) {
+      bestMatch = sentence.trim();
+      bestScore = score;
+    }
+  });
+
+  return bestMatch;
+}
+
+function parseReviewJson(value: string, output: string) {
   const parsed: unknown = JSON.parse(extractJsonObject(value));
   const review = geminiReviewSchema.parse(parsed);
+  const breakdown = review.scores;
+  const total = Object.values(breakdown).reduce(
+    (sum, dimension) => sum + dimension.score,
+    0,
+  );
 
   return {
     coach: {
@@ -150,9 +224,31 @@ function parseReviewJson(value: string) {
         .slice(0, 3)
         .map((strength) => truncateReviewText(strength, 220)),
     },
+    missingInformation: review.missingInformation
+      .slice(0, 5)
+      .map((item) => truncateReviewText(item, 300)),
+    problematicPassages: review.problematicPassages
+      .slice(0, 5)
+      .map((passage) => ({
+        quote: resolvePassageQuote(passage.quote, output),
+        reason: truncateReviewText(passage.reason, 300),
+        severity: passage.severity,
+      }))
+      .filter((passage) => passage.quote.length > 0),
+    score: {
+      breakdown,
+      explanation: truncateReviewText(review.explanation, 700),
+      total,
+    },
+    strengths: review.strengths
+      .slice(0, 5)
+      .map((strength) => truncateReviewText(strength, 300)),
+    suggestions: review.suggestions
+      .slice(0, 5)
+      .map((suggestion) => truncateReviewText(suggestion, 300)),
     weaknesses: review.weaknesses
-      .slice(0, 2)
-      .map((weakness) => truncateReviewText(weakness, 240)),
+      .slice(0, 5)
+      .map((weakness) => truncateReviewText(weakness, 300)),
   };
 }
 
@@ -184,6 +280,8 @@ function createCompletenessGuardrails({
           `- Relevance: ${score.breakdown.relevance.reason}`,
           `- Specificity: ${score.breakdown.specificity.reason}`,
           `- Clarity: ${score.breakdown.clarity.reason}`,
+          `- Completeness: ${score.breakdown.completeness.reason}`,
+          `- Rubric alignment: ${score.breakdown.rubricAlignment.reason}`,
           `- Actionability: ${score.breakdown.actionability.reason}`,
         ].join("\n");
 
@@ -253,18 +351,19 @@ function createGeminiWeaknessPrompt({
   output,
   previousOutput,
   previousScore,
-  score,
   section,
   sectionId,
-}: z.infer<typeof reviewRequestSchema> & {
-  score: ReturnType<typeof scoreStartupProposalOutput>;
-}) {
+}: z.infer<typeof reviewRequestSchema>) {
   const framework = proposalReviewFrameworks[sectionId];
 
   return [
     "You are RootAccess, a domain-specific Startup Proposal reviewer for FPT University students.",
-    "The deterministic scoring engine has already scored the output. Do not change, invent, or mention new scores.",
-    "Your job is Weakness Detection plus concise AI Coach feedback.",
+    "Your job is to score the output and perform evidence-based Weakness Detection plus concise AI Coach feedback.",
+    "Score each of the six dimensions from 0 to 10. Use only evidence in the output and project context.",
+    "For every dimension, explain WHY it received that score. Name the concrete gap instead of repeating the dimension name.",
+    "Rubric Alignment means whether the output addresses the section-specific framework checks listed below.",
+    "Completeness means whether the section contains enough connected information to be usable, not whether it is merely long.",
+    "problematicPassages must contain at least one item. Quote exact short text from the output so Root Access can highlight it. Never paraphrase the quote. For a strong output, select the least effective passage and use low severity.",
     "Do not write the final proposal section for the user.",
     "Do not improve the prompt yet.",
     "Do not give generic writing feedback. Focus only on startup business logic.",
@@ -277,6 +376,26 @@ function createGeminiWeaknessPrompt({
     JSON.stringify(
       {
         currentOutputSummary: "one-sentence summary of the current output",
+        explanation: "concise explanation of the overall quality and biggest score drivers",
+        scores: {
+          relevance: { score: 0, reason: "why, using output evidence" },
+          clarity: { score: 0, reason: "why, using output evidence" },
+          specificity: { score: 0, reason: "why, using output evidence" },
+          completeness: { score: 0, reason: "why, using output evidence" },
+          actionability: { score: 0, reason: "why, using output evidence" },
+          rubricAlignment: { score: 0, reason: "why, using framework checks" },
+        },
+        strengths: ["specific strength supported by the output"],
+        weaknesses: ["specific weakness and why it matters"],
+        missingInformation: ["missing fact, evidence, assumption, or decision"],
+        suggestions: ["concrete action that addresses a named weakness"],
+        problematicPassages: [
+          {
+            quote: "exact short quote copied from the output",
+            reason: "why this passage is problematic",
+            severity: "high",
+          },
+        ],
         previousOutputSummary:
           "one-sentence summary of previous output, or omit when none",
         recommendations: [
@@ -291,7 +410,6 @@ function createGeminiWeaknessPrompt({
           "specific strength or improvement 1",
           "specific strength or improvement 2",
         ],
-        weaknesses: ["top business weakness 1", "top business weakness 2"],
       },
       null,
       2,
@@ -302,13 +420,6 @@ function createGeminiWeaknessPrompt({
     `Framework checks: ${framework.checks.join(", ")}`,
     `Previous score, if retry: ${previousScore ?? "none"}`,
     `Previous output available: ${previousOutput ? "yes" : "no"}`,
-    "",
-    "Deterministic score breakdown:",
-    `- Relevance: ${score.breakdown.relevance.score}/10. Why this score? ${score.breakdown.relevance.reason}`,
-    `- Specificity: ${score.breakdown.specificity.score}/10. Why this score? ${score.breakdown.specificity.reason}`,
-    `- Clarity: ${score.breakdown.clarity.score}/10. Why this score? ${score.breakdown.clarity.reason}`,
-    `- Actionability: ${score.breakdown.actionability.score}/10. Why this score? ${score.breakdown.actionability.reason}`,
-    `- Total: ${score.total}/40`,
     "",
     "Project context:",
     `- Startup idea: ${context.startupIdea}`,
@@ -322,7 +433,7 @@ function createGeminiWeaknessPrompt({
     "Previous output, if any:",
     previousOutput || "none",
     "",
-    "Pasted AI output to review:",
+    "Current generated output to review:",
     output,
   ].join("\n");
 }
@@ -337,6 +448,8 @@ function createGeminiImprovementPrompt({
   score,
   section,
   sectionId,
+  missingInformation,
+  suggestions,
   weaknesses,
 }: z.infer<typeof reviewRequestSchema> & {
   score: ReturnType<typeof scoreStartupProposalOutput>;
@@ -347,6 +460,14 @@ function createGeminiImprovementPrompt({
     weaknesses && weaknesses.length > 0
       ? weaknesses.map((weakness) => `- ${weakness}`).join("\n")
       : "- Use the deterministic score breakdown to target the weakest dimensions.";
+  const missingInformationList =
+    missingInformation && missingInformation.length > 0
+      ? missingInformation.map((item) => `- ${item}`).join("\n")
+      : "- No additional missing information was provided.";
+  const suggestionList =
+    suggestions && suggestions.length > 0
+      ? suggestions.map((item) => `- ${item}`).join("\n")
+      : "- No additional suggestions were provided.";
 
   return [
     "You are RootAccess, a domain-specific Startup Proposal prompt coach for FPT University students.",
@@ -382,17 +503,25 @@ function createGeminiImprovementPrompt({
     `Review framework: ${framework.title}`,
     `Framework checks: ${framework.checks.join(", ")}`,
     `Target AI tool: ${targetAi}`,
-    `Baseline score before improvement: ${baselineScore ?? score.total}/40`,
+    `Baseline score before improvement: ${baselineScore ?? score.total}/60`,
     "",
     "Weaknesses to fix:",
     weaknessList,
+    "",
+    "Missing information that the next output must add or clearly mark [VERIFY]:",
+    missingInformationList,
+    "",
+    "Review suggestions to apply:",
+    suggestionList,
     "",
     "Deterministic score breakdown:",
     `- Relevance: ${score.breakdown.relevance.score}/10. Why this score? ${score.breakdown.relevance.reason}`,
     `- Specificity: ${score.breakdown.specificity.score}/10. Why this score? ${score.breakdown.specificity.reason}`,
     `- Clarity: ${score.breakdown.clarity.score}/10. Why this score? ${score.breakdown.clarity.reason}`,
+    `- Completeness: ${score.breakdown.completeness.score}/10. Why this score? ${score.breakdown.completeness.reason}`,
     `- Actionability: ${score.breakdown.actionability.score}/10. Why this score? ${score.breakdown.actionability.reason}`,
-    `- Total: ${score.total}/40`,
+    `- Rubric alignment: ${score.breakdown.rubricAlignment.score}/10. Why this score? ${score.breakdown.rubricAlignment.reason}`,
+    `- Total: ${score.total}/60`,
     "",
     "Required improved prompt behavior:",
     "- Start with a clear role for the AI tool.",
@@ -552,16 +681,16 @@ export async function POST(request: Request) {
         })
       : createGeminiWeaknessPrompt({
           ...parsedBody.data,
-          score: deterministicScore,
         });
+  const systemInstruction =
+    parsedBody.data.mode === "improve"
+      ? "You create copy-ready, structured AI prompts for startup proposal work. You never write final proposal content, never score outputs, and every improved prompt must ask for a complete revised section plus concrete fixes and additions that address the reviewed output's weaknesses."
+      : "You are an evidence-based Startup Proposal evaluator. You score six rubric dimensions, detect specific weaknesses and missing information, quote exact problematic passages, and coach students concisely. You never write final proposal content or improve prompts.";
   const geminiResult = await callGemini({
     apiKey,
     model,
     prompt,
-    systemInstruction:
-      parsedBody.data.mode === "improve"
-        ? "You create copy-ready, structured AI prompts for startup proposal work. You never write final proposal content, never score outputs, and every improved prompt must ask for a complete revised section plus concrete fixes and additions that address the reviewed output's weaknesses."
-        : "You detect startup proposal weaknesses and coach students with concise comparisons. You never write final proposal content, improve prompts, or score outputs.",
+    systemInstruction,
   });
 
   if ("error" in geminiResult) {
@@ -588,18 +717,53 @@ export async function POST(request: Request) {
       });
     }
 
-    const geminiReview = parseReviewJson(geminiResult.text);
+    let reviewText = geminiResult.text;
 
-    return Response.json({
-      model,
-      review: {
-        coach: geminiReview.coach,
-        frameworkChecks: deterministicScore.frameworkChecks,
-        frameworkTitle: deterministicScore.frameworkTitle,
-        score: deterministicScore,
-        weaknesses: geminiReview.weaknesses,
-      },
-    });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const geminiReview = parseReviewJson(
+          reviewText,
+          parsedBody.data.output,
+        );
+
+        return Response.json({
+          model,
+          review: {
+            coach: geminiReview.coach,
+            frameworkChecks:
+              proposalReviewFrameworks[parsedBody.data.sectionId].checks,
+            frameworkTitle:
+              proposalReviewFrameworks[parsedBody.data.sectionId].title,
+            missingInformation: geminiReview.missingInformation,
+            problematicPassages: geminiReview.problematicPassages,
+            score: geminiReview.score,
+            strengths: geminiReview.strengths,
+            suggestions: geminiReview.suggestions,
+            weaknesses: geminiReview.weaknesses,
+          },
+        });
+      } catch {
+        if (attempt > 0) {
+          throw new Error("invalid_review_json");
+        }
+
+        const retryResult = await callGemini({
+          apiKey,
+          model,
+          prompt: `${prompt}\n\nYour previous response did not match the required JSON schema. Return every required field, including all six integer scores and at least one exact problematic passage quote. Return JSON only.`,
+          systemInstruction,
+        });
+
+        if ("error" in retryResult) {
+          return Response.json(
+            { code: "gemini_error", message: retryResult.error },
+            { status: retryResult.status },
+          );
+        }
+
+        reviewText = retryResult.text;
+      }
+    }
   } catch {
     return Response.json(
       {

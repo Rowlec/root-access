@@ -1,583 +1,580 @@
-Theo mình, sau khi theo dõi dự án của bạn từ CP1 đến bây giờ, **MVP đã đúng hướng nhưng vẫn chưa tạo được cảm giác "wow"**. Vấn đề không nằm ở số lượng tính năng, mà là **mỗi tính năng chưa hoàn thành trọn vẹn (complete experience)**.
-
-Hiện tại flow của bạn là:
-
-> Input → Prompt → AI → Paste → Review → Improve → Export
-
-Đây là flow hợp lý. Nhưng mỗi bước mới chỉ đạt khoảng **70–80%**. Mình sẽ ưu tiên các cải tiến theo ROI (Return on Investment), tức là làm ít nhưng tăng giá trị nhiều.
-
 ---
 
-# PHASE 1 — Make Review Actually Useful (Ưu tiên cao nhất)
-
-## Vấn đề
-
-Hiện Review chỉ giống:
-
-```
-Specificity: 6
-Clarity: 8
-```
-
-Người dùng nhìn xong vẫn không biết:
-
-* Mình làm tốt chỗ nào?
-* Sai ở đâu?
-* Prompt mới cải thiện gì?
-
-Đây là phần đáng lẽ phải là "giá trị cốt lõi".
-
----
-
-## Mục tiêu
-
-Biến Review thành AI Coach.
-
-Không chỉ chấm điểm.
-
-Mà phải coaching.
-
----
-
-## Prompt
+# Phase 1 — Build an Interactive First-Time Experience
 
 ```text
-Phase 1.
+Goal
 
-Redesign the Review experience into an AI Coach instead of a simple scoring page.
+Completely redesign the first-time user experience of RootAccess.
 
-Current issue:
+Current problem
 
-Users only see scores.
+New users open the application and have no idea what RootAccess does or where to start.
 
-They cannot understand:
+Build a complete onboarding experience inspired by Notion, Linear, and Duolingo.
 
-• why the score changed
-• what became better
-• what is still weak
+Requirements
 
-Build a comparison-based review.
+1. Detect first-time users.
 
-For every review, show:
+2. Show a welcome modal explaining:
+   - What RootAccess is.
+   - What users will accomplish.
+   - Estimated completion time.
+   - Main workflow.
 
-1. Previous output summary
+3. Build a guided tour with spotlight animations.
 
-2. Current output summary
+Guide users through:
 
-3. Score comparison
+- Project information form
+- Generate Workflow
+- AI Workspace
+- Review
+- Improve
+- Export
+
+Each step should:
+
+- highlight the related UI
+- dim the background
+- explain why this step exists
+- have Next / Back buttons
+- allow Skip
+
+4. Add contextual helper tips.
 
 Example:
 
-Specificity
+"You are currently defining your customer segment."
 
-6 → 9 (+3)
+"This information will improve later AI suggestions."
 
-Clarity
+5. Save onboarding completion.
 
-7 → 8 (+1)
+Do not show again unless reset.
 
-Actionability
+6. Add subtle animations.
 
-5 → 8 (+3)
+- fade
+- slide
+- pulse
+- progress transitions
 
-4. Strengths improved
+Goal
 
-Example:
-
-✓ customer segment became narrower
-
-✓ validation became measurable
-
-✓ revenue assumption more realistic
-
-5. Remaining weaknesses
-
-Example:
-
-• customer pain still too broad
-
-• pricing evidence missing
-
-• MVP scope can be smaller
-
-6. AI Coach Recommendation
-
-Maximum three actionable suggestions.
-
-Do not repeat generic advice.
-
-Make the review feel like a mentor coaching the student.
+Users should fully understand the product within 30–45 seconds without reading documentation.
 ```
 
 ---
 
-# PHASE 2 — Professional Export
-
-Đây là thứ mình nghĩ cô sẽ rất thích.
-
-Hiện export giống:
-
-```
-# Problem
-
----
-
-**Customer**
-```
-
-Điều này không giống một proposal.
-
----
-
-## Mục tiêu
-
-Export là có thể nộp luôn.
-
----
-
-## Prompt
+# Phase 2 — Replace Copy/Paste with AI Workspace
 
 ```text
-Phase 2.
+Goal
 
-Refactor the Proposal Export system.
+Transform RootAccess from a prompt generator into an AI workspace.
 
-Current export still contains:
+Current problem
 
-- markdown syntax
-- ** symbols
-- ---
-- AI conversational text
-- unnecessary introductions
-- unnecessary conclusions
+Users constantly switch between RootAccess and ChatGPT/Gemini.
 
-Clean everything.
+Remove this friction.
 
-The exported proposal should read like a human-written business proposal.
+Requirements
 
-Requirements:
+Integrate Gemini API.
 
-1.
+Workflow becomes:
 
-Remove all markdown.
-
-2.
-
-Remove AI phrases.
-
-Examples:
-
-"This is..."
-
-"Here is..."
-
-"I suggest..."
-
-"You can..."
-
-"Hope this helps..."
-
-3.
-
-Keep only useful proposal content.
-
-4.
-
-Automatically merge duplicated ideas.
-
-5.
-
-Normalize headings.
-
-Example:
-
-Problem Statement
-
-Customer Segment
-
-Validation
-
-Revenue Model
-
-Competitive Advantage
-
-MVP
-
-6.
-
-Export should require no manual editing.
-
-The document should be presentation-ready.
-```
-
----
-
-# PHASE 3 — Multi Export
-
-## Prompt
-
-```text
-Phase 3.
-
-Upgrade Proposal Export.
-
-Support:
-
-• TXT
-
-• DOCX
-
-• PDF
-
-Generate all formats from one cleaned proposal.
-
-DOCX should preserve headings.
-
-PDF should have proper typography.
-
-Both should look like a university report instead of raw AI output.
-```
-
----
-
-# PHASE 4 — Fix Workflow Logic
-
-Đây là vấn đề mình thấy nghiêm trọng nhất.
-
-Hiện tại flow của bạn là:
-
-```
-Idea
+User Input
 
 ↓
 
-Generate workflow
+Generate
 
 ↓
 
-Step 1
+Gemini API
 
-Find problem
+↓
+
+Output
+
+↓
+
+Review
+
+↓
+
+Improve
+
+↓
+
+Compare
+
+No manual copy/paste.
+
+Keep every generation inside the application.
+
+Create a clean chat-like interface.
+
+Each generation becomes a Version.
+
+Version contains:
+
+- prompt
+- output
+- timestamp
+- score
+- review
+
+Support regeneration.
+
+Support editing prompt before sending.
+
+Support retry.
+
+Maintain conversation history per proposal.
+
+Goal
+
+Users never leave RootAccess while working.
 ```
-
-Nhưng startup không phải lúc nào cũng bắt đầu từ idea.
-
-Có người bắt đầu từ:
-
-* vấn đề
-* công nghệ
-* thị trường
-
-Nghĩa là Step 1 đang áp đặt.
 
 ---
 
-## Đề xuất
-
-Thêm onboarding:
-
-```
-How are you starting today?
-
-○ I already have an idea
-
-○ I only know the problem
-
-○ I only know the target customer
-
-○ I'm still exploring
-```
-
-Sau đó workflow thay đổi.
-
-Ví dụ:
-
-Nếu:
-
-```
-I already have an idea
-```
-
-↓
-
-```
-Validate Problem
-```
-
-Nếu:
-
-```
-I only know the problem
-```
-
-↓
-
-```
-Validate Customer
-```
-
-Workflow dynamic.
-
-Đây là điểm rất mạnh.
-
----
-
-## Prompt
+# Phase 3 — Build a Real AI Review System
 
 ```text
-Phase 4.
+Goal
 
-Redesign workflow generation.
+Upgrade the Review system into a real AI quality evaluation engine.
 
-Current issue:
+Current problem
 
-All users receive the same Startup Proposal workflow.
+Current review only shows a score.
 
-This is logically incorrect.
+Requirements
 
-Different users start from different situations.
+Review should evaluate:
 
-Before generating workflow,
+- Relevance
+- Clarity
+- Specificity
+- Completeness
+- Actionability
+- Rubric Alignment
 
-ask:
+Display
 
-How are you starting today?
+Overall Score
 
-Options:
+Strengths
 
-• I already have an idea
+Weaknesses
 
-• I already know the problem
+Missing Information
 
-• I already know the customer
+Suggestions
 
-• I am still exploring
+Highlight problematic sections inside the output.
 
-Generate different first sections accordingly.
+Do not only say
 
-Workflow must adapt.
+"Specificity is low"
 
-Do not force Problem Discovery for every user.
+Instead explain WHY.
 
-Make RootAccess feel personalized.
+Example
+
+Pain point is too broad.
+
+Customer segment is unclear.
+
+Revenue model lacks validation.
+
+Add color-coded score bars.
+
+Green
+
+Yellow
+
+Red
+
+Goal
+
+Users immediately understand what is wrong.
 ```
 
 ---
 
-# PHASE 5 — Fix Review UI Bug
-
-## Prompt
+# Phase 4 — Intelligent Improve Loop
 
 ```text
-Phase 5.
+Goal
 
-Fix the review comparison UI.
+Turn Improve into a continuous optimization loop.
 
-Current issue:
+Workflow
 
-Only the previous score is shown.
+Generate
 
-Build a side-by-side comparison.
+↓
 
-Display:
+Review
+
+↓
+
+Improve Prompt
+
+↓
+
+Generate Again
+
+↓
+
+Compare
+
+Requirements
+
+Show comparison between:
 
 Old Output
 
-↓
-
-Scores
-
-↓
-
 New Output
 
+Old Prompt
+
+New Prompt
+
+Old Score
+
+New Score
+
+Highlight
+
+Improved Sections
+
+Remaining Problems
+
+Score Difference
+
+Add improvement animation.
+
+Example
+
+7.2
+
 ↓
 
-Scores
+8.9
 
-↓
+Never automatically replace old versions.
 
-Improvement Summary
+Users must always keep history.
 
-Every score change should have:
+Goal
 
-green if improved
-
-red if worse
-
-gray if unchanged
-
-Never replace old scores.
-
-Always compare.
+Users can visually see progress.
 ```
 
 ---
 
-# PHASE 6 — Proposal Timeline (Đây là ý tưởng mình rất thích)
+# Phase 5 — Smart Proposal Builder
 
-Hiện người dùng không biết:
+```text
+Goal
 
-```
-đang ở đâu
-```
+Build a complete Proposal Builder.
 
-Thêm:
+Requirements
 
-```
+Every workflow step automatically fills proposal sections.
+
 Proposal Progress
+
+Idea
 
 Problem
 
-✔
-
 Customer
 
-✔
+Market
+
+Solution
 
 Revenue
 
-○
+Competition
 
 MVP
 
-○
+Validation
 
-Finish
+Users can jump directly into incomplete sections.
 
-○
+Display completion percentage.
+
+Support manual editing.
+
+Auto-save every change.
+
+Goal
+
+Proposal becomes a living document instead of scattered outputs.
 ```
-
-Vừa trực quan.
-
-Vừa đúng startup.
 
 ---
 
-# PHASE 7 — AI Memory (Nếu còn thời gian)
+# Phase 6 — Export System 2.0
 
-Mình thấy hiện tại:
+```text
+Goal
 
-Improve Prompt
+Produce submission-ready documents.
 
-↓
+Current problem
 
-Prompt mất.
+AI outputs still contain markdown and conversational text.
 
-Nên thêm:
+Requirements
 
+Before exporting:
+
+Remove:
+
+- markdown
+- ** **
+- ---
+- bullet artifacts
+- AI introductions
+- AI conclusions
+
+Normalize formatting.
+
+Support
+
+DOCX
+
+PDF
+
+TXT
+
+Professional layout.
+
+Cover page.
+
+Table of contents.
+
+Consistent headings.
+
+Readable spacing.
+
+No AI artifacts should remain.
+
+Export should require zero manual cleanup.
 ```
-History
-
-Version 1
-
-Version 2
-
-Version 3
-
-Compare
-```
-
-Đây là tính năng rất "AI product".
 
 ---
 
-# PHASE 8 — Mentor Mode (Mình đánh giá rất đáng làm)
+# Phase 7 — Proposal Dashboard
 
-Đây là cái mình nghĩ sẽ khiến sản phẩm khác biệt hơn.
+```text
+Goal
 
-Sau mỗi review.
+Create a dashboard.
 
-Thay vì:
+Users can:
 
+View all proposals.
+
+Continue unfinished proposals.
+
+Duplicate.
+
+Rename.
+
+Delete.
+
+Search.
+
+Filter.
+
+Display
+
+Progress
+
+Last edited
+
+Score
+
+Versions
+
+Credits used
+
+Goal
+
+Users manage multiple startup projects.
 ```
-Improve Prompt
-```
-
-Thêm:
-
-```
-Ask AI Mentor
-
-"Why is my customer too broad?"
-
-"What should I improve next?"
-
-"Is my pricing realistic?"
-```
-
-Không cần AI agent.
-
-Chỉ cần:
-
-Preset questions.
-
-Gemini trả lời.
-
-Rất đáng tiền.
 
 ---
 
-# Thứ tự chạy cho Agent
+# Phase 8 — AI Coach
 
-Mình sẽ **không khuyến khích chạy theo thứ tự bạn liệt kê**, mà nên chạy theo giá trị tạo ra cho người dùng:
+```text
+Goal
 
-### Sprint 1 (Bắt buộc)
+Build an AI Coach.
 
-1. AI Coach Review (so sánh output cũ vs mới)
-2. Export sạch (loại bỏ markdown, lời thoại AI)
-3. DOCX + PDF export
-4. Fix Review UI bug
+This is NOT another chatbot.
+
+The coach understands:
+
+Current workflow step.
+
+Proposal progress.
+
+Previous AI reviews.
+
+Current weaknesses.
+
+Capabilities
+
+Recommend next action.
+
+Warn users before making common mistakes.
+
+Suggest better customer segments.
+
+Detect inconsistent assumptions.
+
+Recommend whether to use ChatGPT or Gemini.
+
+Recommend additional validation.
+
+The coach should proactively guide users throughout the workflow.
+
+Goal
+
+RootAccess feels like an experienced startup mentor rather than a prompt generator.
+```
 
 ---
 
-### Sprint 2 (Tăng tính logic)
+# Phase 9 — Polish Everything
 
-5. Dynamic Workflow Generation
-6. Proposal Progress Timeline
+```text
+Goal
+
+Polish the entire application.
+
+Improve:
+
+Animations
+
+Loading
+
+Skeletons
+
+Transitions
+
+Empty states
+
+Error handling
+
+Mobile responsiveness
+
+Accessibility
+
+Keyboard shortcuts
+
+Success notifications
+
+Micro interactions
+
+Every interaction should feel smooth and professional.
+
+Goal
+
+Deliver a production-quality MVP suitable for a startup pitch and final project demonstration.
+```
 
 ---
 
-### Sprint 3 (Tăng giá trị cảm nhận)
+## Theo mình, **còn thiếu một Phase cuối cùng** mà rất nhiều nhóm bỏ qua nhưng lại gây ấn tượng mạnh khi demo:
 
-7. Prompt History
-8. Mentor Mode
+### **Phase 10 – Business & Monetization Experience**
 
----
+Đây là phần giúp **BMC khớp hoàn toàn với MVP**, đúng như giảng viên đã nhắc.
 
-## Một đề xuất cuối cùng (đây là cái mình thích nhất)
+```text
+Goal
 
-Hiện tên nút là:
+Integrate the business model into the product.
 
+Requirements
+
+1. Implement Credit System.
+
+Every AI action consumes credits.
+
+Before using credits:
+
+Show confirmation dialog.
+
+Explain how many credits will be used.
+
+2. Pricing Page
+
+Implement:
+
+Free
+
+Pro
+
+Premium
+
+Clearly compare:
+
+Credits
+
+Features
+
+AI models
+
+Export formats
+
+Proposal history
+
+3. Subscription Flow
+
+Users can:
+
+Upgrade
+
+View remaining credits
+
+View usage history
+
+View billing status
+
+4. Payment Flow (Prototype)
+
+Implement complete checkout UI.
+
+Payment success page.
+
+Payment failed page.
+
+Subscription activated state.
+
+(Mock payment is acceptable.)
+
+Goal
+
+The MVP should demonstrate a complete product journey:
+Discover → Use → Consume Credits → Upgrade → Continue Using.
 ```
-Review
-Improve Prompt
-```
 
-Nghe khá "AI".
-
-Mình sẽ đổi thành:
-
-```
-Review My Work
-```
-
-↓
-
-```
-Improve My Prompt
-```
-
-↓
-
-```
-Generate Better Output
-```
-
-↓
-
-```
-Update My Proposal
-```
-
-Người dùng sẽ hiểu đây là **một vòng lặp cải thiện (improvement loop)**, chứ không phải các tính năng rời rạc. Điều này giúp MVP dễ hiểu hơn ngay từ lần sử dụng đầu tiên mà không cần thêm nhiều chức năng mới.
+**Nếu hoàn thành được 10 phase này**, RootAccess sẽ không còn giống một "website tạo prompt" nữa mà sẽ trở thành một **AI SaaS hoàn chỉnh**: có onboarding, AI workspace, review, cải thiện, quản lý proposal, export và mô hình thu phí nhất quán với BMC. Đây là mức hoàn thiện phù hợp cho một đồ án cuối kỳ và cũng đủ thuyết phục hơn khi demo.

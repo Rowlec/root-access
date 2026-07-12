@@ -11,6 +11,8 @@ export type ScoreDimension =
   | "relevance"
   | "specificity"
   | "clarity"
+  | "completeness"
+  | "rubricAlignment"
   | "actionability";
 
 export type ScoreDimensionResult = {
@@ -382,6 +384,44 @@ function scoreActionability(signals: ScoreSignals) {
   return { reason, score };
 }
 
+function scoreCompleteness(signals: ScoreSignals) {
+  const score = clampScore(
+    1 +
+      (signals.wordCount >= 120 ? 3 : signals.wordCount >= 70 ? 2 : 0) +
+      (signals.hasSectionLabels ? 2 : 0) +
+      (signals.hasEvidenceLanguage ? 1 : 0) +
+      (signals.hasNumbers ? 1 : 0) +
+      (signals.hasTestLanguage ? 1 : 0) +
+      (signals.frameworkKeywordMatches >= 3 ? 1 : 0),
+  );
+  const reason =
+    score >= 8
+      ? "Output covers the section with context, evidence needs, and usable detail."
+      : score >= 5
+        ? "Output covers the core idea, but important evidence or decision details are missing."
+        : "Output is too incomplete to use as a full proposal section.";
+
+  return { reason, score };
+}
+
+function scoreRubricAlignment(signals: ScoreSignals) {
+  const score = clampScore(
+    1 +
+      Math.min(signals.frameworkKeywordMatches, 5) +
+      Math.min(signals.actionKeywordMatches, 2) +
+      (signals.hasEvidenceLanguage ? 1 : 0) +
+      (signals.hasTestLanguage ? 1 : 0),
+  );
+  const reason =
+    score >= 8
+      ? "Output addresses the business checks required for this proposal section."
+      : score >= 5
+        ? "Output addresses part of the section rubric but leaves some checks unsupported."
+        : "Output does not yet address enough of the section-specific rubric.";
+
+  return { reason, score };
+}
+
 export function scoreStartupProposalOutput(input: ScoreInput) {
   const framework = proposalReviewFrameworks[input.sectionId];
   const signals = getSignals(input);
@@ -389,6 +429,8 @@ export function scoreStartupProposalOutput(input: ScoreInput) {
     relevance: scoreRelevance(signals),
     specificity: scoreSpecificity(signals),
     clarity: scoreClarity(signals),
+    completeness: scoreCompleteness(signals),
+    rubricAlignment: scoreRubricAlignment(signals),
     actionability: scoreActionability(signals),
   };
   const total = Object.values(breakdown).reduce(
@@ -399,9 +441,9 @@ export function scoreStartupProposalOutput(input: ScoreInput) {
   return {
     breakdown,
     explanation:
-      total >= 32
+      total >= 48
         ? "Strong output. It is section-specific, clear, and usable for proposal work."
-        : total >= 24
+        : total >= 36
           ? "Promising output. It needs sharper business logic before it is proposal-ready."
           : "Weak output. It needs more specific startup logic before the user retries.",
     frameworkChecks: framework.checks,
