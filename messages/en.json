@@ -214,7 +214,7 @@
     "emptyState": {
       "badge": "Root Access",
       "title": "Add your startup context first",
-      "description": "RootAccess needs your idea, industry, urgency, and AI model before starting the AI Improvement Loop.",
+      "description": "RootAccess needs your startup idea and industry before starting your proposal.",
       "action": "Go to startup form"
     }
   },
@@ -233,6 +233,8 @@
       "autosaved": "Saved automatically",
       "emptySection": "Generate or review the related workflow output to fill this section, or write your own draft.",
       "manualHint": "This section has your edits and will not be overwritten by new workflow output.",
+      "aiDraftReady": "Your AI proposal draft is ready. Apply it to the editor, then review and edit it before exporting.",
+      "applyAiDraft": "Apply AI draft",
       "syncedHint": "This section is synced from the latest related workflow output.",
       "useLatestOutput": "Use latest workflow output",
       "sections": {
@@ -610,9 +612,9 @@
     "action": "Submit Feedback"
   },
   "WorkflowWorkspace": {
-    "badge": "AI Improvement Loop",
-    "title": "Build a better Startup Proposal, one Proposal Section at a time",
-    "description": "Work one Build Step at a time: generate a prompt, test output, review business logic, improve the prompt, and retry.",
+    "badge": "Startup proposal workspace",
+    "title": "Build your proposal one clear step at a time",
+    "description": "Do one thing at a time: create output, review its quality, then improve it when needed.",
     "copied": "Copied",
     "contextualTip": "You are working on {section}. Everything in this panel is used to generate, review, and improve this section only.",
     "context": {
@@ -642,17 +644,17 @@
       "remaining": "Remaining"
     },
     "action": {
-      "layer": "AI Workspace",
-      "prompt": "Prompt editor",
-      "promptHint": "Edit the instructions, then send them directly to Gemini without leaving Root Access.",
-      "generatePrompt": "Generate with Gemini",
-      "regeneratePrompt": "Regenerate",
+      "layer": "Step 1 · Create output",
+      "prompt": "Output instructions",
+      "promptHint": "Adjust the instructions before creating the output.",
+      "generatePrompt": "Create output",
+      "regeneratePrompt": "Create output again",
       "resetPrompt": "Reset prompt",
       "copyPrompt": "Copy prompt",
-      "pasteOutput": "Gemini output",
+      "pasteOutput": "Your output",
       "outputPlaceholder": "Your generated section will appear here.",
       "emptyOutput": "No output yet. Review the prompt above, then generate the first version.",
-      "generating": "Gemini is generating",
+      "generating": "Creating output",
       "editableOutput": "You can edit this output before reviewing it. Changes are saved locally."
     },
     "learn": {
@@ -665,7 +667,7 @@
     "review": {
       "layer": "Review Layer",
       "title": "Review business logic",
-      "description": "Gemini evaluates six stable rubric dimensions and explains every score with output evidence.",
+      "description": "The workspace evaluates six business criteria and explains every score using your output.",
       "action": "Review output",
       "firstPass": "Output 1 score",
       "retryPass": "Retry output score",
@@ -713,7 +715,7 @@
       "title": "Retry and compare",
       "description": "Edit the improved prompt if needed, generate the next output here, then compare scores.",
       "copyImproved": "Copy improved prompt",
-      "pasteOutput": "Improved Gemini output",
+      "pasteOutput": "Improved output",
       "outputPlaceholder": "The output generated from the improved prompt will appear here.",
       "generate": "Generate improved output",
       "rescore": "Review retry",
@@ -724,7 +726,7 @@
     },
     "history": {
       "title": "Version History",
-      "description": "Every Gemini generation is preserved with its prompt, output, time, score, and review status.",
+      "description": "Every created output is preserved with its instructions, content, time, score, and review status.",
       "promptVersions": "Prompt versions",
       "outputHistory": "Output history",
       "output": "Output",

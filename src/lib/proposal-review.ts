@@ -83,6 +83,13 @@ export const proposalReviewFrameworks: Record<
       "validate",
       "interview",
       "survey",
+      "vấn đề",
+      "nỗi đau",
+      "cấp bách",
+      "tần suất",
+      "khảo sát",
+      "phỏng vấn",
+      "kiểm chứng",
     ],
     actionKeywords: [
       "validate",
@@ -93,6 +100,10 @@ export const proposalReviewFrameworks: Record<
       "frequency",
       "evidence",
       "test",
+      "khảo sát",
+      "phỏng vấn",
+      "đo lường",
+      "kiểm chứng",
     ],
   },
   customer: {
@@ -109,6 +120,11 @@ export const proposalReviewFrameworks: Record<
       "channel",
       "pain",
       "behavior",
+      "khách hàng",
+      "phân khúc",
+      "người dùng",
+      "hành vi",
+      "kênh tiếp cận",
     ],
     actionKeywords: [
       "segment",
@@ -119,6 +135,10 @@ export const proposalReviewFrameworks: Record<
       "survey",
       "identify",
       "prioritize",
+      "phân khúc",
+      "tiếp cận",
+      "phỏng vấn",
+      "khảo sát",
     ],
   },
   revenue: {
@@ -136,6 +156,11 @@ export const proposalReviewFrameworks: Record<
       "pay",
       "margin",
       "scale",
+      "doanh thu",
+      "định giá",
+      "sẵn sàng chi trả",
+      "lợi nhuận",
+      "mở rộng",
     ],
     actionKeywords: [
       "test",
@@ -146,6 +171,10 @@ export const proposalReviewFrameworks: Record<
       "pay",
       "conversion",
       "margin",
+      "thử nghiệm",
+      "định giá",
+      "đo lường",
+      "chi trả",
     ],
   },
   mvp: {
@@ -162,6 +191,11 @@ export const proposalReviewFrameworks: Record<
       "test",
       "exclude",
       "must-have",
+      "tính năng",
+      "phạm vi",
+      "khả thi",
+      "nguyên mẫu",
+      "loại trừ",
     ],
     actionKeywords: [
       "build",
@@ -172,6 +206,10 @@ export const proposalReviewFrameworks: Record<
       "measure",
       "feasible",
       "must-have",
+      "xây dựng",
+      "nguyên mẫu",
+      "thử nghiệm",
+      "loại trừ",
     ],
   },
   differentiation: {
@@ -188,6 +226,11 @@ export const proposalReviewFrameworks: Record<
       "advantage",
       "value",
       "switch",
+      "đối thủ",
+      "khác biệt",
+      "lợi thế",
+      "giá trị",
+      "thay thế",
     ],
     actionKeywords: [
       "compare",
@@ -198,6 +241,10 @@ export const proposalReviewFrameworks: Record<
       "validate",
       "advantage",
       "alternative",
+      "so sánh",
+      "chứng minh",
+      "đo lường",
+      "kiểm chứng",
     ],
   },
 };
@@ -211,6 +258,12 @@ const vagueClaimPatterns = [
   "easily",
   "solve everything",
   "revolutionary",
+  "mọi người",
+  "tất cả người dùng",
+  "rất hữu ích",
+  "tốt nhất",
+  "dễ dàng",
+  "giải quyết mọi thứ",
 ];
 
 const evidencePatterns = [
@@ -223,6 +276,12 @@ const evidencePatterns = [
   "measured",
   "assumption",
   "verify",
+  "bằng chứng",
+  "dữ liệu",
+  "phỏng vấn",
+  "khảo sát",
+  "giả định",
+  "kiểm chứng",
 ];
 
 const testPatterns = [
@@ -234,6 +293,11 @@ const testPatterns = [
   "survey",
   "prototype",
   "experiment",
+  "thử nghiệm",
+  "kiểm chứng",
+  "đo lường",
+  "phỏng vấn",
+  "khảo sát",
 ];
 
 const timePatterns = [
@@ -246,6 +310,11 @@ const timePatterns = [
   "urgent",
   "now",
   "frequency",
+  "hằng ngày",
+  "hàng tuần",
+  "hàng tháng",
+  "cấp bách",
+  "tần suất",
 ];
 
 function normalizeText(value: string) {
@@ -253,7 +322,7 @@ function normalizeText(value: string) {
 }
 
 function getWords(value: string) {
-  return normalizeText(value).match(/[a-z0-9]+/g) ?? [];
+  return normalizeText(value).match(/[\p{L}\p{N}]+/gu) ?? [];
 }
 
 function countMatches(text: string, keywords: readonly string[]) {

@@ -59,6 +59,8 @@ function stripMarkdown(value: string) {
     .replace(/`([^`]+)`/g, "$1")
     .replace(/^\s*[-*+]\s+/gm, "")
     .replace(/^\s*\d+[.)]\s+/gm, "")
+    .replace(/[\u2022]/g, "")
+    .replace(/\*{1,}|_{2,}|`{1,}/g, "")
     .replace(/\|/g, " ")
     .replace(/[ \t]+/g, " ");
 }
@@ -142,15 +144,27 @@ function escapeXml(value: string) {
 
 function createParagraphXml(
   value: string,
-  options: { bold?: boolean; fontSize?: number; spacingBefore?: number } = {},
+  options: {
+    align?: "center" | "left";
+    bold?: boolean;
+    fontSize?: number;
+    spacingBefore?: number;
+  } = {},
 ) {
   const runProperties = [
+    '<w:rFonts w:ascii="Aptos" w:hAnsi="Aptos" w:cs="Aptos"/>',
     options.bold ? "<w:b/>" : "",
     options.fontSize ? `<w:sz w:val="${options.fontSize}"/>` : "",
   ].join("");
-  const paragraphProperties = options.spacingBefore
-    ? `<w:pPr><w:spacing w:before="${options.spacingBefore}" w:after="120"/></w:pPr>`
-    : "";
+  const paragraphProperties =
+    options.spacingBefore || options.align
+      ? [
+          "<w:pPr>",
+          options.align ? `<w:jc w:val="${options.align}"/>` : "",
+          `<w:spacing w:before="${options.spacingBefore ?? 0}" w:after="140"/>`,
+          "</w:pPr>",
+        ].join("")
+      : "";
 
   return [
     "<w:p>",
@@ -166,9 +180,10 @@ function createParagraphXml(
 function createDocumentXml(document: ProposalExportDocument) {
   const body = [
     createParagraphXml(document.title, {
+      align: "center",
       bold: true,
-      fontSize: 36,
-      spacingBefore: 0,
+      fontSize: 40,
+      spacingBefore: 720,
     }),
     ...document.contextLines.map((line) =>
       createParagraphXml(line, { fontSize: 22 }),
@@ -176,8 +191,8 @@ function createDocumentXml(document: ProposalExportDocument) {
     ...document.sections.flatMap((section) => [
       createParagraphXml(section.heading, {
         bold: true,
-        fontSize: 28,
-        spacingBefore: 360,
+        fontSize: 30,
+        spacingBefore: 420,
       }),
       ...section.content
         .split(/\n+/)
@@ -187,7 +202,7 @@ function createDocumentXml(document: ProposalExportDocument) {
     '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>',
   ].join("");
 
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${body}</w:document>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}</w:body></w:document>`;
 }
 
 const crcTable = new Uint32Array(256);

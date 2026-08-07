@@ -214,7 +214,7 @@
     "emptyState": {
       "badge": "Root Access",
       "title": "Hãy thêm startup context trước",
-      "description": "RootAccess cần ý tưởng, lĩnh vực, mức độ gấp và AI model trước khi bắt đầu AI Improvement Loop.",
+      "description": "RootAccess cần ý tưởng và lĩnh vực để bắt đầu xây proposal.",
       "action": "Quay lại form startup"
     }
   },
@@ -233,6 +233,8 @@
       "autosaved": "Đã tự lưu",
       "emptySection": "Hãy generate hoặc review output workflow liên quan để tự điền phần này, hoặc tự viết bản nháp.",
       "manualHint": "Phần này có chỉnh sửa của bạn và sẽ không bị output workflow mới ghi đè.",
+      "aiDraftReady": "Bản proposal AI đã sẵn sàng. Bạn có thể áp dụng vào editor, sau đó tiếp tục chỉnh sửa trước khi xuất file.",
+      "applyAiDraft": "Áp dụng bản AI",
       "syncedHint": "Phần này đang đồng bộ từ output workflow liên quan mới nhất.",
       "useLatestOutput": "Dùng output workflow mới nhất",
       "sections": {
@@ -610,9 +612,9 @@
     "action": "Gửi phản hồi"
   },
   "WorkflowWorkspace": {
-    "badge": "AI Improvement Loop",
-    "title": "Xây Startup Proposal tốt hơn, từng Proposal Section",
-    "description": "Làm từng Build Step: tạo prompt, test output, review business logic, cải thiện prompt và retry.",
+    "badge": "Startup proposal workspace",
+    "title": "Hoàn thiện proposal từng bước rõ ràng",
+    "description": "Mỗi lần chỉ làm một việc: tạo output, review chất lượng, rồi cải thiện khi cần.",
     "copied": "Đã copy",
     "contextualTip": "Bạn đang làm section {section}. Mọi nội dung trong panel này chỉ được dùng để tạo, review và cải thiện section hiện tại.",
     "context": {
@@ -642,17 +644,17 @@
       "remaining": "Còn lại"
     },
     "action": {
-      "layer": "AI Workspace",
-      "prompt": "Chỉnh sửa prompt",
-      "promptHint": "Chỉnh hướng dẫn rồi gửi trực tiếp cho Gemini mà không cần rời Root Access.",
-      "generatePrompt": "Tạo bằng Gemini",
-      "regeneratePrompt": "Tạo lại",
+      "layer": "Bước 1 · Tạo output",
+      "prompt": "Hướng dẫn tạo output",
+      "promptHint": "Bạn có thể điều chỉnh hướng dẫn trước khi tạo output.",
+      "generatePrompt": "Tạo output",
+      "regeneratePrompt": "Tạo lại output",
       "resetPrompt": "Khôi phục prompt",
       "copyPrompt": "Copy prompt",
-      "pasteOutput": "Output từ Gemini",
+      "pasteOutput": "Output của bạn",
       "outputPlaceholder": "Section được tạo sẽ xuất hiện tại đây.",
       "emptyOutput": "Chưa có output. Kiểm tra prompt phía trên rồi tạo version đầu tiên.",
-      "generating": "Gemini đang tạo nội dung",
+      "generating": "Đang tạo output",
       "editableOutput": "Bạn có thể sửa output trước khi review. Thay đổi được lưu trên thiết bị."
     },
     "learn": {
@@ -665,7 +667,7 @@
     "review": {
       "layer": "Review Layer",
       "title": "Review business logic",
-      "description": "Gemini đánh giá sáu tiêu chí rubric ổn định và giải thích từng điểm bằng dẫn chứng trong output.",
+      "description": "Hệ thống đánh giá sáu tiêu chí nghiệp vụ và giải thích từng điểm dựa trên output.",
       "action": "Review output",
       "firstPass": "Output 1 score",
       "retryPass": "Retry output score",
@@ -713,7 +715,7 @@
       "title": "Retry and compare",
       "description": "Chỉnh improved prompt nếu cần, tạo output mới ngay tại đây rồi so sánh score.",
       "copyImproved": "Copy improved prompt",
-      "pasteOutput": "Output cải thiện từ Gemini",
+      "pasteOutput": "Output đã cải thiện",
       "outputPlaceholder": "Output tạo từ improved prompt sẽ xuất hiện tại đây.",
       "generate": "Tạo output cải thiện",
       "rescore": "Review retry",
@@ -724,7 +726,7 @@
     },
     "history": {
       "title": "Version History",
-      "description": "Mỗi lần Gemini generate đều được lưu cùng prompt, output, thời gian, score và trạng thái review.",
+      "description": "Mỗi lần tạo output đều được lưu cùng hướng dẫn, nội dung, thời gian, điểm và trạng thái review.",
       "promptVersions": "Prompt versions",
       "outputHistory": "Output history",
       "output": "Output",

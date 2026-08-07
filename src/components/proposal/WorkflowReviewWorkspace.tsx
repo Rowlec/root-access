@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import {
+  ArrowLeft,
   ArrowRight,
   Bot,
   Check,
@@ -23,8 +25,11 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { ContextualHelper } from "@/components/onboarding/ContextualHelper";
-import { ProposalBuilder } from "@/components/proposal/ProposalBuilder";
+import {
+  ProposalBuilder,
+  type BuilderDocument,
+  type ProposalSectionId as ProposalDocumentSectionId,
+} from "@/components/proposal/ProposalBuilder";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,6 +57,7 @@ import {
   proposalSectionIds,
   type ProposalSectionId,
 } from "@/lib/proposal-review";
+import type { WorkflowPhase } from "@/lib/workflow-route";
 import { cn } from "@/lib/utils";
 
 type WorkflowSection = {
@@ -157,8 +163,9 @@ type PendingCreditAction = {
 };
 
 type WorkflowReviewWorkspaceProps = {
+  activeSectionId: ProposalSectionId;
+  phase: WorkflowPhase;
   context: {
-    aiModel: "ChatGPT" | "Gemini";
     deadlineUrgency: string;
     industry: string;
     locale: string;
@@ -662,15 +669,16 @@ function writeIntelligenceEvent(event: IntelligenceEvent) {
 }
 
 export function WorkflowReviewWorkspace({
+  activeSectionId,
   context,
+  phase,
 }: WorkflowReviewWorkspaceProps) {
+  const router = useRouter();
   const t = useTranslations("WorkflowWorkspace");
   const [workspaceState, setWorkspaceState] = useState<WorkspaceState>({});
   const [hydratedWorkflowRunId, setHydratedWorkflowRunId] = useState<string | null>(
     null,
   );
-  const [activeSectionId, setActiveSectionId] =
-    useState<ProposalSectionId>("problem");
   const [isReviewing, setIsReviewing] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -680,6 +688,13 @@ export function WorkflowReviewWorkspace({
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [printDocument, setPrintDocument] =
     useState<ProposalExportDocument | null>(null);
+  const [builderDocument, setBuilderDocument] =
+    useState<BuilderDocument | null>(null);
+  const [aiDraft, setAiDraft] = useState<
+    Partial<Record<ProposalDocumentSectionId, string>> | null
+  >(null);
+  const [isGeneratingProposal, setIsGeneratingProposal] = useState(false);
+  const [isDraftExportOpen, setIsDraftExportOpen] = useState(false);
   const [pendingCreditAction, setPendingCreditAction] =
     useState<PendingCreditAction | null>(null);
   const { canUse, getRemaining, recordUse, usage } = useCreditUsage(plan);
@@ -711,18 +726,18 @@ export function WorkflowReviewWorkspace({
   const firstIncompleteIndex = sections.findIndex(
     (section) => !getSectionState(workspaceState, section.id).completed,
   );
-  const activeUnlockState =
-    firstIncompleteIndex === -1
-      ? null
-      : getSectionState(workspaceState, sections[firstIncompleteIndex].id);
   const unlockedSectionIndex =
     firstIncompleteIndex === -1
       ? sections.length - 1
-      : firstIncompleteIndex + (activeUnlockState?.originalOutput.trim() ? 1 : 0);
+      : firstIncompleteIndex;
   const remainingCount = Math.max(sections.length - completedCount, 0);
   const completionPercentage = Math.round(
     (completedCount / sections.length) * 100,
   );
+  const isWorkflowComplete = completedCount === sections.length;
+  const isGeneratePhase = phase === "generate";
+  const isReviewPhase = phase === "review";
+  const isImprovePhase = phase === "improve";
   const latestReview = activeState.retryReview ?? activeState.originalReview;
   const improvedPrompt =
     activeState.retryReview?.improvedPrompt ??
@@ -746,6 +761,35 @@ export function WorkflowReviewWorkspace({
   const oldScore = comparisonBeforeVersion?.review?.score.total;
   const newScore = comparisonAfterVersion?.review?.score.total;
   const isVietnamese = context.locale === "vi";
+  const phaseCards = [
+    {
+      description: isVietnamese
+        ? "Tạo và kiểm tra nội dung đầu tiên"
+        : "Create and check the first version",
+      enabled: true,
+      id: "generate" as const,
+      label: isVietnamese ? "Tạo output" : "Create output",
+      number: 1,
+    },
+    {
+      description: isVietnamese
+        ? "Đánh giá chất lượng nghiệp vụ"
+        : "Assess business quality",
+      enabled: Boolean(activeState.originalOutput.trim()),
+      id: "review" as const,
+      label: isVietnamese ? "Review" : "Review",
+      number: 2,
+    },
+    {
+      description: isVietnamese
+        ? "Cải thiện hoặc hoàn tất phần này"
+        : "Improve or complete this section",
+      enabled: Boolean(latestReview),
+      id: "improve" as const,
+      label: isVietnamese ? "Cải thiện" : "Improve",
+      number: 3,
+    },
+  ];
   const headerCopy = {
     back: isVietnamese ? "Home" : "Home",
     creditTooltip: isVietnamese
@@ -771,6 +815,8 @@ export function WorkflowReviewWorkspace({
     exportDescription: isVietnamese
       ? "Xuất bản proposal sạch, bỏ markdown và lời thoại AI để dùng như tài liệu nộp bài."
       : "Export a clean proposal without markdown or AI chatter, ready for submission formatting.",
+    generateProposal: isVietnamese ? "Tạo bản proposal AI" : "Create AI proposal draft",
+    generatingProposal: isVietnamese ? "Đang tổng hợp proposal" : "Creating proposal draft",
     exportTitle: isVietnamese ? "Xuất Startup Proposal" : "Export Startup Proposal",
     improveAgain: isVietnamese
       ? "Cải thiện thêm prompt"
@@ -814,7 +860,7 @@ export function WorkflowReviewWorkspace({
       mvp,
       differentiation,
     ]);
-    const exportSections: ProposalExportSection[] = [
+    const reviewedSections: ProposalExportSection[] = [
       {
         content: problem,
         heading: "Problem Statement",
@@ -841,6 +887,20 @@ export function WorkflowReviewWorkspace({
       },
     ];
 
+    const editedSections: ProposalExportSection[] = builderDocument
+      ? [
+          { content: builderDocument.sections.idea.content, heading: "Startup Idea" },
+          { content: builderDocument.sections.problem.content, heading: "Problem Statement" },
+          { content: builderDocument.sections.customer.content, heading: "Customer Segment" },
+          { content: builderDocument.sections.market.content, heading: "Market Context" },
+          { content: builderDocument.sections.solution.content, heading: "Solution" },
+          { content: builderDocument.sections.revenue.content, heading: "Revenue Model" },
+          { content: builderDocument.sections.competition.content, heading: "Competitive Advantage" },
+          { content: builderDocument.sections.mvp.content, heading: "MVP Scope" },
+          { content: builderDocument.sections.validation.content, heading: "Validation Plan" },
+        ]
+      : reviewedSections;
+
     return buildProposalExport({
       contextLines: [
         `Startup idea: ${context.startupIdea}`,
@@ -848,16 +908,15 @@ export function WorkflowReviewWorkspace({
         `Target customer: ${
           context.targetCustomer || (isVietnamese ? "Chưa xác định" : "Not specified")
         }`,
-        `Deadline urgency: ${context.deadlineUrgency}`,
       ],
-      sections: exportSections,
+      sections: editedSections,
       title: "Startup Proposal",
     });
   }, [
-    context.deadlineUrgency,
     context.industry,
     context.startupIdea,
     context.targetCustomer,
+    builderDocument,
     isVietnamese,
     workspaceState,
   ]);
@@ -891,8 +950,8 @@ export function WorkflowReviewWorkspace({
           .join("\n\n"),
         problem,
         customer,
-        market: customer,
-        solution: mvp,
+        market: "",
+        solution: "",
         revenue,
         competition: differentiation,
         mvp,
@@ -907,6 +966,7 @@ export function WorkflowReviewWorkspace({
       workspaceState,
     ],
   );
+  const canExportDraft = proposalDocument.sections.length > 0;
 
   useEffect(() => {
     const hydrationTimer = window.setTimeout(() => {
@@ -931,6 +991,52 @@ export function WorkflowReviewWorkspace({
       return;
     }
   }, [context.workflowRunId, hydratedWorkflowRunId, workspaceState]);
+
+  useEffect(() => {
+    if (
+      hydratedWorkflowRunId !== context.workflowRunId ||
+      currentIndex <= unlockedSectionIndex
+    ) {
+      return;
+    }
+
+    const firstAllowedSection = sections[unlockedSectionIndex];
+
+    if (firstAllowedSection) {
+      router.replace(`/result/${firstAllowedSection.id}/generate`);
+    }
+  }, [
+    context.workflowRunId,
+    currentIndex,
+    hydratedWorkflowRunId,
+    router,
+    sections,
+    unlockedSectionIndex,
+  ]);
+
+  useEffect(() => {
+    if (hydratedWorkflowRunId !== context.workflowRunId) {
+      return;
+    }
+
+    if (!activeState.originalOutput.trim() && !isGeneratePhase) {
+      router.replace(`/result/${activeSection.id}/generate`);
+      return;
+    }
+
+    if (isImprovePhase && !latestReview) {
+      router.replace(`/result/${activeSection.id}/review`);
+    }
+  }, [
+    activeSection.id,
+    activeState.originalOutput,
+    context.workflowRunId,
+    hydratedWorkflowRunId,
+    isGeneratePhase,
+    isImprovePhase,
+    latestReview,
+    router,
+  ]);
 
   useEffect(() => {
     const handleStorage = () => {
@@ -1166,7 +1272,9 @@ export function WorkflowReviewWorkspace({
   }
 
   function downloadProposalDraft(format: "docx" | "pdf" | "txt") {
-    const filename = `startup-proposal-${context.workflowRunId}`;
+    const filename = isWorkflowComplete
+      ? `startup-proposal-${context.workflowRunId}`
+      : `startup-proposal-draft-${context.workflowRunId}`;
 
     if (format === "docx") {
       downloadBlob(createDocxBlob(proposalDocument), `${filename}.docx`);
@@ -1183,6 +1291,82 @@ export function WorkflowReviewWorkspace({
     }
 
     downloadBlob(createTextBlob(proposalDocument), `${filename}.txt`);
+  }
+
+  async function generateProposalDraft() {
+    if (!builderDocument) {
+      setError(
+        isVietnamese
+          ? "Đang tải Proposal Builder. Vui lòng thử lại trong giây lát."
+          : "Proposal Builder is still loading. Please try again in a moment.",
+      );
+      return;
+    }
+
+    setError(null);
+    setIsGeneratingProposal(true);
+
+    try {
+      const sections = Object.fromEntries(
+        Object.entries(builderDocument.sections).map(([sectionId, section]) => [
+          sectionId,
+          section.content,
+        ]),
+      );
+      const response = await fetch("/api/gemini/proposal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          context: {
+            industry: context.industry,
+            startupIdea: context.startupIdea,
+            targetCustomer: context.targetCustomer,
+          },
+          locale: isVietnamese ? "vi" : "en",
+          sections,
+        }),
+      });
+      const data = (await response.json()) as {
+        draft?: Partial<Record<ProposalDocumentSectionId, unknown>>;
+        message?: unknown;
+      };
+
+      if (!response.ok || !data.draft || typeof data.draft !== "object") {
+        throw new Error(
+          typeof data.message === "string"
+            ? data.message
+            : isVietnamese
+              ? "RootAccess chưa tạo được proposal lúc này. Hãy thử lại."
+              : "Root Access could not create the proposal right now. Please retry.",
+        );
+      }
+
+      const draft = Object.fromEntries(
+        Object.entries(data.draft).filter(
+          ([, value]) => typeof value === "string" && value.trim().length > 0,
+        ),
+      ) as Partial<Record<ProposalDocumentSectionId, string>>;
+
+      if (Object.keys(draft).length === 0) {
+        throw new Error(
+          isVietnamese
+            ? "Bản proposal AI không có nội dung hợp lệ."
+            : "The AI proposal draft did not contain usable content.",
+        );
+      }
+
+      setAiDraft(draft);
+    } catch (proposalError) {
+      setError(
+        proposalError instanceof Error
+          ? proposalError.message
+          : isVietnamese
+            ? "RootAccess chưa tạo được proposal lúc này. Hãy thử lại."
+            : "Root Access could not create the proposal right now. Please retry.",
+      );
+    } finally {
+      setIsGeneratingProposal(false);
+    }
   }
 
   async function reviewOutput(kind: "original" | "retry") {
@@ -1231,7 +1415,6 @@ export function WorkflowReviewWorkspace({
         },
         body: JSON.stringify({
           context: {
-            aiModel: context.aiModel,
             deadlineUrgency: context.deadlineUrgency,
             industry: context.industry,
             startupIdea: context.startupIdea,
@@ -1391,7 +1574,6 @@ export function WorkflowReviewWorkspace({
       body: JSON.stringify({
         baselineScore,
         context: {
-          aiModel: context.aiModel,
           deadlineUrgency: context.deadlineUrgency,
           industry: context.industry,
           startupIdea: context.startupIdea,
@@ -1617,14 +1799,15 @@ export function WorkflowReviewWorkspace({
     const nextSection = sections[currentIndex + 1];
 
     if (nextSection) {
-      setActiveSectionId(nextSection.id);
       window.requestAnimationFrame(() => {
-        window.scrollTo({
-          behavior: "smooth",
-          top: 0,
-        });
+        router.push(`/result/${nextSection.id}/generate`);
       });
     }
+  }
+
+  function goToPreviousSection() {
+    setError(null);
+    router.push(`/result/${activeSection.id}/review`);
   }
 
   async function copyImprovedPrompt() {
@@ -2094,29 +2277,90 @@ export function WorkflowReviewWorkspace({
 
   return (
     <>
-      <section className="space-y-5 pb-7">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-3xl space-y-3">
-            <Badge variant="secondary">{t("badge")}</Badge>
-            <h1 className="text-3xl font-semibold leading-tight tracking-normal text-foreground sm:text-5xl sm:leading-[1.12]">
-              {t("title")}
+      <section className="mx-auto grid w-full max-w-4xl gap-4 pb-6">
+        <div className="glass flex flex-col gap-4 rounded-3xl p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">{t("badge")}</Badge>
+              <span className="text-xs font-medium text-muted-foreground">
+                {isVietnamese
+                  ? `Phần ${currentIndex + 1}/${sections.length}`
+                  : `Section ${currentIndex + 1}/${sections.length}`}
+              </span>
+            </div>
+            <h1 className="mt-3 text-2xl font-semibold leading-tight text-foreground sm:text-3xl">
+              {activeSection.title}
             </h1>
-            <p className="text-base leading-7 text-muted-foreground sm:text-lg">
-              {t("description")}
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              {activeSection.objective}
             </p>
           </div>
-          <div className="glass rounded-3xl p-4 text-sm leading-6 text-muted-foreground">
-            <p className="font-semibold text-foreground">{t("context.title")}</p>
-            <p>{context.startupIdea}</p>
-            <p>
-              {context.industry} / {context.aiModel}
-            </p>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+            <div className="max-w-sm rounded-2xl border border-border/70 bg-secondary/25 px-3 py-2 text-sm leading-6 text-muted-foreground">
+              <span className="font-medium text-foreground">{context.startupIdea}</span>
+              <span className="mx-2 text-border">·</span>
+              <span>{context.industry}</span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="btn-glass h-10 justify-center rounded-full px-4"
+              disabled={!canExportDraft}
+              onClick={() => setIsDraftExportOpen(true)}
+            >
+              <Download aria-hidden="true" />
+              {isVietnamese ? "Xuất bản nháp" : "Export current draft"}
+            </Button>
           </div>
         </div>
+
+        <nav
+          aria-label={isVietnamese ? "Các bước của phần hiện tại" : "Current section steps"}
+          className="grid gap-2 sm:grid-cols-3"
+        >
+          {phaseCards.map((step) => {
+            const isActive = step.id === phase;
+
+            return (
+              <button
+                key={step.id}
+                type="button"
+                disabled={!step.enabled}
+                aria-current={isActive ? "step" : undefined}
+                className={cn(
+                  "flex min-h-24 items-start gap-3 rounded-2xl border p-3 text-left transition-colors sm:p-4",
+                  isActive
+                    ? "border-primary bg-primary/15 text-foreground"
+                    : step.enabled
+                      ? "border-border/70 bg-secondary/20 text-foreground hover:bg-secondary/35"
+                      : "cursor-not-allowed border-border/50 bg-secondary/10 text-muted-foreground opacity-60",
+                )}
+                onClick={() => router.push(`/result/${activeSection.id}/${step.id}`)}
+              >
+                <span
+                  className={cn(
+                    "flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+                    isActive
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border bg-background/60",
+                  )}
+                >
+                  {step.number}
+                </span>
+                <span className="grid gap-1">
+                  <span className="text-sm font-semibold">{step.label}</span>
+                  <span className="text-xs leading-5 text-muted-foreground">
+                    {step.description}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </nav>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[18rem_1fr] lg:items-start">
-        <aside className="lg:sticky lg:top-6">
+      <section className="mx-auto grid w-full max-w-4xl gap-5">
+        <aside className="hidden">
           <div className="glass space-y-4 rounded-3xl p-4">
             <div>
               <p className="text-sm font-medium text-foreground">
@@ -2158,8 +2402,8 @@ export function WorkflowReviewWorkspace({
                           return;
                         }
 
-                        setActiveSectionId(section.id);
                         setError(null);
+                        router.push(`/result/${section.id}/generate`);
                       }}
                     >
                       <span
@@ -2201,20 +2445,19 @@ export function WorkflowReviewWorkspace({
         </aside>
 
         <div className="grid gap-5">
+          {isGeneratePhase ? (
           <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
             <div data-onboarding="ai-workspace" className="space-y-2">
               <Badge variant="outline">{t("action.layer")}</Badge>
               <h2 className="text-2xl font-semibold leading-tight text-foreground">
-                {activeSection.title}
+                {isVietnamese ? "Tạo phiên bản đầu tiên" : "Create the first version"}
               </h2>
               <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                {activeSection.objective}
+                {isVietnamese
+                  ? "Chỉnh hướng dẫn nếu cần, sau đó tạo output để chuyển sang bước review."
+                  : "Adjust the instructions if needed, then create an output to continue to review."}
               </p>
             </div>
-
-            <ContextualHelper>
-              {t("contextualTip", { section: activeSection.title })}
-            </ContextualHelper>
 
             {error ? (
               <p className="rounded-2xl border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm leading-6 text-destructive">
@@ -2296,28 +2539,6 @@ export function WorkflowReviewWorkspace({
               </div>
             </div>
 
-            <details
-              data-onboarding="improve-guide"
-              className="rounded-2xl border border-border/70 bg-secondary/20 p-3"
-            >
-              <summary className="cursor-pointer text-sm font-medium text-foreground">
-                {t("learn.title")}
-              </summary>
-              <div className="mt-3 grid gap-3 text-sm leading-6 text-muted-foreground">
-                <p>{t("learn.whyPromptWorks")}</p>
-                <p>
-                  {t("learn.toolReason", {
-                    tool: context.aiModel,
-                  })}
-                </p>
-                <p>
-                  {latestReview
-                    ? t("learn.comparisonAfterReview")
-                    : t("learn.comparisonBeforeReview")}
-                </p>
-              </div>
-            </details>
-
             <div
               data-onboarding="review-entry"
               data-generation-latest={activeState.originalOutput ? "true" : undefined}
@@ -2361,8 +2582,32 @@ export function WorkflowReviewWorkspace({
               )}
             </div>
           </section>
+          ) : null}
 
-          {activeState.originalOutput.trim() ? (
+          {isGeneratePhase ? (
+            <div className="flex flex-col-reverse gap-3 rounded-3xl border border-border/70 bg-secondary/20 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="btn-glass h-11 w-full justify-center rounded-full px-5 sm:w-auto"
+                onClick={() => router.push("/")}
+              >
+                <ArrowLeft aria-hidden="true" />
+                {isVietnamese ? "Quay lại thông tin dự án" : "Back to project details"}
+              </Button>
+              <Button
+                type="button"
+                className="btn-liquid h-11 w-full justify-center rounded-full px-5 text-primary-foreground sm:w-auto"
+                disabled={!activeState.originalOutput.trim()}
+                onClick={() => router.push(`/result/${activeSection.id}/review`)}
+              >
+                {isVietnamese ? "Tiếp tục review" : "Continue to review"}
+                <ArrowRight aria-hidden="true" />
+              </Button>
+            </div>
+          ) : null}
+
+          {!isGeneratePhase && activeState.originalOutput.trim() ? (
             <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-2">
@@ -2404,7 +2649,8 @@ export function WorkflowReviewWorkspace({
                   })
                 : null}
 
-              {latestReview &&
+              {isImprovePhase &&
+              latestReview &&
               !improvedPrompt &&
               !activeState.improvementSkipped ? (
                 <div
@@ -2461,7 +2707,7 @@ export function WorkflowReviewWorkspace({
                 </div>
               ) : null}
 
-              {latestReview && improvedPrompt ? (
+              {isImprovePhase && latestReview && improvedPrompt ? (
                 <div
                   data-onboarding="improve-result"
                   className="grid gap-3 rounded-2xl border border-border/70 bg-secondary/30 p-3"
@@ -2517,10 +2763,43 @@ export function WorkflowReviewWorkspace({
                   </div>
                 </div>
               ) : null}
+              {isReviewPhase ? (
+                <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-secondary/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    {latestReview
+                      ? (isVietnamese
+                        ? "Đã có kết quả review. Sang bước tiếp theo để cải thiện prompt hoặc giữ phiên bản hiện tại."
+                        : "Your review is ready. Continue to improve the prompt or keep the current version.")
+                      : (isVietnamese
+                        ? "Bấm Review bài của tôi để mở bước cải thiện."
+                        : "Run Review My Work to unlock the improvement step.")}
+                  </p>
+                  <div className="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="btn-glass h-11 justify-center rounded-full px-5"
+                      onClick={() => router.push(`/result/${activeSection.id}/generate`)}
+                    >
+                      <ArrowLeft aria-hidden="true" />
+                      {isVietnamese ? "Quay lại" : "Back"}
+                    </Button>
+                    <Button
+                      type="button"
+                      className="btn-liquid h-11 justify-center rounded-full px-5 text-primary-foreground"
+                      disabled={!latestReview}
+                      onClick={() => router.push(`/result/${activeSection.id}/improve`)}
+                    >
+                      {isVietnamese ? "Sang bước cải thiện" : "Continue to improve"}
+                      <ArrowRight aria-hidden="true" />
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
             </section>
           ) : null}
 
-          {improvedPrompt ? (
+          {isImprovePhase && improvedPrompt ? (
             <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
               <div className="space-y-2">
                 <Badge variant="outline">{t("retry.layer")}</Badge>
@@ -2702,19 +2981,39 @@ export function WorkflowReviewWorkspace({
             </section>
           ) : null}
 
-          {latestReview ? (
-            <div className="flex justify-end">
+          {isImprovePhase ? (
+            <>
+          <div className="rounded-3xl border border-border/70 bg-secondary/20 p-3 sm:p-4">
+            {!latestReview ? (
+              <p className="mb-3 text-sm leading-6 text-muted-foreground">
+                {isVietnamese
+                  ? "Hoàn thành Review bài của tôi để mở nút sang bước tiếp theo."
+                  : "Complete Review My Work to unlock the next step."}
+              </p>
+            ) : null}
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                className="btn-glass h-11 w-full justify-center rounded-full px-5 sm:w-auto"
+                onClick={goToPreviousSection}
+              >
+                <ArrowLeft aria-hidden="true" />
+                {isVietnamese ? "Quay lại" : "Back"}
+              </Button>
               <Button
                 type="button"
                 className="btn-liquid h-11 w-full justify-center rounded-full px-5 text-primary-foreground sm:w-auto"
-                disabled={!activeState.originalReview}
+                disabled={!latestReview || !activeState.originalReview}
                 onClick={completeSection}
               >
                 <Check aria-hidden="true" />
-                {headerCopy.updateProposal}
+                {currentIndex === sections.length - 1
+                  ? (isVietnamese ? "Hoàn thành review" : "Finish review")
+                  : (isVietnamese ? "Lưu và sang bước tiếp" : "Save and continue")}
               </Button>
             </div>
-          ) : null}
+          </div>
 
           {activeState.generationVersions.length > 0 ? (
             <section className="glass grid gap-4 rounded-3xl p-4 sm:p-5">
@@ -2788,15 +3087,20 @@ export function WorkflowReviewWorkspace({
             </section>
           ) : null}
 
-          <ProposalBuilder
-            sources={proposalBuilderSources}
-            workflowRunId={context.workflowRunId}
-          />
+          {isWorkflowComplete ? (
+            <>
+              <ProposalBuilder
+                aiDraft={aiDraft}
+                onAiDraftApplied={() => setAiDraft(null)}
+                onDocumentChange={setBuilderDocument}
+                sources={proposalBuilderSources}
+                workflowRunId={context.workflowRunId}
+              />
 
-          <section
-            data-onboarding="export"
-            className="glass grid gap-4 rounded-3xl p-4 sm:p-5"
-          >
+              <section
+                data-onboarding="export"
+                className="glass grid gap-4 rounded-3xl p-4 sm:p-5"
+              >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -2812,8 +3116,24 @@ export function WorkflowReviewWorkspace({
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
                   type="button"
+                  className="btn-liquid h-10 justify-center rounded-full px-4 text-primary-foreground"
+                  disabled={!builderDocument || isGeneratingProposal}
+                  onClick={generateProposalDraft}
+                >
+                  {isGeneratingProposal ? (
+                    <Loader2 aria-hidden="true" className="animate-spin" />
+                  ) : (
+                    <Sparkles aria-hidden="true" />
+                  )}
+                  {isGeneratingProposal
+                    ? headerCopy.generatingProposal
+                    : headerCopy.generateProposal}
+                </Button>
+                <Button
+                  type="button"
                   variant="outline"
                   className="btn-glass h-10 justify-center rounded-full px-4"
+                  disabled={!builderDocument}
                   onClick={() =>
                     copyToClipboard(proposalDocument.text, "proposal-draft")
                   }
@@ -2826,6 +3146,7 @@ export function WorkflowReviewWorkspace({
                 <Button
                   type="button"
                   className="btn-liquid h-10 justify-center rounded-full px-4 text-primary-foreground"
+                  disabled={!builderDocument}
                   onClick={() => downloadProposalDraft("txt")}
                 >
                   <Download aria-hidden="true" />
@@ -2835,6 +3156,7 @@ export function WorkflowReviewWorkspace({
                   type="button"
                   variant="outline"
                   className="btn-glass h-10 justify-center rounded-full px-4"
+                  disabled={!builderDocument}
                   onClick={() => downloadProposalDraft("docx")}
                 >
                   <Download aria-hidden="true" />
@@ -2844,6 +3166,7 @@ export function WorkflowReviewWorkspace({
                   type="button"
                   variant="outline"
                   className="btn-glass h-10 justify-center rounded-full px-4"
+                  disabled={!builderDocument}
                   onClick={() => downloadProposalDraft("pdf")}
                 >
                   <Download aria-hidden="true" />
@@ -2854,11 +3177,98 @@ export function WorkflowReviewWorkspace({
             <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap rounded-2xl border border-border/70 bg-secondary/30 p-3 text-sm leading-6 text-muted-foreground">
               {proposalDocument.text}
             </pre>
-          </section>
+              </section>
+            </>
+          ) : (
+            <section className="glass rounded-3xl p-4 text-sm leading-6 text-muted-foreground sm:p-5">
+              {isVietnamese
+                ? "Hoàn thành và lưu từng bước review để mở Proposal Builder và xuất file ở bước cuối."
+                : "Complete and save each review step to unlock the Proposal Builder and file export at the end."}
+            </section>
+          )}
+            </>
+          ) : null}
         </div>
       </section>
 
       {printableProposal}
+
+      {isDraftExportOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="draft-export-title"
+            className="glass w-full max-w-lg rounded-3xl p-5"
+          >
+            <Badge variant="secondary">
+              {isWorkflowComplete
+                ? (isVietnamese ? "Proposal hoàn chỉnh" : "Complete proposal")
+                : (isVietnamese ? "Bản nháp hiện tại" : "Current draft")}
+            </Badge>
+            <h2
+              id="draft-export-title"
+              className="mt-3 text-2xl font-semibold leading-tight text-foreground"
+            >
+              {isVietnamese ? "Xuất proposal" : "Export proposal"}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {isWorkflowComplete
+                ? (isVietnamese
+                  ? "File sẽ lấy đúng nội dung hiện có trong Proposal Builder."
+                  : "The file will use the current content in Proposal Builder.")
+                : (isVietnamese
+                  ? `Đây là bản nháp với ${proposalDocument.sections.length} phần đã có nội dung. Bạn vẫn có thể tiếp tục hoàn thiện các bước còn lại sau khi tải.`
+                  : `This is a draft with ${proposalDocument.sections.length} populated sections. You can continue completing the remaining steps after download.`)}
+            </p>
+            <div className="mt-5 grid gap-2 sm:grid-cols-3">
+              <Button
+                type="button"
+                className="btn-liquid h-11 justify-center rounded-full text-primary-foreground"
+                onClick={() => {
+                  downloadProposalDraft("docx");
+                  setIsDraftExportOpen(false);
+                }}
+              >
+                <Download aria-hidden="true" />
+                DOCX
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="btn-glass h-11 justify-center rounded-full"
+                onClick={() => {
+                  downloadProposalDraft("pdf");
+                  setIsDraftExportOpen(false);
+                }}
+              >
+                <Download aria-hidden="true" />
+                PDF
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="btn-glass h-11 justify-center rounded-full"
+                onClick={() => {
+                  downloadProposalDraft("txt");
+                  setIsDraftExportOpen(false);
+                }}
+              >
+                <Download aria-hidden="true" />
+                TXT
+              </Button>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              className="mt-3 h-10 w-full justify-center rounded-full"
+              onClick={() => setIsDraftExportOpen(false)}
+            >
+              {isVietnamese ? "Đóng" : "Close"}
+            </Button>
+          </section>
+        </div>
+      ) : null}
 
       {pendingCreditAction ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-const proposalSectionIds = [
+export const proposalSectionIds = [
   "idea",
   "problem",
   "customer",
@@ -21,9 +21,9 @@ const proposalSectionIds = [
   "validation",
 ] as const;
 
-type ProposalSectionId = (typeof proposalSectionIds)[number];
+export type ProposalSectionId = (typeof proposalSectionIds)[number];
 
-type BuilderDocument = {
+export type BuilderDocument = {
   sections: Record<ProposalSectionId, BuilderSectionState>;
 };
 
@@ -35,6 +35,9 @@ type BuilderSectionState = {
 };
 
 type ProposalBuilderProps = {
+  aiDraft?: Partial<Record<ProposalSectionId, string>> | null;
+  onAiDraftApplied?: () => void;
+  onDocumentChange?: (document: BuilderDocument) => void;
   sources: Record<ProposalSectionId, string>;
   workflowRunId: string;
 };
@@ -111,7 +114,13 @@ function isComplete(content: string) {
   return content.trim().length > 0;
 }
 
-export function ProposalBuilder({ sources, workflowRunId }: ProposalBuilderProps) {
+export function ProposalBuilder({
+  aiDraft,
+  onAiDraftApplied,
+  onDocumentChange,
+  sources,
+  workflowRunId,
+}: ProposalBuilderProps) {
   const t = useTranslations("ProposalBuilder");
   const [proposalDocument, setProposalDocument] =
     useState<BuilderDocument>(createEmptyDocument);
@@ -183,6 +192,12 @@ export function ProposalBuilder({ sources, workflowRunId }: ProposalBuilderProps
     }
   }, [isHydrated, proposalDocument, workflowRunId]);
 
+  useEffect(() => {
+    if (isHydrated) {
+      onDocumentChange?.(proposalDocument);
+    }
+  }, [isHydrated, onDocumentChange, proposalDocument]);
+
   const completedCount = proposalSectionIds.filter((sectionId) =>
     isComplete(proposalDocument.sections[sectionId].content),
   ).length;
@@ -222,6 +237,36 @@ export function ProposalBuilder({ sources, workflowRunId }: ProposalBuilderProps
         },
       },
     }));
+  }
+
+  function applyAiDraft() {
+    if (!aiDraft) {
+      return;
+    }
+
+    setProposalDocument((currentDocument) => ({
+      sections: Object.fromEntries(
+        proposalSectionIds.map((sectionId) => {
+          const generatedContent = aiDraft[sectionId]?.trim();
+          const currentSection = currentDocument.sections[sectionId];
+
+          if (!generatedContent) {
+            return [sectionId, currentSection];
+          }
+
+          return [
+            sectionId,
+            {
+              ...currentSection,
+              content: generatedContent,
+              isManual: true,
+              updatedAt: new Date().toISOString(),
+            },
+          ];
+        }),
+      ) as BuilderDocument["sections"],
+    }));
+    onAiDraftApplied?.();
   }
 
   function jumpToFirstIncomplete() {
@@ -284,6 +329,19 @@ export function ProposalBuilder({ sources, workflowRunId }: ProposalBuilderProps
           </Button>
         </div>
       </div>
+
+      {aiDraft ? (
+        <div className="flex flex-col gap-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-6 text-foreground">{t("live.aiDraftReady")}</p>
+          <Button
+            type="button"
+            className="btn-liquid shrink-0 justify-center rounded-full text-primary-foreground"
+            onClick={applyAiDraft}
+          >
+            {t("live.applyAiDraft")}
+          </Button>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]">
         <nav

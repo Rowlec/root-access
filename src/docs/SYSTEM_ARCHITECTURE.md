@@ -8,7 +8,7 @@ Primary routes:
 
 ```txt
 /          Landing and startup context form
-/result    Startup Proposal prompt review workspace
+/result    Startup Proposal guided review workspace
 /checkout  Fake Pro checkout for monetization validation
 ```
 
@@ -16,10 +16,12 @@ Server route:
 
 ```txt
 /api/gemini/review
+/api/gemini/proposal
 ```
 
-The API route reviews pasted external AI output. It does not generate final
-proposal content for the user.
+The review route assesses section output. The proposal route creates a
+structured editable draft from the student's completed notes; it does not make
+unsupported factual claims or bypass the student's review.
 
 ## Important Files
 
@@ -58,22 +60,24 @@ GoalForm
 - startup idea
 - industry
 - target customer
-- deadline urgency
-- AI model: ChatGPT or Gemini
 
 The form keeps the workflow deterministic. Startup Proposal is the only active
-workflow.
+workflow. Compatibility defaults for urgency and model remain internal only.
 
 ## Result Flow
 
-`src/app/result/page.tsx` validates query params and renders
-`WorkflowReviewWorkspace`.
+`src/app/result/page.tsx` renders a client entry point that restores the
+startup context from localStorage, so project details are not put in the URL.
 
-The workspace has exactly three user-facing layers:
+The workspace shows one review section at a time, then opens the Builder and
+export stage only after all review sections are complete. Each section has:
 
 - Action Layer: objective, starting prompt, copy button, paste output.
 - Review Layer: output score, top weaknesses, improved prompt.
 - Retry Layer: copy improved prompt, paste retry output, score comparison.
+
+The editable Proposal Builder is the single source for preview and export. An
+AI draft must be explicitly applied to that editor before it changes the file.
 
 ## Review API
 

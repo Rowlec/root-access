@@ -6,7 +6,7 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { ContextualHelper } from "@/components/onboarding/ContextualHelper";
@@ -18,28 +18,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import {
-  availableToolOptions,
-  availableToolsSchema,
-  deadlineUrgencyOptions,
-  goalFormSchema,
-  type GoalFormValues,
-} from "@/lib/goal-form-schema";
-import {
-  formatAnalyticsTools,
-  getUniqueAnalyticsTools,
-} from "@/lib/analytics-payload";
+import { goalFormSchema, type GoalFormValues } from "@/lib/goal-form-schema";
 
-const toolPreferencesStorageKey = "root-access:available-tools";
 const goalContextStorageKey = "root-access:startup-context";
 const descriptionHeightClasses = {
   default: "min-h-6",
@@ -87,41 +69,6 @@ function FormField({
   );
 }
 
-function readStoredAvailableTools() {
-  try {
-    const storedValue = window.localStorage.getItem(toolPreferencesStorageKey);
-
-    if (!storedValue) {
-      return null;
-    }
-
-    const parsedValue: unknown = JSON.parse(storedValue);
-    const parsedTools = availableToolsSchema.safeParse(parsedValue);
-
-    if (!parsedTools.success) {
-      window.localStorage.removeItem(toolPreferencesStorageKey);
-      return null;
-    }
-
-    return parsedTools.data;
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredAvailableTools(
-  availableTools: GoalFormValues["availableTools"],
-) {
-  try {
-    window.localStorage.setItem(
-      toolPreferencesStorageKey,
-      JSON.stringify(availableTools),
-    );
-  } catch {
-    return;
-  }
-}
-
 function readStoredGoalContext() {
   try {
     const storedValue = window.localStorage.getItem(goalContextStorageKey);
@@ -155,14 +102,7 @@ function writeStoredGoalContext(values: GoalFormValues) {
 export function GoalForm() {
   const router = useRouter();
   const t = useTranslations("GoalForm");
-  const deadlineUrgencyOptionLabels = {
-    "1-3 days": t("fields.deadlineUrgency.options.oneToThreeDays"),
-    "1 week": t("fields.deadlineUrgency.options.oneWeek"),
-    "2 weeks+": t("fields.deadlineUrgency.options.twoWeeksPlus"),
-    "No deadline": t("fields.deadlineUrgency.options.noDeadline"),
-  } satisfies Record<(typeof deadlineUrgencyOptions)[number], string>;
   const {
-    control,
     formState: { errors, isSubmitting },
     handleSubmit,
     register,
@@ -175,7 +115,7 @@ export function GoalForm() {
       startupIdea: "",
       industry: "",
       targetCustomer: "",
-      deadlineUrgency: undefined,
+      deadlineUrgency: "No deadline",
       availableTools: ["Gemini"],
     },
   });
@@ -222,57 +162,17 @@ export function GoalForm() {
       return;
     }
 
-    const storedAvailableTools = readStoredAvailableTools();
-
-    if (!storedAvailableTools) {
-      return;
-    }
-
-    setValue("availableTools", storedAvailableTools, {
-      shouldDirty: false,
-      shouldTouch: false,
-      shouldValidate: false,
-    });
   }, [setValue]);
 
   function onSubmit(values: GoalFormValues) {
-    const selectedTools = getUniqueAnalyticsTools(values.availableTools);
-
-    writeStoredAvailableTools(values.availableTools);
     writeStoredGoalContext(values);
 
     track("Workflow Start", {
-      mode: values.workflowMode,
-      stage: values.currentStage,
       industry: values.industry,
-      urgency: values.deadlineUrgency,
-      selectedTools: formatAnalyticsTools(selectedTools),
-      selectedToolCount: selectedTools.length,
     });
 
-    selectedTools.forEach((tool) => {
-      track("Tool Selected", {
-        tool,
-        stage: values.currentStage,
-        urgency: values.deadlineUrgency,
-      });
-    });
-
-    const params = new URLSearchParams({
-      mode: values.workflowMode,
-      stage: values.currentStage,
-      idea: values.startupIdea,
-      industry: values.industry,
-      urgency: values.deadlineUrgency,
-    });
-    if (values.targetCustomer.trim().length > 0) {
-      params.set("targetCustomer", values.targetCustomer);
-    }
-    values.availableTools.forEach((tool) => {
-      params.append("availableTools", tool);
-    });
-
-    router.push(`/result?${params.toString()}`);
+    // Project context remains in browser storage and is not put into the URL.
+    router.push("/result");
   }
 
   return (
@@ -361,119 +261,7 @@ export function GoalForm() {
                   />
                 </FormField>
 
-                <FormField
-                  id="deadlineUrgency"
-                  label={t("fields.deadlineUrgency.label")}
-                  description={t("fields.deadlineUrgency.description")}
-                  descriptionHeight="paired"
-                  error={
-                    errors.deadlineUrgency
-                      ? t("fields.deadlineUrgency.error")
-                      : undefined
-                  }
-                >
-                  <Controller
-                    control={control}
-                    name="deadlineUrgency"
-                    render={({ field }) => (
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <SelectTrigger
-                          id="deadlineUrgency"
-                          className="h-10 w-full"
-                          aria-invalid={Boolean(errors.deadlineUrgency)}
-                        >
-                          <SelectValue
-                            placeholder={t(
-                              "fields.deadlineUrgency.placeholder",
-                            )}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {deadlineUrgencyOptions.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {deadlineUrgencyOptionLabels[option]}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </FormField>
               </div>
-
-              <fieldset
-                className="grid gap-2.5"
-                aria-invalid={Boolean(errors.availableTools)}
-                aria-describedby={
-                  errors.availableTools
-                    ? "availableTools-description availableTools-error"
-                    : "availableTools-description"
-                }
-              >
-                <legend className="text-sm font-medium text-foreground">
-                  {t("fields.availableTools.label")}
-                </legend>
-                <p
-                  id="availableTools-description"
-                  className="text-sm leading-6 text-muted-foreground"
-                >
-                  {t("fields.availableTools.description")}
-                </p>
-                <Controller
-                  control={control}
-                  name="availableTools"
-                  render={({ field }) => {
-                    const selectedTools = field.value ?? [];
-
-                    return (
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {availableToolOptions.map((toolPreference) => {
-                          const isSelected =
-                            selectedTools.includes(toolPreference);
-
-                          return (
-                            <label
-                              key={toolPreference}
-                              className={cn(
-                                "flex min-h-11 cursor-pointer items-center gap-3 rounded-2xl border border-input bg-secondary/20 px-3 py-2 text-sm transition-colors hover:bg-secondary/40",
-                                isSelected &&
-                                  "border-primary bg-primary/20 text-foreground",
-                              )}
-                            >
-                              <input
-                                ref={field.ref}
-                                type="radio"
-                                name={field.name}
-                                value={toolPreference}
-                                checked={isSelected}
-                                onBlur={field.onBlur}
-                                onChange={() => {
-                                  field.onChange([toolPreference]);
-                                }}
-                                className="size-4 rounded-full border-input accent-foreground"
-                              />
-                              <span className="font-medium text-foreground">
-                                {toolPreference}
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    );
-                  }}
-                />
-                {errors.availableTools ? (
-                  <p
-                    id="availableTools-error"
-                    className="text-sm text-destructive"
-                  >
-                    {t("fields.availableTools.error")}
-                  </p>
-                ) : null}
-              </fieldset>
 
               <Button
                 data-onboarding="generate-workflow"

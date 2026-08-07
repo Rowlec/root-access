@@ -28,6 +28,8 @@ export const availableToolsSchema = z.array(availableToolSchema).min(1);
 export const workflowModeSchema = z.enum(workflowModeOptions);
 
 export const goalFormSchema = z.object({
+  // These compatibility fields are set internally; they are no longer shown
+  // in the active intake.
   workflowMode: workflowModeSchema,
   currentStage: z.enum(currentStageOptions),
   startupIdea: z.string().trim().min(3),
