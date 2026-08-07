@@ -176,6 +176,69 @@ async function seedProject(
   );
 }
 
+test("keeps the guided tour aligned with the create, review, improve, and export flow", async ({ page }) => {
+  await page.route("**/api/gemini/generate", async (route) => {
+    await route.fulfill({ json: { output: originalOutput } });
+  });
+  await page.route("**/api/gemini/review", async (route) => {
+    await route.fulfill({ json: { review: createReview() } });
+  });
+
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "Chào mừng bạn đến với Root Access" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Chỉ tôi cách sử dụng" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Bắt đầu bằng project context hữu ích" }),
+  ).toBeVisible();
+
+  await page.getByRole("dialog").getByRole("button", { name: "Tiếp theo" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Mở workspace theo từng bước" }),
+  ).toBeVisible();
+  await page.getByRole("dialog").getByRole("button", { name: "Mở workspace" }).click();
+  await expect(page.getByText("Tour đang chờ ở bước workspace")).toBeVisible();
+
+  await page.locator("#startupIdea").fill(projectContext.startupIdea);
+  await page.locator("#industry").fill(projectContext.industry);
+  await page.locator("#targetCustomer").fill(projectContext.targetCustomer);
+  await page.getByRole("button", { name: "Bắt đầu proposal review" }).click();
+  await expect(page).toHaveURL(/\/result\/problem\/generate$/);
+  await expect(
+    page.getByRole("heading", { name: "Tạo output có định hướng" }),
+  ).toBeVisible();
+
+  await page.locator('[data-generation-action="original"]').click();
+  await expect(page.locator("#ai-output")).toHaveValue(originalOutput);
+  await page.getByRole("dialog").getByRole("button", { name: "Tiếp theo" }).click();
+  await expect(page).toHaveURL(/\/result\/problem\/review$/);
+
+  await page.locator('[data-review-action="original"]').click();
+  await page.locator('[data-credit-confirm="true"]').click();
+  await expect(page.locator('[data-review-scores="true"]')).toBeVisible();
+  await page.getByRole("dialog").getByRole("button", { name: "Tiếp theo" }).click();
+  await expect(page).toHaveURL(/\/result\/problem\/improve$/);
+  await expect(
+    page.getByRole("heading", { name: "Cải thiện chỉ khi feedback cho thấy cần thiết" }),
+  ).toBeVisible();
+
+  await page.getByRole("dialog").getByRole("button", { name: "Tiếp theo" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Xuất bản nháp vào đúng lúc" }),
+  ).toBeVisible();
+  await expect(
+    page.locator('[data-onboarding-spotlight="export"]'),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Xuất bản nháp" })).toBeEnabled();
+
+  const artifactDirectory = resolve(process.cwd(), "e2e-artifacts");
+  mkdirSync(artifactDirectory, { recursive: true });
+  const screenshotPath = resolve(artifactDirectory, "onboarding-export-tour.png");
+  await page.screenshot({ path: screenshotPath });
+  expect(statSync(screenshotPath).size).toBeGreaterThan(5_000);
+});
+
 test("guides a student through create output, review, and improve", async ({ page }) => {
   await seedProject(page);
 

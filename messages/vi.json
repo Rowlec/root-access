@@ -12,54 +12,55 @@
   },
   "Onboarding": {
     "welcome": {
-      "badge": "Tour sản phẩm 45 giây",
+      "badge": "Tour sản phẩm 1 phút",
       "title": "Chào mừng bạn đến với Root Access",
       "description": "Root Access giúp bạn sử dụng AI tốt hơn cho Startup Proposal, tập trung từng section một. Bạn vẫn là người kiểm soát tư duy và bài viết cuối cùng.",
       "accomplishTitle": "Bạn sẽ đạt được gì",
       "accomplishBody": "Một proposal section mạnh hơn, biết rõ điểm yếu và có prompt tốt hơn cho lần thử tiếp theo.",
       "timeTitle": "Thời gian dự kiến",
-      "timeBody": "30–45 giây cho tour này, sau đó khoảng 8–12 phút cho mỗi proposal section.",
+      "timeBody": "Khoảng 1 phút để xem tour; sau đó bạn tự chọn phần nào cần tạo, review hoặc cải thiện.",
       "workflowTitle": "Quy trình chính",
-      "workflowBody": "Nhập context → tạo → review → cải thiện → so sánh → export."
+      "workflowBody": "Nhập context → tạo output → review → cải thiện khi cần → xuất bản nháp."
     },
     "tour": {
       "progress": "Bước {current}/{total}",
+      "completeCurrentAction": "Hãy hoàn thành thao tác đang được hướng dẫn trước, rồi bấm Tiếp theo.",
       "steps": {
         "projectForm": {
           "title": "Bắt đầu bằng project context hữu ích",
-          "body": "Mô tả ý tưởng startup, lĩnh vực, khách hàng mục tiêu, deadline và công cụ AI. Root Access dùng các thông tin này xuyên suốt workflow.",
+          "body": "Mô tả ý tưởng startup, lĩnh vực và khách hàng mục tiêu. Root Access giữ bối cảnh này nhất quán xuyên suốt proposal.",
           "helper": "Context càng cụ thể thì prompt càng sát và feedback review càng chính xác."
         },
         "generateWorkflow": {
-          "title": "Tạo proposal workspace",
-          "body": "Gửi form để mở workspace gồm năm proposal section. Tour sẽ tự động tiếp tục sau khi bạn submit.",
-          "helper": "Workflow luôn theo quy tắc cố định và chỉ tập trung vào Startup Proposal."
+          "title": "Mở workspace theo từng bước",
+          "body": "Gửi context để bắt đầu phần đầu tiên. Tour sẽ tiếp tục khi workspace mở ra.",
+          "helper": "Mỗi section chỉ có ba bước rõ ràng: tạo output, review và cải thiện khi cần."
         },
         "workspace": {
-          "title": "Làm từng section một",
-          "body": "AI Workspace hiển thị mục tiêu hiện tại, prompt tập trung và nơi đưa output AI trở lại Root Access.",
-          "helper": "Hoàn thành từng section giúp proposal dễ kiểm soát và không bị quá tải."
+          "title": "Tạo output có định hướng",
+          "body": "Kiểm tra hướng dẫn cho section hiện tại, chỉnh khi cần rồi chọn Tạo output. Output vẫn có thể sửa trước khi review.",
+          "helper": "Bước này chỉ tạo một bản làm việc; bạn chưa cần tin hoặc dùng ngay nội dung AI tạo ra."
         },
         "review": {
           "title": "Review output của AI",
-          "body": "Đưa output đã tạo vào đây. Root Access sẽ đánh giá business logic và giải thích phần mạnh, yếu hoặc còn thiếu.",
-          "helper": "Review giúp bạn kiểm tra output bằng bằng chứng thay vì chấp nhận câu trả lời AI một cách mù quáng."
+          "body": "Chọn Review bài của tôi để kiểm tra sáu tiêu chí nghiệp vụ và xem bằng chứng cho điểm mạnh, yếu, hoặc dữ kiện còn thiếu.",
+          "helper": "Review biến câu trả lời AI thành điều bạn có thể kiểm chứng, thay vì nội dung phải chấp nhận một cách mù quáng."
         },
         "improve": {
-          "title": "Cải thiện prompt dựa trên feedback",
-          "body": "Sau review, Root Access tạo prompt đầy đủ hơn và nhắm đúng những weakness của output trước.",
-          "helper": "Prompt mới giữ nguyên nhiệm vụ đầy đủ, đồng thời bổ sung chi tiết thiếu và yêu cầu sửa lỗi."
+          "title": "Cải thiện chỉ khi feedback cho thấy cần thiết",
+          "body": "Bạn có thể tạo một hướng dẫn tốt hơn từ điểm yếu đã phát hiện, hoặc giữ output hiện tại và sang section kế tiếp.",
+          "helper": "Không có lần gọi AI ẩn: chỉ khi bạn chọn Cải thiện prompt thì hệ thống mới dùng thêm lượt AI."
         },
         "export": {
-          "title": "Export tài liệu làm việc sạch",
-          "body": "Khi các section đã sẵn sàng, export proposal draft sạch dưới dạng TXT, DOCX hoặc PDF để bạn tự chỉnh sửa cuối cùng.",
+          "title": "Xuất bản nháp vào đúng lúc",
+          "body": "Nút Xuất bản nháp mở ngay khi đã có nội dung để bạn xuất TXT, DOCX hoặc PDF; không cần đợi hoàn thành tất cả section.",
           "helper": "Luôn kiểm chứng dữ kiện, thêm lập luận của bạn và viết lại bản nộp cuối bằng giọng văn của chính mình."
         }
       }
     },
     "waiting": {
       "title": "Tour đang chờ ở bước workspace",
-      "body": "Hoàn thành form project và tạo workflow. Tour sẽ tự tiếp tục ở màn hình kế tiếp."
+      "body": "Điền context rồi chọn Bắt đầu proposal review. Tour sẽ tiếp tục ở màn hình tạo output."
     },
     "actions": {
       "start": "Chỉ tôi cách sử dụng",
@@ -67,7 +68,7 @@
       "back": "Quay lại",
       "next": "Tiếp theo",
       "finish": "Hoàn thành tour",
-      "continueInForm": "Bắt đầu điền form",
+      "continueInForm": "Mở workspace",
       "goToForm": "Đi tới form"
     }
   },
@@ -98,7 +99,7 @@
       },
       "workflow": {
         "title": "Test output",
-        "description": "Chỉnh prompt và tạo output bằng Gemini ngay bên trong Root Access."
+        "description": "Chỉnh hướng dẫn và tạo output ngay trong Root Access."
       },
       "proposal": {
         "title": "Cải thiện prompt",
@@ -137,7 +138,7 @@
     "title": "Nhập context cho Proposal Section",
     "description": "RootAccess chỉ tập trung vào Startup Proposal trong MVP này.",
     "cardTitle": "Startup context",
-    "cardDescription": "Giữ ngắn gọn. Root Access sẽ dùng context này xuyên suốt Gemini workspace tích hợp.",
+    "cardDescription": "Giữ ngắn gọn. Root Access sẽ dùng context này xuyên suốt workspace được hướng dẫn.",
     "contextualTip": "Các thông tin này sẽ trở thành context cố định cho mọi prompt, review và lần cải thiện trong proposal.",
     "fields": {
       "workflowMode": {
@@ -631,9 +632,10 @@
       "dashboard": "Dashboard",
       "upgrade": "Mua credits",
       "limits": {
-        "generation": "Không giới hạn tạo prompt.",
+        "generation": "Đã hết lượt tạo output của gói hiện tại.",
         "review": "Đã hết lượt review miễn phí.",
-        "improvement": "Đã hết lượt improvement miễn phí."
+        "improvement": "Đã hết lượt improvement miễn phí.",
+        "proposalDraft": "Đã hết lượt tổng hợp proposal miễn phí."
       }
     },
     "progress": {
@@ -660,7 +662,7 @@
     "learn": {
       "title": "Learn Layer",
       "whyPromptWorks": "Prompt này ép AI trả lời theo business checks của section hiện tại thay vì viết chung chung.",
-      "toolReason": "Gemini tạo mọi version ngay trong Root Access; model preference của bạn là {tool}.",
+      "toolReason": "Root Access tạo và lưu từng version trong cùng một workspace để bạn dễ kiểm tra.",
       "comparisonBeforeReview": "Sau khi review, bạn sẽ thấy prompt mới khác gì so với prompt ban đầu.",
       "comparisonAfterReview": "Prompt mới nhắm trực tiếp vào điểm yếu đã phát hiện trong output trước."
     },

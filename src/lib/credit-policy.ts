@@ -7,7 +7,7 @@ export type CreditAction =
   | "proposalDraft";
 export type CreditUsageSnapshot = Record<CreditAction, number>;
 
-type CreditLimit = number | "unlimited";
+type CreditLimit = number;
 
 export const creditUsageStorageKey = "root-access:credit-usage:v1";
 export const creditPlanStorageKey = "root-access:credit-plan:v1";
@@ -23,7 +23,7 @@ export const emptyCreditUsage: CreditUsageSnapshot = {
 export const creditPlans = {
   free: {
     limits: {
-      generation: "unlimited",
+      generation: 8,
       review: 5,
       improvement: 3,
       refinement: 3,
@@ -36,7 +36,7 @@ export const creditPlans = {
   },
   starter: {
     limits: {
-      generation: "unlimited",
+      generation: 30,
       review: 20,
       improvement: 20,
       refinement: 20,
@@ -49,7 +49,7 @@ export const creditPlans = {
   },
   pro: {
     limits: {
-      generation: "unlimited",
+      generation: 80,
       review: 50,
       improvement: 50,
       refinement: 50,
@@ -90,10 +90,10 @@ export function canUseCredit({
     (plan === "starter" || plan === "pro") &&
     (action === "review" || action === "improvement")
   ) {
-    return limit === "unlimited" || usage.review + usage.improvement < limit;
+    return usage.review + usage.improvement < limit;
   }
 
-  return limit === "unlimited" || usage[action] < limit;
+  return usage[action] < limit;
 }
 
 export function getRemainingCredits({
@@ -106,10 +106,6 @@ export function getRemainingCredits({
   usage: CreditUsageSnapshot;
 }) {
   const limit = getCreditLimit(plan, action);
-
-  if (limit === "unlimited") {
-    return "unlimited";
-  }
 
   if (
     (plan === "starter" || plan === "pro") &&

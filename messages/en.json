@@ -12,54 +12,55 @@
   },
   "Onboarding": {
     "welcome": {
-      "badge": "45-second product tour",
+      "badge": "1-minute product tour",
       "title": "Welcome to Root Access",
       "description": "Root Access helps you improve how you use AI for a Startup Proposal, one focused section at a time. You stay in control of the thinking and final writing.",
       "accomplishTitle": "What you will achieve",
       "accomplishBody": "A stronger proposal section, clear weaknesses, and a better prompt for the next attempt.",
       "timeTitle": "Estimated time",
-      "timeBody": "30–45 seconds for this tour, then about 8–12 minutes per proposal section.",
+      "timeBody": "About one minute for this tour; then choose which section to create, review, or improve.",
       "workflowTitle": "Main workflow",
-      "workflowBody": "Add context → generate → review → improve → compare → export."
+      "workflowBody": "Add context → create output → review → improve when needed → export a draft."
     },
     "tour": {
       "progress": "Step {current} of {total}",
+      "completeCurrentAction": "Complete the highlighted action first, then select Next.",
       "steps": {
         "projectForm": {
           "title": "Start with useful project context",
-          "body": "Describe the startup idea, industry, target customer, deadline, and AI tool. Root Access uses these inputs throughout the workflow.",
+          "body": "Describe the startup idea, industry, and target customer. Root Access keeps this context consistent across the proposal.",
           "helper": "Specific context produces more relevant prompts and more accurate review feedback."
         },
         "generateWorkflow": {
-          "title": "Create your proposal workspace",
-          "body": "Submit the form to open a guided workspace for five proposal sections. The tour will continue automatically after you submit.",
-          "helper": "Your workflow stays rule-based and focused only on Startup Proposal work."
+          "title": "Open the step-by-step workspace",
+          "body": "Submit your context to start the first section. The tour resumes once the workspace opens.",
+          "helper": "Each section has three clear steps: create output, review it, and improve when needed."
         },
         "workspace": {
-          "title": "Work on one section at a time",
-          "body": "The AI Workspace shows the current objective, a focused prompt, and the place where you bring back the AI output.",
-          "helper": "Finishing one focused section at a time keeps the proposal manageable."
+          "title": "Create a guided output",
+          "body": "Check the instructions for the current section, edit them if needed, then select Create output. You can still edit the output before reviewing it.",
+          "helper": "This creates working material only; you do not need to trust or use an AI answer as-is."
         },
         "review": {
           "title": "Review the AI output",
-          "body": "Add the generated output here. Root Access then evaluates the business logic and explains what is strong, weak, or missing.",
-          "helper": "Review turns an AI response into evidence you can inspect instead of content you accept blindly."
+          "body": "Select Review my work to check six business criteria and see evidence for strengths, weaknesses, and missing facts.",
+          "helper": "Review turns an AI answer into something you can verify rather than content you accept blindly."
         },
         "improve": {
-          "title": "Improve the prompt with evidence",
-          "body": "After review, Root Access creates a fuller prompt that targets the exact weaknesses found in the previous output.",
-          "helper": "The improved prompt preserves the full task while adding the missing details and corrections."
+          "title": "Improve only when feedback makes it useful",
+          "body": "Create a better instruction from the weaknesses found, or keep the current output and move to the next section.",
+          "helper": "There are no hidden AI calls: Root Access uses another AI request only when you select Improve prompt."
         },
         "export": {
-          "title": "Export a clean working document",
-          "body": "When your sections are ready, export a cleaned proposal draft as TXT, DOCX, or PDF for your own final editing.",
+          "title": "Export a draft when it is useful",
+          "body": "The Export current draft button becomes available as soon as there is content, so you can export TXT, DOCX, or PDF before every section is complete.",
           "helper": "Always verify facts, add your reasoning, and rewrite the final submission in your own voice."
         }
       }
     },
     "waiting": {
       "title": "Tour paused at the workspace step",
-      "body": "Complete the project form and create the workflow. The tour will resume automatically on the next screen."
+      "body": "Add your context and select Start proposal review. The tour will resume on the create-output screen."
     },
     "actions": {
       "start": "Show me how it works",
@@ -67,7 +68,7 @@
       "back": "Back",
       "next": "Next",
       "finish": "Finish tour",
-      "continueInForm": "Use the form",
+      "continueInForm": "Open workspace",
       "goToForm": "Go to form"
     }
   },
@@ -98,7 +99,7 @@
       },
       "workflow": {
         "title": "Test output",
-        "description": "Edit the prompt and generate the output with Gemini directly inside Root Access."
+        "description": "Edit the instructions and create output directly inside Root Access."
       },
       "proposal": {
         "title": "Improve prompt",
@@ -137,7 +138,7 @@
     "title": "Add context for your Proposal Sections",
     "description": "RootAccess focuses only on Startup Proposal in this MVP.",
     "cardTitle": "Startup context",
-    "cardDescription": "Keep it short. Root Access will use this context throughout the integrated Gemini workspace.",
+    "cardDescription": "Keep it short. Root Access uses this context throughout the guided workspace.",
     "contextualTip": "These details become fixed context for every prompt, review, and improvement in this proposal.",
     "fields": {
       "workflowMode": {
@@ -631,9 +632,10 @@
       "dashboard": "Dashboard",
       "upgrade": "Buy credits",
       "limits": {
-        "generation": "Prompt generation is unlimited.",
+        "generation": "Your current plan has no create-output requests remaining.",
         "review": "Free review limit reached.",
-        "improvement": "Free improvement limit reached."
+        "improvement": "Free improvement limit reached.",
+        "proposalDraft": "Free proposal assembly limit reached."
       }
     },
     "progress": {
@@ -660,7 +662,7 @@
     "learn": {
       "title": "Learn Layer",
       "whyPromptWorks": "This prompt forces the AI to answer against the current section's business checks instead of writing generically.",
-      "toolReason": "Gemini generates each version inside Root Access; your selected model preference is {tool}.",
+      "toolReason": "Root Access creates and saves each version in one workspace so you can inspect it clearly.",
       "comparisonBeforeReview": "After review, you will see how the improved prompt differs from the starting prompt.",
       "comparisonAfterReview": "The improved prompt targets the weaknesses detected in the previous output."
     },

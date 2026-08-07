@@ -88,7 +88,20 @@ export async function POST(request: Request) {
         feedback,
         "Return a complete revised output, not a list of editing instructions.",
       ].join("\n")
-    : prompt;
+    : [
+        prompt,
+        previousOutput
+          ? [
+              "",
+              "Reference output from the current section:",
+              previousOutput,
+              "",
+              "Create a stronger new version. Keep useful evidence, but do not repeat unsupported claims.",
+            ].join("\n")
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
   const languageInstruction =
     locale === "vi"
       ? "Write the complete response in Vietnamese."
@@ -126,7 +139,7 @@ export async function POST(request: Request) {
             { role: "user", parts: [{ text: effectivePrompt }] },
           ],
           generationConfig: {
-            maxOutputTokens: 8192,
+            maxOutputTokens: 2400,
             temperature: 0.45,
           },
           systemInstruction: { parts: [{ text: systemInstruction }] },

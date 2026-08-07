@@ -793,8 +793,8 @@ export function WorkflowReviewWorkspace({
   const headerCopy = {
     back: isVietnamese ? "Home" : "Home",
     creditTooltip: isVietnamese
-      ? "1 review = 1 credit / 1 improve = 1 credit"
-      : "1 review = 1 credit / 1 improve = 1 credit",
+      ? "Mỗi review hoặc cải thiện dùng 1 credit; chỉ thực hiện khi bạn xác nhận."
+      : "Each review or improvement uses 1 credit and runs only after you confirm.",
     creditConfirm: isVietnamese
       ? "Hành động này tốn 1 credit. Bạn muốn tiếp tục?"
       : "This action costs 1 credit. Do you want to continue?",
@@ -815,7 +815,7 @@ export function WorkflowReviewWorkspace({
     exportDescription: isVietnamese
       ? "Xuất bản proposal sạch, bỏ markdown và lời thoại AI để dùng như tài liệu nộp bài."
       : "Export a clean proposal without markdown or AI chatter, ready for submission formatting.",
-    generateProposal: isVietnamese ? "Tạo bản proposal AI" : "Create AI proposal draft",
+    generateProposal: isVietnamese ? "Tổng hợp bản proposal" : "Assemble proposal draft",
     generatingProposal: isVietnamese ? "Đang tổng hợp proposal" : "Creating proposal draft",
     exportTitle: isVietnamese ? "Xuất Startup Proposal" : "Export Startup Proposal",
     improveAgain: isVietnamese
@@ -832,8 +832,8 @@ export function WorkflowReviewWorkspace({
     noContinue: isVietnamese ? "Không, tiếp tục" : "No, continue",
     proposalTitle: isVietnamese ? "Startup proposal" : "Startup proposal",
     regressionNotice: isVietnamese
-      ? "Retry bị thấp điểm hơn. RootAccess đã tạo lại improved prompt để bạn test lại."
-      : "The retry scored lower. RootAccess regenerated the improved prompt for another test.",
+      ? "Retry bị thấp điểm hơn. Hãy xem lại feedback rồi chỉ tạo thêm prompt nếu bạn thấy cần."
+      : "The retry scored lower. Review the feedback, then create another prompt only if it is useful.",
     reviewMyWork: isVietnamese ? "Review bài của tôi" : "Review My Work",
     updateProposal: isVietnamese ? "Hoàn thành bước này" : "Complete Step",
   };
@@ -1166,15 +1166,6 @@ export function WorkflowReviewWorkspace({
       return;
     }
 
-    const history = Object.values(workspaceState)
-      .flatMap((sectionState) => sectionState?.generationVersions ?? [])
-      .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
-      .slice(-4)
-      .flatMap((version) => [
-        { role: "user" as const, text: version.prompt },
-        { role: "model" as const, text: version.output },
-      ]);
-
     setError(null);
     setIsGenerating(true);
 
@@ -1189,8 +1180,9 @@ export function WorkflowReviewWorkspace({
             startupIdea: context.startupIdea,
             targetCustomer: context.targetCustomer,
           },
-          history,
           locale: context.locale === "vi" ? "vi" : "en",
+          previousOutput:
+            kind === "retry" ? activeState.originalOutput.trim() : undefined,
           prompt,
           section: activeSection.title,
         }),
@@ -1303,6 +1295,12 @@ export function WorkflowReviewWorkspace({
       return;
     }
 
+    if (!canUse("proposalDraft")) {
+      setError(t("credits.limits.proposalDraft"));
+      setIsUpgradeOpen(true);
+      return;
+    }
+
     setError(null);
     setIsGeneratingProposal(true);
 
@@ -1355,6 +1353,7 @@ export function WorkflowReviewWorkspace({
         );
       }
 
+      recordUse("proposalDraft");
       setAiDraft(draft);
     } catch (proposalError) {
       setError(
@@ -1542,7 +1541,10 @@ export function WorkflowReviewWorkspace({
         previousReviewedVersion?.review &&
         review.score.total < previousReviewedVersion.review.score.total
       ) {
-        await repairRegressedPrompt(review, previousReviewedVersion.review.score.total);
+        updateSectionState(activeSection.id, (sectionState) => ({
+          ...sectionState,
+          regressionNotice: headerCopy.regressionNotice,
+        }));
       }
     } catch (reviewError) {
       setError(
@@ -1583,7 +1585,6 @@ export function WorkflowReviewWorkspace({
         mode: "improve",
         originalPrompt: promptToImprove,
         output: sourceOutput,
-        previousOutput: activeState.originalOutput.trim() || undefined,
         previousScore: activeState.originalReview?.score.total,
           section: activeSection.title,
           sectionId: activeSection.id,
@@ -1681,80 +1682,6 @@ export function WorkflowReviewWorkspace({
       setError(
         improvementError instanceof Error
           ? improvementError.message
-          : t("errors.reviewFailed"),
-      );
-    } finally {
-      setIsImproving(false);
-    }
-  }
-
-  async function repairRegressedPrompt(
-    regressedReview: OutputReview,
-    baselineScore: number,
-  ) {
-    const sourceOutput = activeState.retryOutput.trim();
-
-    if (
-      regressedReview.score.total >= baselineScore ||
-      !sourceOutput ||
-      !improvedPrompt
-    ) {
-      return;
-    }
-
-    setIsImproving(true);
-
-    try {
-      let nextPrompt = improvedPrompt;
-      let nextImprovement: {
-        improvedPrompt: string;
-        whyBetter: string;
-      } | null = null;
-
-      for (let attempt = 0; attempt < 2; attempt += 1) {
-        nextImprovement = await fetchPromptImprovement({
-          baselineScore,
-          promptToImprove: nextPrompt,
-          reviewToImprove: regressedReview,
-          sourceOutput,
-        });
-        nextPrompt = nextImprovement.improvedPrompt;
-      }
-
-      if (!nextImprovement) {
-        return;
-      }
-
-      const repairedImprovement = nextImprovement;
-
-      updateSectionState(activeSection.id, (sectionState) => ({
-        ...sectionState,
-        improvedPromptCopied: false,
-        originalReview: sectionState.originalReview
-          ? {
-              ...sectionState.originalReview,
-              improvedPrompt: repairedImprovement.improvedPrompt,
-              whyBetter: repairedImprovement.whyBetter,
-            }
-          : sectionState.originalReview,
-        regressionNotice: headerCopy.regressionNotice,
-        retryPrompt: repairedImprovement.improvedPrompt,
-        retryReview: sectionState.retryReview
-          ? {
-              ...sectionState.retryReview,
-              improvedPrompt: repairedImprovement.improvedPrompt,
-              whyBetter: repairedImprovement.whyBetter,
-            }
-          : {
-              ...regressedReview,
-              improvedPrompt: repairedImprovement.improvedPrompt,
-              whyBetter: repairedImprovement.whyBetter,
-            },
-      }));
-    } catch (regressionError) {
-      setError(
-        regressionError instanceof Error
-          ? regressionError.message
           : t("errors.reviewFailed"),
       );
     } finally {
@@ -2303,6 +2230,7 @@ export function WorkflowReviewWorkspace({
             </div>
             <Button
               type="button"
+              data-onboarding="draft-export"
               variant="outline"
               className="btn-glass h-10 justify-center rounded-full px-4"
               disabled={!canExportDraft}
@@ -3098,7 +3026,7 @@ export function WorkflowReviewWorkspace({
               />
 
               <section
-                data-onboarding="export"
+                data-onboarding="final-export"
                 className="glass grid gap-4 rounded-3xl p-4 sm:p-5"
               >
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -3194,7 +3122,7 @@ export function WorkflowReviewWorkspace({
       {printableProposal}
 
       {isDraftExportOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[110] grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
           <section
             role="dialog"
             aria-modal="true"
@@ -3271,7 +3199,7 @@ export function WorkflowReviewWorkspace({
       ) : null}
 
       {pendingCreditAction ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[110] grid place-items-center bg-background/80 p-4 backdrop-blur-sm">
           <div className="glass w-full max-w-md rounded-3xl p-5">
             <div className="space-y-3">
               <Badge variant="secondary">{pendingCreditAction.label}</Badge>

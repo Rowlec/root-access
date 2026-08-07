@@ -18,9 +18,9 @@ const reviewRequestSchema = z.object({
   }),
   locale: z.enum(["en", "vi"]).default("en"),
   mode: z.enum(["review", "improve"]).default("review"),
-  originalPrompt: z.string().trim().min(1).max(12000),
-  output: z.string().trim().min(1).max(20000),
-  previousOutput: z.string().trim().max(20000).optional(),
+  originalPrompt: z.string().trim().min(1).max(8000),
+  output: z.string().trim().min(1).max(12000),
+  previousOutput: z.string().trim().max(12000).optional(),
   previousScore: z.number().int().min(0).max(60).optional(),
   section: z.string().trim().min(1).max(120),
   sectionId: z.enum(proposalSectionIds),
@@ -444,7 +444,6 @@ function createGeminiImprovementPrompt({
   locale,
   originalPrompt,
   output,
-  previousOutput,
   score,
   section,
   sectionId,
@@ -544,21 +543,20 @@ function createGeminiImprovementPrompt({
     "Prompt to improve:",
     originalPrompt,
     "",
-    "Original/baseline output, if available:",
-    previousOutput || output,
-    "",
-    "Current AI output that exposed the weaknesses:",
+    "Output that needs a stronger prompt:",
     output,
   ].join("\n");
 }
 
 async function callGemini({
   apiKey,
+  maxOutputTokens,
   model,
   prompt,
   systemInstruction,
 }: {
   apiKey: string;
+  maxOutputTokens: number;
   model: string;
   prompt: string;
   systemInstruction: string;
@@ -585,7 +583,9 @@ async function callGemini({
             },
           ],
           generationConfig: {
+            maxOutputTokens,
             responseMimeType: "application/json",
+            temperature: 0.2,
           },
           systemInstruction: {
             parts: [
@@ -673,6 +673,7 @@ export async function POST(request: Request) {
     sectionId: parsedBody.data.sectionId,
   });
   const model = getModel();
+  const maxOutputTokens = parsedBody.data.mode === "improve" ? 1800 : 1400;
   const prompt =
     parsedBody.data.mode === "improve"
       ? createGeminiImprovementPrompt({
@@ -688,6 +689,7 @@ export async function POST(request: Request) {
       : "You are an evidence-based Startup Proposal evaluator. You score six rubric dimensions, detect specific weaknesses and missing information, quote exact problematic passages, and coach students concisely. You never write final proposal content or improve prompts.";
   const geminiResult = await callGemini({
     apiKey,
+    maxOutputTokens,
     model,
     prompt,
     systemInstruction,
@@ -717,53 +719,27 @@ export async function POST(request: Request) {
       });
     }
 
-    let reviewText = geminiResult.text;
+    const geminiReview = parseReviewJson(
+      geminiResult.text,
+      parsedBody.data.output,
+    );
 
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      try {
-        const geminiReview = parseReviewJson(
-          reviewText,
-          parsedBody.data.output,
-        );
-
-        return Response.json({
-          model,
-          review: {
-            coach: geminiReview.coach,
-            frameworkChecks:
-              proposalReviewFrameworks[parsedBody.data.sectionId].checks,
-            frameworkTitle:
-              proposalReviewFrameworks[parsedBody.data.sectionId].title,
-            missingInformation: geminiReview.missingInformation,
-            problematicPassages: geminiReview.problematicPassages,
-            score: geminiReview.score,
-            strengths: geminiReview.strengths,
-            suggestions: geminiReview.suggestions,
-            weaknesses: geminiReview.weaknesses,
-          },
-        });
-      } catch {
-        if (attempt > 0) {
-          throw new Error("invalid_review_json");
-        }
-
-        const retryResult = await callGemini({
-          apiKey,
-          model,
-          prompt: `${prompt}\n\nYour previous response did not match the required JSON schema. Return every required field, including all six integer scores and at least one exact problematic passage quote. Return JSON only.`,
-          systemInstruction,
-        });
-
-        if ("error" in retryResult) {
-          return Response.json(
-            { code: "gemini_error", message: retryResult.error },
-            { status: retryResult.status },
-          );
-        }
-
-        reviewText = retryResult.text;
-      }
-    }
+    return Response.json({
+      model,
+      review: {
+        coach: geminiReview.coach,
+        frameworkChecks:
+          proposalReviewFrameworks[parsedBody.data.sectionId].checks,
+        frameworkTitle:
+          proposalReviewFrameworks[parsedBody.data.sectionId].title,
+        missingInformation: geminiReview.missingInformation,
+        problematicPassages: geminiReview.problematicPassages,
+        score: geminiReview.score,
+        strengths: geminiReview.strengths,
+        suggestions: geminiReview.suggestions,
+        weaknesses: geminiReview.weaknesses,
+      },
+    });
   } catch {
     return Response.json(
       {

@@ -43,6 +43,18 @@ type GeminiResponse = {
 
 const unavailableMessage = "AI service unavailable. Please retry.";
 const defaultModel = "gemini-3.1-flash-lite";
+const maxSectionSourceCharacters = 4000;
+
+function compactSectionNotes(value: string) {
+  if (value.length <= maxSectionSourceCharacters) {
+    return value;
+  }
+
+  const opening = value.slice(0, 2800).trimEnd();
+  const ending = value.slice(-1100).trimStart();
+
+  return `${opening}\n\n[Earlier working notes shortened to keep this AI request focused.]\n\n${ending}`;
+}
 
 function extractText(data: GeminiResponse) {
   return data.candidates?.[0]?.content?.parts
@@ -93,6 +105,12 @@ export async function POST(request: Request) {
 
   const { context, locale, sections } = parsedRequest.data;
   const language = locale === "vi" ? "Vietnamese" : "English";
+  const compactSections = Object.fromEntries(
+    Object.entries(sections).map(([sectionId, content]) => [
+      sectionId,
+      compactSectionNotes(content),
+    ]),
+  );
   const prompt = [
     "Create a polished, editable startup proposal from the student's working notes.",
     `Write every value in ${language}.`,
@@ -106,7 +124,7 @@ export async function POST(request: Request) {
     `Industry: ${context.industry}`,
     `Target customer: ${context.targetCustomer || "Not specified"}`,
     "Working notes by section:",
-    JSON.stringify(sections),
+    JSON.stringify(compactSections),
   ].join("\n\n");
 
   let response: Response;
@@ -120,7 +138,7 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: {
-            maxOutputTokens: 8192,
+            maxOutputTokens: 4600,
             responseMimeType: "application/json",
             temperature: 0.25,
           },

@@ -38,12 +38,37 @@ type SpotlightRect = {
 
 type TourStep = {
   body: string;
+  completionTarget?: string;
   helper: string;
   id: string;
-  route: "/" | "/result";
+  route: "generate" | "home" | "improve" | "review";
   targets: string[];
   title: string;
 };
+
+function getWorkflowSectionId(pathname: string) {
+  const match = pathname.match(/^\/result\/([^/]+)\/(?:generate|review|improve)$/);
+
+  return match?.[1] ?? "problem";
+}
+
+function getTourRoute(pathname: string) {
+  if (pathname === "/") {
+    return "home" as const;
+  }
+
+  const match = pathname.match(/^\/result\/[^/]+\/(generate|review|improve)$/);
+
+  return match?.[1] as TourStep["route"] | undefined;
+}
+
+function getTourPath(route: TourStep["route"], pathname: string) {
+  if (route === "home") {
+    return "/";
+  }
+
+  return `/result/${getWorkflowSectionId(pathname)}/${route}`;
+}
 
 function readProgress(): OnboardingProgress {
   try {
@@ -97,6 +122,7 @@ export function ProductOnboarding() {
   const t = useTranslations("Onboarding");
   const [progress, setProgress] = useState<OnboardingProgress | null>(null);
   const [spotlightRect, setSpotlightRect] = useState<SpotlightRect | null>(null);
+  const [tourNotice, setTourNotice] = useState<string | null>(null);
   const [viewport, setViewport] = useState({ height: 0, width: 0 });
   const tourDialogRef = useRef<HTMLDivElement>(null);
   const tourSteps = useMemo<TourStep[]>(
@@ -105,7 +131,7 @@ export function ProductOnboarding() {
         body: t("tour.steps.projectForm.body"),
         helper: t("tour.steps.projectForm.helper"),
         id: "project-form",
-        route: "/",
+        route: "home",
         targets: ['[data-onboarding="project-form"]'],
         title: t("tour.steps.projectForm.title"),
       },
@@ -113,23 +139,25 @@ export function ProductOnboarding() {
         body: t("tour.steps.generateWorkflow.body"),
         helper: t("tour.steps.generateWorkflow.helper"),
         id: "generate-workflow",
-        route: "/",
+        route: "home",
         targets: ['[data-onboarding="generate-workflow"]'],
         title: t("tour.steps.generateWorkflow.title"),
       },
       {
         body: t("tour.steps.workspace.body"),
+        completionTarget: '[data-generation-latest="true"]',
         helper: t("tour.steps.workspace.helper"),
         id: "workspace",
-        route: "/result",
+        route: "generate",
         targets: ['[data-onboarding="ai-workspace"]'],
         title: t("tour.steps.workspace.title"),
       },
       {
         body: t("tour.steps.review.body"),
+        completionTarget: '[data-review-scores="true"]',
         helper: t("tour.steps.review.helper"),
         id: "review",
-        route: "/result",
+        route: "review",
         targets: ['[data-onboarding="review-entry"]'],
         title: t("tour.steps.review.title"),
       },
@@ -137,19 +165,16 @@ export function ProductOnboarding() {
         body: t("tour.steps.improve.body"),
         helper: t("tour.steps.improve.helper"),
         id: "improve",
-        route: "/result",
-        targets: [
-          '[data-onboarding="improve-result"]',
-          '[data-onboarding="improve-guide"]',
-        ],
+        route: "improve",
+        targets: ['[data-onboarding="improve-result"]'],
         title: t("tour.steps.improve.title"),
       },
       {
         body: t("tour.steps.export.body"),
         helper: t("tour.steps.export.helper"),
         id: "export",
-        route: "/result",
-        targets: ['[data-onboarding="export"]'],
+        route: "improve",
+        targets: ['[data-onboarding="draft-export"]'],
         title: t("tour.steps.export.title"),
       },
     ],
@@ -157,7 +182,9 @@ export function ProductOnboarding() {
   );
   const activeStep = progress?.status === "tour" ? tourSteps[progress.step] : null;
   const activeTargetSelectors = activeStep?.targets.join("||") ?? "";
-  const isTourVisible = Boolean(activeStep && activeStep.route === pathname);
+  const isTourVisible = Boolean(
+    activeStep && activeStep.route === getTourRoute(pathname),
+  );
   const isWaitingForWorkspace = Boolean(
     progress?.status === "tour" && progress.step === 2 && pathname === "/",
   );
@@ -172,15 +199,24 @@ export function ProductOnboarding() {
   }
 
   function startTour() {
-    const firstStep = pathname === "/result" ? 2 : 0;
+    const currentRoute = getTourRoute(pathname);
+    const firstStep =
+      currentRoute === "generate"
+        ? 2
+        : currentRoute === "review"
+          ? 3
+          : currentRoute === "improve"
+            ? 4
+            : 0;
     const nextProgress: OnboardingProgress = {
       status: "tour",
       step: firstStep,
     };
 
+    setTourNotice(null);
     persistProgress(nextProgress);
 
-    if (pathname !== "/" && pathname !== "/result") {
+    if (!currentRoute) {
       persistProgress({ status: "tour", step: 0 });
       router.push("/#goal-form");
     }
@@ -200,15 +236,19 @@ export function ProductOnboarding() {
     const boundedStep = Math.max(0, Math.min(step, tourSteps.length - 1));
     const nextStep = tourSteps[boundedStep];
 
+    setTourNotice(null);
     persistProgress({ status: "tour", step: boundedStep });
 
-    if (nextStep.route === pathname) {
+    if (nextStep.route === getTourRoute(pathname)) {
       return;
     }
 
-    if (nextStep.route === "/") {
+    if (nextStep.route === "home") {
       router.push("/#goal-form");
+      return;
     }
+
+    router.push(getTourPath(nextStep.route, pathname));
   }
 
   function handleNext() {
@@ -218,6 +258,14 @@ export function ProductOnboarding() {
 
     if (progress.step >= tourSteps.length - 1) {
       completeOnboarding();
+      return;
+    }
+
+    if (
+      activeStep?.completionTarget &&
+      !document.querySelector(activeStep.completionTarget)
+    ) {
+      setTourNotice(t("tour.completeCurrentAction"));
       return;
     }
 
@@ -237,7 +285,7 @@ export function ProductOnboarding() {
     const resetOnboarding = () => {
       const nextProgress: OnboardingProgress = {
         status: "welcome",
-        step: pathname === "/result" ? 2 : 0,
+        step: 0,
       };
 
       writeProgress(nextProgress);
@@ -254,9 +302,16 @@ export function ProductOnboarding() {
   }, [pathname]);
 
   useEffect(() => {
+    setTourNotice(null);
+  }, [activeStep?.id]);
+
+  useEffect(() => {
     if (!isTourVisible || !activeTargetSelectors) {
       return;
     }
+
+    setSpotlightRect(null);
+    setViewport({ height: window.innerHeight, width: window.innerWidth });
 
     let animationFrame = 0;
     let targetElement: HTMLElement | null = null;
@@ -335,7 +390,7 @@ export function ProductOnboarding() {
       window.clearTimeout(focusTimer);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  });
+  }, [isTourVisible, progress?.status]);
 
   const tourCardStyle = useMemo<CSSProperties | undefined>(() => {
     if (viewport.width < 640) {
@@ -519,10 +574,11 @@ export function ProductOnboarding() {
 
   return (
     <>
-      <div className="fixed inset-0 z-[70]" aria-hidden="true" />
+      <div className="pointer-events-none fixed inset-0 z-[70]" aria-hidden="true" />
       {spotlightRect ? (
         <div
           aria-hidden="true"
+          data-onboarding-spotlight={activeStep.id}
           className="onboarding-spotlight pointer-events-none fixed z-[75] rounded-3xl border-2 border-primary"
           style={spotlightRect}
         />
@@ -532,7 +588,7 @@ export function ProductOnboarding() {
       <div
         ref={tourDialogRef}
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-labelledby="onboarding-tour-title"
         tabIndex={-1}
         className={cn(
@@ -570,6 +626,11 @@ export function ProductOnboarding() {
             <Lightbulb aria-hidden="true" className="mt-1 size-4 shrink-0 text-primary" />
             <p>{activeStep.helper}</p>
           </div>
+          {tourNotice ? (
+            <p role="status" className="mt-3 text-sm leading-6 text-amber-200">
+              {tourNotice}
+            </p>
+          ) : null}
         </div>
 
         <div className="mt-4 flex gap-1.5" aria-hidden="true">

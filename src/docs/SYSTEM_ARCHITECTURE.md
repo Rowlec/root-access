@@ -8,7 +8,8 @@ Primary routes:
 
 ```txt
 /          Landing and startup context form
-/result    Startup Proposal guided review workspace
+/result    Restores context and redirects to the next permitted wizard phase
+/result/[section]/[phase]  Create, review, or improve one proposal section
 /checkout  Fake Pro checkout for monetization validation
 ```
 
@@ -17,6 +18,7 @@ Server route:
 ```txt
 /api/gemini/review
 /api/gemini/proposal
+/api/gemini/generate
 ```
 
 The review route assesses section output. The proposal route creates a
@@ -69,19 +71,22 @@ workflow. Compatibility defaults for urgency and model remain internal only.
 `src/app/result/page.tsx` renders a client entry point that restores the
 startup context from localStorage, so project details are not put in the URL.
 
-The workspace shows one review section at a time, then opens the Builder and
-export stage only after all review sections are complete. Each section has:
+The workspace shows one proposal section at a time. Each section has:
 
-- Action Layer: objective, starting prompt, copy button, paste output.
-- Review Layer: output score, top weaknesses, improved prompt.
-- Retry Layer: copy improved prompt, paste retry output, score comparison.
+- Create output: objective, editable instructions, and one generated working
+  version.
+- Review: six business-logic scores, evidence, weaknesses, and missing facts.
+- Improve: an optional better instruction and a retry comparison.
 
-The editable Proposal Builder is the single source for preview and export. An
-AI draft must be explicitly applied to that editor before it changes the file.
+Draft TXT/DOCX/PDF export uses the available section outputs before completion.
+After all sections are complete, the editable Proposal Builder is the source
+of the final export. An AI draft must be explicitly applied to that editor
+before it changes the file.
 
 ## Review API
 
-`src/app/api/gemini/review/route.ts` calls Gemini once for the review bundle:
+`src/app/api/gemini/review/route.ts` makes one bounded AI request per explicit
+review or prompt-improvement action:
 
 - Output Score Engine
 - Weakness Detection
@@ -97,9 +102,10 @@ are:
 - Actionability: 0-10
 - Rubric Alignment: 0-10
 
-Gemini returns a reason for every dimension. The server validates each score and
-recomputes the total as 0-60. The same response includes strengths, weaknesses,
-missing information, suggestions, and exact output passages for highlighting.
+The server validates each score and recomputes the total as 0-60. Review output
+includes strengths, weaknesses, missing information, suggestions, and exact
+output passages for highlighting. It does not make a silent second request if
+the provider returns invalid JSON.
 
 ## Proposal Progress
 
@@ -119,7 +125,6 @@ compact on mobile and sticky on desktop.
 Browser localStorage stores:
 
 - startup context
-- selected AI model
 - review workspace state
 - credit usage
 - Pro demo plan state
@@ -138,17 +143,10 @@ root-access:credit-plan:v1
 
 Credit policy lives in `src/lib/credit-policy.ts`.
 
-Free:
-
-- 5 prompt generations
-- 5 output reviews
-- 3 improved prompts
-
-Pro:
-
-- unlimited prompt generations
-- unlimited output reviews
-- unlimited improved prompts
+Free: 8 output generations, 5 reviews, 3 improvements, and 2 proposal
+assemblies. Starter and Pro expand those bounded allowances. Credits are a
+client-side MVP demo; production enforcement requires authenticated server-side
+metering.
 
 `/checkout` is a fake checkout page. It activates Pro demo mode in localStorage
 and does not process payment.
@@ -156,13 +154,14 @@ and does not process payment.
 ## Architecture Invariants
 
 - Startup Proposal remains the only MVP workflow area.
-- Root Access reviews AI outputs and improves prompts; it does not generate the
-  final proposal.
+- Root Access creates constrained working outputs, reviews them, and improves
+  instructions. It does not present generated material as a final submission.
 - Workflow library remains static.
 - Workflow selection remains deterministic.
 - Prompt templates remain predefined.
 - Tool adaptation remains rule-based.
-- Output scoring, weakness detection, and prompt improvement call the server API.
+- Every server AI call is initiated by a visible user action and has a bounded
+  payload/output budget.
 - No Canva, PDF, PowerPoint, Excel, image, or website generation.
 - No real payment integration.
 - Academic integrity notices remain visible.
