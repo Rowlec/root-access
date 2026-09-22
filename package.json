@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20.9.0"
+    "node": "20.x"
   },
   "scripts": {
     "dev": "next dev",
@@ -13,7 +13,7 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:check": "node scripts/check-database.mjs",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "node scripts/migrate.mjs",
     "db:studio": "drizzle-kit studio",
     "demo:check": "node scripts/check-demo-readiness.mjs",
     "services:check": "node scripts/check-services.mjs",
