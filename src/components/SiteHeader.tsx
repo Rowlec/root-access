@@ -79,10 +79,10 @@ export function SiteHeader({ locale, isClerkConfigured }: SiteHeaderProps) {
 
         <nav className="flex min-w-0 items-center gap-1 sm:gap-3">
           <Link
-            href="/dashboard"
+            href="/app"
             className="hidden rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground lg:inline-block"
           >
-            Dashboard
+            Workspace
           </Link>
           <Button
             type="button"

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { withAiCreditGuard } from "@/lib/server/ai-guard";
+
 import {
   isProposalSectionId,
   proposalReviewFrameworks,
@@ -628,7 +630,7 @@ async function callGemini({
   };
 }
 
-export async function POST(request: Request) {
+async function handlePost(request: Request) {
   const apiKey = getApiKey();
 
   if (!apiKey) {
@@ -749,4 +751,17 @@ export async function POST(request: Request) {
       { status: 502 },
     );
   }
+}
+
+export async function POST(request: Request) {
+  let mode: "review" | "improvement" = "review";
+
+  try {
+    const body = (await request.clone().json()) as { mode?: unknown };
+    mode = body.mode === "improve" ? "improvement" : "review";
+  } catch {
+    // The handler returns the canonical invalid JSON response and the guard refunds.
+  }
+
+  return withAiCreditGuard(mode, () => handlePost(request));
 }

@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { withAiCreditGuard } from "@/lib/server/ai-guard";
+
 const sectionIds = [
   "idea",
   "problem",
@@ -73,7 +75,7 @@ function parseJson(value: string) {
   return proposalResponseSchema.safeParse(JSON.parse(normalized));
 }
 
-export async function POST(request: Request) {
+async function handlePost(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -201,4 +203,8 @@ export async function POST(request: Request) {
       { status: 502 },
     );
   }
+}
+
+export async function POST(request: Request) {
+  return withAiCreditGuard("proposalDraft", () => handlePost(request));
 }

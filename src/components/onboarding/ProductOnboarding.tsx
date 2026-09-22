@@ -302,16 +302,15 @@ export function ProductOnboarding() {
   }, [pathname]);
 
   useEffect(() => {
-    setTourNotice(null);
+    const noticeTimer = window.setTimeout(() => setTourNotice(null), 0);
+
+    return () => window.clearTimeout(noticeTimer);
   }, [activeStep?.id]);
 
   useEffect(() => {
     if (!isTourVisible || !activeTargetSelectors) {
       return;
     }
-
-    setSpotlightRect(null);
-    setViewport({ height: window.innerHeight, width: window.innerWidth });
 
     let animationFrame = 0;
     let targetElement: HTMLElement | null = null;
@@ -334,6 +333,8 @@ export function ProductOnboarding() {
       setViewport({ height: window.innerHeight, width: window.innerWidth });
     };
     const findTarget = () => {
+      setSpotlightRect(null);
+      setViewport({ height: window.innerHeight, width: window.innerWidth });
       targetElement =
         targetSelectors
           .map((selector) => document.querySelector<HTMLElement>(selector))
@@ -380,7 +381,12 @@ export function ProductOnboarding() {
     const focusTimer = window.setTimeout(() => tourDialogRef.current?.focus(), 80);
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        completeOnboarding();
+        const nextProgress: OnboardingProgress = {
+          status: "complete",
+          step: tourSteps.length - 1,
+        };
+        writeProgress(nextProgress);
+        setProgress(nextProgress);
       }
     };
 
@@ -390,7 +396,7 @@ export function ProductOnboarding() {
       window.clearTimeout(focusTimer);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isTourVisible, progress?.status]);
+  }, [isTourVisible, progress?.status, tourSteps.length]);
 
   const tourCardStyle = useMemo<CSSProperties | undefined>(() => {
     if (viewport.width < 640) {

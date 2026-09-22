@@ -4,10 +4,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
-import { FooterDisclaimer } from "@/components/FooterDisclaimer";
 import { LiquidBackground } from "@/components/LiquidBackground";
-import { ProductOnboarding } from "@/components/onboarding/ProductOnboarding";
-import { SiteHeader } from "@/components/SiteHeader";
+import { RootChrome } from "@/components/RootChrome";
 import "./globals.css";
 
 const inter = Inter({
@@ -88,15 +86,12 @@ export default async function RootLayout({
   const content = (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LiquidBackground />
-      <div className="relative z-10 flex min-h-full flex-col">
-        <SiteHeader
+      <RootChrome
           locale={locale}
           isClerkConfigured={Boolean(clerkPublishableKey)}
-        />
-        <ProductOnboarding />
+      >
         {children}
-        <FooterDisclaimer />
-      </div>
+      </RootChrome>
     </NextIntlClientProvider>
   );
 

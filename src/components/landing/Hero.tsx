@@ -48,7 +48,7 @@ export function Hero() {
               size="lg"
               className="btn-glass h-12 rounded-full px-6 text-base font-semibold"
             >
-              <Link href="/dashboard">Dashboard</Link>
+              <Link href="/app">Mở workspace</Link>
             </Button>
           </div>
         </div>

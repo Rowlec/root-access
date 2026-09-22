@@ -35,7 +35,7 @@ function ConfiguredAuthControls({ locale }: Pick<AuthControlsProps, "locale">) {
     try {
       const result = await signIn.sso({
         redirectCallbackUrl: "/sso-callback",
-        redirectUrl: "/",
+        redirectUrl: "/app",
         strategy: "oauth_google",
       });
 
@@ -93,7 +93,7 @@ function ConfiguredAuthControls({ locale }: Pick<AuthControlsProps, "locale">) {
         </span>
         Google
       </Button>
-      <SignInButton mode="modal">
+      <SignInButton mode="modal" forceRedirectUrl="/app">
         <Button
           type="button"
           variant="ghost"
@@ -106,7 +106,7 @@ function ConfiguredAuthControls({ locale }: Pick<AuthControlsProps, "locale">) {
           <span className="hidden lg:inline">Email</span>
         </Button>
       </SignInButton>
-      <SignUpButton mode="modal">
+      <SignUpButton mode="modal" forceRedirectUrl="/app">
         <Button
           type="button"
           variant="outline"

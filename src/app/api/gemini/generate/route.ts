@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { withAiCreditGuard } from "@/lib/server/ai-guard";
+
 const conversationMessageSchema = z.object({
   role: z.enum(["user", "model"]),
   text: z.string().trim().min(1).max(20000),
@@ -45,7 +47,7 @@ function extractText(data: GeminiResponse) {
   );
 }
 
-export async function POST(request: Request) {
+async function handlePost(request: Request) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
@@ -185,4 +187,8 @@ export async function POST(request: Request) {
   }
 
   return Response.json({ output });
+}
+
+export async function POST(request: Request) {
+  return withAiCreditGuard("generation", () => handlePost(request));
 }

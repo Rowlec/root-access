@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 
 import { AcademicIntegrityNotice } from "@/components/AcademicIntegrityNotice";
 import { WorkflowReviewWorkspace } from "@/components/proposal/WorkflowReviewWorkspace";
+import { WorkflowServerSync } from "@/components/proposal/WorkflowServerSync";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { goalFormSchema } from "@/lib/goal-form-schema";
@@ -144,6 +145,7 @@ export function ProposalWorkspaceEntry({
   return (
     <main className="min-h-svh px-5 py-10 sm:px-8 sm:py-14 lg:px-10">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <WorkflowServerSync workflowRunId={workflowRunId} />
         <WorkflowReviewWorkspace
           activeSectionId={activeSectionId}
           phase={activePhase}

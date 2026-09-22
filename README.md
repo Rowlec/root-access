@@ -16,6 +16,15 @@ builder, or generic AI assistant.
 
 The active MVP supports one workflow only: Startup Proposal.
 
+The production slice also includes:
+
+- a ChatGPT-style workspace at `/app`
+- Clerk-backed identity and `user`/`admin` authorization
+- PostgreSQL project and workflow persistence
+- an atomic credit ledger around Gemini calls
+- payOS payment links with a verified, idempotent webhook
+- a protected product-intelligence dashboard at `/admin`
+
 The fixed product flow is:
 
 1. User enters startup context.
@@ -84,12 +93,14 @@ Pro demo:
 
 - 50 credits - 39k
 
-The fake checkout lives at `/checkout` and activates the selected demo plan in
-localStorage. No real payment integration is implemented.
+`/app/billing` creates a payOS payment link when billing is configured. Credits
+are granted only by the verified webhook. The older `/checkout` route remains
+available as a legacy demo surface.
 
 ## Product Intelligence
 
-The internal dashboard lives at `/dashboard`.
+The protected server-side dashboard lives at `/admin`. `/dashboard` redirects
+to it.
 
 It reads localStorage telemetry for:
 
@@ -107,16 +118,24 @@ Install dependencies:
 npm install
 ```
 
-Configure Gemini server credentials:
+Configure the server credentials listed in `.env.example`, then apply the
+database migration:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Then set:
+At minimum for the legacy local workflow, set:
 
 ```txt
 GEMINI_API_KEY=your_server_side_key
+```
+
+For `/app`, billing and admin analytics, also configure Clerk, `DATABASE_URL`,
+`ADMIN_USER_IDS` and payOS, then run:
+
+```bash
+npm run db:migrate
 ```
 
 Run the development server:
