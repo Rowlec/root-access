@@ -53,7 +53,7 @@ function getWorkflowSectionId(pathname: string) {
 }
 
 function getTourRoute(pathname: string) {
-  if (pathname === "/") {
+  if (pathname === "/welcome") {
     return "home" as const;
   }
 
@@ -64,7 +64,7 @@ function getTourRoute(pathname: string) {
 
 function getTourPath(route: TourStep["route"], pathname: string) {
   if (route === "home") {
-    return "/";
+    return "/welcome";
   }
 
   return `/result/${getWorkflowSectionId(pathname)}/${route}`;
@@ -186,7 +186,7 @@ export function ProductOnboarding() {
     activeStep && activeStep.route === getTourRoute(pathname),
   );
   const isWaitingForWorkspace = Boolean(
-    progress?.status === "tour" && progress.step === 2 && pathname === "/",
+    progress?.status === "tour" && progress.step === 2 && pathname === "/welcome",
   );
 
   function persistProgress(nextProgress: OnboardingProgress) {
@@ -218,7 +218,7 @@ export function ProductOnboarding() {
 
     if (!currentRoute) {
       persistProgress({ status: "tour", step: 0 });
-      router.push("/#goal-form");
+      router.push("/welcome#goal-form");
     }
   }
 
@@ -244,7 +244,7 @@ export function ProductOnboarding() {
     }
 
     if (nextStep.route === "home") {
-      router.push("/#goal-form");
+      router.push("/welcome#goal-form");
       return;
     }
 
@@ -271,7 +271,7 @@ export function ProductOnboarding() {
 
     const nextStep = progress.step + 1;
 
-    if (nextStep === 2 && pathname === "/") {
+    if (nextStep === 2 && pathname === "/welcome") {
       persistProgress({ status: "tour", step: nextStep });
       window.requestAnimationFrame(showForm);
       return;

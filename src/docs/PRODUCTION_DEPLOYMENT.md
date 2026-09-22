@@ -40,14 +40,19 @@ authorization source.
    `https://YOUR_DOMAIN/api/payments/payos/webhook`.
 7. Deploy production and run one low-value payment test.
 
+On Vercel, the `vercel-build` package script runs `npm run db:migrate` before
+`next build`. As long as `DATABASE_URL` is configured in the Vercel environment,
+committed migrations are applied automatically and safely skipped on later
+deployments.
+
 After deployment, open `/api/health`. Core deployment is ready when it returns
 HTTP 200 with `status: "ready"`. Billing can remain `false` until payOS is
 configured; `/app/billing` stays disabled in that state.
 
 ## Smoke test
 
-- Signed-out visitor sees the public landing page.
-- Signed-in visitor opening `/` is redirected to `/app`.
+- Opening `/` redirects to `/app`; Clerk requests sign-in when needed.
+- The optional public product explanation remains available at `/welcome`.
 - A new project appears in the sidebar after creation.
 - The owner can launch and restore its guided workflow.
 - Another user cannot load that project ID.

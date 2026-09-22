@@ -63,7 +63,7 @@ export function SiteHeader({ locale, isClerkConfigured }: SiteHeaderProps) {
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/45 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5">
+        <Link href="/app" className="flex shrink-0 items-center gap-2.5">
           <Image
             src="/logo.png"
             alt="Root Access logo"

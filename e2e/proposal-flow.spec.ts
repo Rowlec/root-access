@@ -140,7 +140,7 @@ async function seedProject(
 ) {
   const workflowRunId = createRunId();
 
-  await page.goto("/");
+  await page.goto("/welcome");
   await page.evaluate(
     ({ builder, context, runId, workspace }) => {
       window.localStorage.setItem("root-access:startup-context", JSON.stringify(context));
@@ -184,7 +184,7 @@ test("keeps the guided tour aligned with the create, review, improve, and export
     await route.fulfill({ json: { review: createReview() } });
   });
 
-  await page.goto("/");
+  await page.goto("/welcome");
   await expect(
     page.getByRole("heading", { name: "Chào mừng bạn đến với Root Access" }),
   ).toBeVisible();
