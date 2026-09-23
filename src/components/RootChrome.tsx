@@ -16,7 +16,12 @@ export function RootChrome({
   locale: string;
 }) {
   const pathname = usePathname();
-  const usesAppChrome = pathname.startsWith("/app") || pathname.startsWith("/admin");
+  const usesAppChrome =
+    pathname.startsWith("/app") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/sign-in") ||
+    pathname.startsWith("/sign-up") ||
+    pathname.startsWith("/blocked");
 
   if (usesAppChrome) {
     return <div className="relative z-10 min-h-full">{children}</div>;
