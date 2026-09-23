@@ -3,8 +3,17 @@ import "server-only";
 import { count, desc, eq, sql } from "drizzle-orm";
 
 import { getDb } from "@/db";
-import { orders, projects, usageEvents, users } from "@/db/schema";
+import {
+  adminAuditLogs,
+  orders,
+  projects,
+  tokenPackages,
+  usageEvents,
+  users,
+  wallets,
+} from "@/db/schema";
 import { requireAdmin } from "@/lib/server/auth";
+import { ensureDefaultPackages } from "@/lib/server/billing";
 
 export async function getAdminDashboardData() {
   const admin = await requireAdmin();
@@ -51,4 +60,83 @@ export async function getAdminDashboardData() {
     recentOrders,
     eventFunnel,
   };
+}
+
+export async function getAdminUsers() {
+  await requireAdmin();
+  return getDb()
+    .select({
+      balance: wallets.balance,
+      clerkUserId: users.clerkUserId,
+      createdAt: users.createdAt,
+      displayName: users.displayName,
+      email: users.email,
+      id: users.id,
+      isDisabled: users.isDisabled,
+      role: users.role,
+    })
+    .from(users)
+    .leftJoin(wallets, eq(wallets.userId, users.id))
+    .orderBy(desc(users.createdAt));
+}
+
+export async function getAdminProjects() {
+  await requireAdmin();
+  return getDb()
+    .select({
+      createdAt: projects.createdAt,
+      id: projects.id,
+      ownerEmail: users.email,
+      progressPercent: projects.progressPercent,
+      status: projects.status,
+      title: projects.title,
+      updatedAt: projects.updatedAt,
+    })
+    .from(projects)
+    .leftJoin(users, eq(projects.userId, users.id))
+    .orderBy(desc(projects.updatedAt));
+}
+
+export async function getAdminPackages() {
+  await requireAdmin();
+  await ensureDefaultPackages();
+  return getDb().select().from(tokenPackages).orderBy(desc(tokenPackages.updatedAt));
+}
+
+export async function getAdminOrders() {
+  await requireAdmin();
+  return getDb()
+    .select({
+      amountVnd: orders.amountVnd,
+      checkoutUrl: orders.checkoutUrl,
+      createdAt: orders.createdAt,
+      credits: orders.credits,
+      email: users.email,
+      id: orders.id,
+      orderCode: orders.orderCode,
+      packageId: orders.packageId,
+      paidAt: orders.paidAt,
+      status: orders.status,
+    })
+    .from(orders)
+    .leftJoin(users, eq(orders.userId, users.id))
+    .orderBy(desc(orders.createdAt));
+}
+
+export async function getAdminAuditLogs() {
+  await requireAdmin();
+  return getDb()
+    .select({
+      action: adminAuditLogs.action,
+      adminEmail: users.email,
+      createdAt: adminAuditLogs.createdAt,
+      id: adminAuditLogs.id,
+      metadata: adminAuditLogs.metadata,
+      targetId: adminAuditLogs.targetId,
+      targetType: adminAuditLogs.targetType,
+    })
+    .from(adminAuditLogs)
+    .leftJoin(users, eq(adminAuditLogs.adminUserId, users.id))
+    .orderBy(desc(adminAuditLogs.createdAt))
+    .limit(200);
 }

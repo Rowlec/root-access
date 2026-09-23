@@ -2,13 +2,14 @@ import { CheckCircle2, Coins, ShieldCheck } from "lucide-react";
 
 import { PurchaseCreditsButton } from "@/components/app/PurchaseCreditsButton";
 import { Badge } from "@/components/ui/badge";
-import { creditPackages } from "@/lib/billing/packages";
 import { isDatabaseConfigured } from "@/db";
+import { getAvailablePackages } from "@/lib/server/billing";
 import { isPayOSConfigured } from "@/lib/server/payos";
 
 export default async function BillingPage({ searchParams }: { searchParams: Promise<{ payment?: string }> }) {
   const { payment } = await searchParams;
   const ready = isDatabaseConfigured() && isPayOSConfigured();
+  const packages = isDatabaseConfigured() ? await getAvailablePackages() : [];
 
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 lg:px-10">
@@ -29,7 +30,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
       ) : null}
 
       <div className="mt-8 grid gap-5 md:grid-cols-2">
-        {Object.values(creditPackages).map((item) => (
+        {packages.map((item) => (
           <section key={item.id} className="glass rounded-3xl p-6">
             <h2 className="text-xl font-semibold">{item.name}</h2>
             <p className="mt-3 text-4xl font-semibold text-primary">{item.credits}</p>

@@ -99,12 +99,14 @@ export async function PUT(request: Request, context: WorkflowRouteContext) {
           updatedAt: new Date(),
         })
         .where(eq(projects.id, id));
-      await tx.insert(usageEvents).values({
-        eventName: "workflow_synced",
-        projectId: id,
-        properties: { completedSections: completedCount },
-        userId: user.id,
-      });
+      if (project.progressPercent !== completedCount * 20) {
+        await tx.insert(usageEvents).values({
+          eventName: "workflow_progress_updated",
+          projectId: id,
+          properties: { completedSections: completedCount },
+          userId: user.id,
+        });
+      }
     });
 
     return Response.json({ ok: true, progressPercent: completedCount * 20 });

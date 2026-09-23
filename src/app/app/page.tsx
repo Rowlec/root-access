@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, Database, ShieldCheck, Sparkles } from "lucide-react";
 
 import { NewProjectForm } from "@/components/app/NewProjectForm";
+import { CreditBalance } from "@/components/app/CreditBalance";
 import { Badge } from "@/components/ui/badge";
 import { isDatabaseConfigured } from "@/db";
 import { isClerkConfigured } from "@/lib/server/auth";
@@ -23,7 +24,7 @@ export default async function AppHomePage() {
         </div>
         <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm">
           <span className="text-muted-foreground">Số dư</span>
-          <strong className="ml-2 text-lg text-primary">{overview?.wallet?.balance ?? 20} credits</strong>
+          <strong className="ml-2 text-lg text-primary"><CreditBalance initialBalance={overview?.wallet?.balance ?? 20} /> credits</strong>
         </div>
       </div>
 

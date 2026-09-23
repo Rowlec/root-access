@@ -4,14 +4,12 @@ import { useState } from "react";
 import { CreditCard, LoaderCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import type { CreditPackageId } from "@/lib/billing/packages";
-
 export function PurchaseCreditsButton({
   disabled,
   packageId,
 }: {
   disabled: boolean;
-  packageId: CreditPackageId;
+  packageId: string;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);

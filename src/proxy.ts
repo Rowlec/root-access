@@ -9,6 +9,7 @@ const isAppRoute = createRouteMatcher([
   "/api/projects(.*)",
 ]);
 const isMeteredAiRoute = createRouteMatcher(["/api/gemini(.*)"]);
+const isCreditRoute = createRouteMatcher(["/api/credits(.*)"]);
 const clerkConfigured = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
     process.env.CLERK_SECRET_KEY &&
@@ -19,7 +20,7 @@ const clerkHandler = clerkConfigured
   ? clerkMiddleware(async (auth, request) => {
       if (
         process.env.DATABASE_URL &&
-        (isAppRoute(request) || isMeteredAiRoute(request))
+        (isAppRoute(request) || isMeteredAiRoute(request) || isCreditRoute(request))
       ) {
         await auth.protect();
       }
@@ -39,6 +40,7 @@ export const config = {
     "/app/:path*",
     "/admin/:path*",
     "/api/gemini/:path*",
+    "/api/credits/:path*",
     "/api/payments/create/:path*",
     "/api/projects/:path*",
   ],

@@ -16,29 +16,9 @@ import {
   type ProposalSectionId,
 } from "@/lib/proposal-review";
 import { isWorkflowPhase, type WorkflowPhase } from "@/lib/workflow-route";
+import { createProposalRunId } from "@/lib/proposal-run";
 
 const goalContextStorageKey = "root-access:startup-context";
-
-function createProposalRunId({
-  idea,
-  industry,
-  targetCustomer,
-  locale,
-}: {
-  idea: string;
-  industry: string;
-  targetCustomer: string;
-  locale: string;
-}) {
-  const source = JSON.stringify({ idea, industry, targetCustomer, locale });
-  let hash = 0;
-
-  for (let index = 0; index < source.length; index += 1) {
-    hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
-  }
-
-  return hash.toString(36);
-}
 
 type ProposalWorkspaceEntryProps = {
   phase?: string;

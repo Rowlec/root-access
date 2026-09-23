@@ -165,6 +165,9 @@ type PendingCreditAction = {
 type WorkflowReviewWorkspaceProps = {
   activeSectionId: ProposalSectionId;
   phase: WorkflowPhase;
+  projectHomePath?: string;
+  routeBase?: string;
+  serverMetered?: boolean;
   context: {
     deadlineUrgency: string;
     industry: string;
@@ -672,6 +675,9 @@ export function WorkflowReviewWorkspace({
   activeSectionId,
   context,
   phase,
+  projectHomePath = "/",
+  routeBase = "/result",
+  serverMetered = false,
 }: WorkflowReviewWorkspaceProps) {
   const router = useRouter();
   const t = useTranslations("WorkflowWorkspace");
@@ -837,7 +843,7 @@ export function WorkflowReviewWorkspace({
     reviewMyWork: isVietnamese ? "Review bài của tôi" : "Review My Work",
     updateProposal: isVietnamese ? "Hoàn thành bước này" : "Complete Step",
   };
-  const pendingRemaining = pendingCreditAction
+  const pendingRemaining = pendingCreditAction && !serverMetered
     ? getRemaining(pendingCreditAction.action)
     : null;
   const pendingRemainingAfter =
@@ -1003,13 +1009,14 @@ export function WorkflowReviewWorkspace({
     const firstAllowedSection = sections[unlockedSectionIndex];
 
     if (firstAllowedSection) {
-      router.replace(`/result/${firstAllowedSection.id}/generate`);
+      router.replace(`${routeBase}/${firstAllowedSection.id}/generate`);
     }
   }, [
     context.workflowRunId,
     currentIndex,
     hydratedWorkflowRunId,
     router,
+    routeBase,
     sections,
     unlockedSectionIndex,
   ]);
@@ -1020,12 +1027,12 @@ export function WorkflowReviewWorkspace({
     }
 
     if (!activeState.originalOutput.trim() && !isGeneratePhase) {
-      router.replace(`/result/${activeSection.id}/generate`);
+      router.replace(`${routeBase}/${activeSection.id}/generate`);
       return;
     }
 
     if (isImprovePhase && !latestReview) {
-      router.replace(`/result/${activeSection.id}/review`);
+      router.replace(`${routeBase}/${activeSection.id}/review`);
     }
   }, [
     activeSection.id,
@@ -1036,6 +1043,7 @@ export function WorkflowReviewWorkspace({
     isImprovePhase,
     latestReview,
     router,
+    routeBase,
   ]);
 
   useEffect(() => {
@@ -1109,7 +1117,7 @@ export function WorkflowReviewWorkspace({
   }
 
   function requestCreditAction(pendingAction: PendingCreditAction) {
-    if (!canUse(pendingAction.action)) {
+    if (!serverMetered && !canUse(pendingAction.action)) {
       setError(t(`credits.limits.${pendingAction.action}`));
       setIsUpgradeOpen(true);
       return;
@@ -1160,7 +1168,7 @@ export function WorkflowReviewWorkspace({
       return;
     }
 
-    if (!canUse("generation")) {
+    if (!serverMetered && !canUse("generation")) {
       setError(t("credits.limits.generation"));
       setIsUpgradeOpen(true);
       return;
@@ -1202,7 +1210,7 @@ export function WorkflowReviewWorkspace({
 
       const output = data.output.trim();
 
-      recordUse("generation");
+      if (!serverMetered) recordUse("generation");
       updateSectionState(activeSection.id, (sectionState) => {
         const version: GenerationVersion = {
           createdAt: new Date().toISOString(),
@@ -1295,7 +1303,7 @@ export function WorkflowReviewWorkspace({
       return;
     }
 
-    if (!canUse("proposalDraft")) {
+    if (!serverMetered && !canUse("proposalDraft")) {
       setError(t("credits.limits.proposalDraft"));
       setIsUpgradeOpen(true);
       return;
@@ -1353,7 +1361,7 @@ export function WorkflowReviewWorkspace({
         );
       }
 
-      recordUse("proposalDraft");
+      if (!serverMetered) recordUse("proposalDraft");
       setAiDraft(draft);
     } catch (proposalError) {
       setError(
@@ -1397,7 +1405,7 @@ export function WorkflowReviewWorkspace({
       return;
     }
 
-    if (!canUse("review")) {
+    if (!serverMetered && !canUse("review")) {
       setError(t("credits.limits.review"));
       setIsUpgradeOpen(true);
       return;
@@ -1463,7 +1471,7 @@ export function WorkflowReviewWorkspace({
         review,
       };
 
-      recordUse("review");
+      if (!serverMetered) recordUse("review");
       updateSectionState(activeSection.id, (sectionState) => {
         const preservedImprovedPrompt =
           review.improvedPrompt ??
@@ -1637,7 +1645,7 @@ export function WorkflowReviewWorkspace({
       return;
     }
 
-    if (!canUse("improvement")) {
+    if (!serverMetered && !canUse("improvement")) {
       setError(t("credits.limits.improvement"));
       setIsUpgradeOpen(true);
       return;
@@ -1654,7 +1662,7 @@ export function WorkflowReviewWorkspace({
         sourceOutput,
       });
 
-      recordUse("improvement");
+      if (!serverMetered) recordUse("improvement");
       updateSectionState(activeSection.id, (sectionState) => {
         const currentReview =
           sectionState.retryReview ?? sectionState.originalReview;
@@ -1727,14 +1735,14 @@ export function WorkflowReviewWorkspace({
 
     if (nextSection) {
       window.requestAnimationFrame(() => {
-        router.push(`/result/${nextSection.id}/generate`);
+        router.push(`${routeBase}/${nextSection.id}/generate`);
       });
     }
   }
 
   function goToPreviousSection() {
     setError(null);
-    router.push(`/result/${activeSection.id}/review`);
+    router.push(`${routeBase}/${activeSection.id}/review`);
   }
 
   async function copyImprovedPrompt() {
@@ -2263,7 +2271,7 @@ export function WorkflowReviewWorkspace({
                       ? "border-border/70 bg-secondary/20 text-foreground hover:bg-secondary/35"
                       : "cursor-not-allowed border-border/50 bg-secondary/10 text-muted-foreground opacity-60",
                 )}
-                onClick={() => router.push(`/result/${activeSection.id}/${step.id}`)}
+                onClick={() => router.push(`${routeBase}/${activeSection.id}/${step.id}`)}
               >
                 <span
                   className={cn(
@@ -2331,7 +2339,7 @@ export function WorkflowReviewWorkspace({
                         }
 
                         setError(null);
-                        router.push(`/result/${section.id}/generate`);
+                        router.push(`${routeBase}/${section.id}/generate`);
                       }}
                     >
                       <span
@@ -2518,7 +2526,7 @@ export function WorkflowReviewWorkspace({
                 type="button"
                 variant="outline"
                 className="btn-glass h-11 w-full justify-center rounded-full px-5 sm:w-auto"
-                onClick={() => router.push("/")}
+                onClick={() => router.push(projectHomePath)}
               >
                 <ArrowLeft aria-hidden="true" />
                 {isVietnamese ? "Quay lại thông tin dự án" : "Back to project details"}
@@ -2527,7 +2535,7 @@ export function WorkflowReviewWorkspace({
                 type="button"
                 className="btn-liquid h-11 w-full justify-center rounded-full px-5 text-primary-foreground sm:w-auto"
                 disabled={!activeState.originalOutput.trim()}
-                onClick={() => router.push(`/result/${activeSection.id}/review`)}
+                onClick={() => router.push(`${routeBase}/${activeSection.id}/review`)}
               >
                 {isVietnamese ? "Tiếp tục review" : "Continue to review"}
                 <ArrowRight aria-hidden="true" />
@@ -2707,7 +2715,7 @@ export function WorkflowReviewWorkspace({
                       type="button"
                       variant="outline"
                       className="btn-glass h-11 justify-center rounded-full px-5"
-                      onClick={() => router.push(`/result/${activeSection.id}/generate`)}
+                      onClick={() => router.push(`${routeBase}/${activeSection.id}/generate`)}
                     >
                       <ArrowLeft aria-hidden="true" />
                       {isVietnamese ? "Quay lại" : "Back"}
@@ -2716,7 +2724,7 @@ export function WorkflowReviewWorkspace({
                       type="button"
                       className="btn-liquid h-11 justify-center rounded-full px-5 text-primary-foreground"
                       disabled={!latestReview}
-                      onClick={() => router.push(`/result/${activeSection.id}/improve`)}
+                      onClick={() => router.push(`${routeBase}/${activeSection.id}/improve`)}
                     >
                       {isVietnamese ? "Sang bước cải thiện" : "Continue to improve"}
                       <ArrowRight aria-hidden="true" />
@@ -3206,9 +3214,15 @@ export function WorkflowReviewWorkspace({
               <h2 className="text-xl font-semibold leading-tight text-foreground">
                 {headerCopy.creditConfirm}
               </h2>
-              <p className="text-sm leading-6 text-muted-foreground">
-                {headerCopy.creditRemainingAfter}: {pendingRemainingAfter} credits
-              </p>
+              {serverMetered ? (
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {isVietnamese ? "Số dư sẽ được backend kiểm tra và cập nhật an toàn." : "Your balance will be checked and updated securely by the server."}
+                </p>
+              ) : (
+                <p className="text-sm leading-6 text-muted-foreground">
+                  {headerCopy.creditRemainingAfter}: {pendingRemainingAfter} credits
+                </p>
+              )}
             </div>
             <div className="mt-5 flex flex-col gap-2 sm:flex-row">
               <Button

@@ -1,14 +1,14 @@
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { getDb, isDatabaseConfigured } from "@/db";
 import { orders, tokenPackages, usageEvents } from "@/db/schema";
-import { creditPackages } from "@/lib/billing/packages";
 import { ensureCurrentUser, UnauthorizedError } from "@/lib/server/auth";
+import { ensureDefaultPackages } from "@/lib/server/billing";
 import { getPayOS, isPayOSConfigured } from "@/lib/server/payos";
 
 const requestSchema = z.object({
-  packageId: z.enum(["starter", "pro"]),
+  packageId: z.string().trim().min(2).max(40).regex(/^[a-z0-9-]+$/),
 });
 
 export async function POST(request: Request) {
@@ -36,28 +36,27 @@ export async function POST(request: Request) {
     return Response.json({ code: "invalid_package", message: "Invalid package." }, { status: 400 });
   }
 
-  const selectedPackage = creditPackages[parsed.data.packageId];
+  await ensureDefaultPackages();
+  const [selectedPackage] = await getDb()
+    .select()
+    .from(tokenPackages)
+    .where(
+      and(
+        eq(tokenPackages.id, parsed.data.packageId),
+        eq(tokenPackages.isActive, true),
+      ),
+    )
+    .limit(1);
+
+  if (!selectedPackage) {
+    return Response.json(
+      { code: "package_not_found", message: "Credit package is unavailable." },
+      { status: 404 },
+    );
+  }
   const orderCode = Date.now();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
   const db = getDb();
-
-  await db
-    .insert(tokenPackages)
-    .values({
-      credits: selectedPackage.credits,
-      id: selectedPackage.id,
-      name: selectedPackage.name,
-      priceVnd: selectedPackage.priceVnd,
-    })
-    .onConflictDoUpdate({
-      target: tokenPackages.id,
-      set: {
-        credits: selectedPackage.credits,
-        name: selectedPackage.name,
-        priceVnd: selectedPackage.priceVnd,
-        updatedAt: new Date(),
-      },
-    });
 
   const [order] = await db
     .insert(orders)

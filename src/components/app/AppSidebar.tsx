@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { CreditBalance } from "@/components/app/CreditBalance";
 
 type SidebarProject = {
   id: string;
@@ -65,9 +66,7 @@ export function AppSidebar({
       </nav>
 
       <div className="mt-5 min-h-0 flex-1 overflow-y-auto">
-        <p className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Lịch sử dự án
-        </p>
+        <div className="flex items-center justify-between px-3"><p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Lịch sử dự án</p><Link href="/app/projects" className="text-xs text-primary">Tất cả</Link></div>
         <div className="mt-2 grid gap-1">
           {projects.length ? (
             projects.map((project) => (
@@ -89,17 +88,17 @@ export function AppSidebar({
       </div>
 
       <div className="grid gap-1 border-t border-border/70 pt-3 text-sm">
-        <Link href="/app/billing" className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-secondary/50">
+        <Link href="/app/credits" className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-secondary/50">
           <span className="flex items-center gap-2"><Coins className="size-4 text-primary" /> Credits</span>
-          <strong>{balance}</strong>
+          <strong><CreditBalance initialBalance={balance} /></strong>
         </Link>
         {isAdmin ? (
           <Link href="/admin" className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-secondary/50">
             <BarChart3 className="size-4" /> Admin dashboard
           </Link>
         ) : null}
-        <div className="flex items-center justify-between rounded-lg px-3 py-2">
-          <span className="flex items-center gap-2"><Settings className="size-4" /> Tài khoản</span>
+        <div className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-secondary/50">
+          <Link href="/app/account" className="flex items-center gap-2"><Settings className="size-4" /> Tài khoản</Link>
           <UserButton />
         </div>
       </div>

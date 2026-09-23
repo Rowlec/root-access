@@ -67,7 +67,7 @@ export function LaunchWorkflowButton({
     } catch {
       // The local workflow remains usable if server restoration is unavailable.
     }
-    router.push("/result/problem/generate");
+    router.push(`/app/projects/${project.id}/workflow/problem/generate`);
   }
 
   return (

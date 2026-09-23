@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, Check, Circle, Coins, WandSparkles } from "lucide-react";
 
 import { LaunchWorkflowButton } from "@/components/app/LaunchWorkflowButton";
+import { ProjectSettings } from "@/components/app/ProjectSettings";
 import { Badge } from "@/components/ui/badge";
 import { getOwnedProject } from "@/lib/server/projects";
 
@@ -54,6 +55,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
               <div className="mt-5"><LaunchWorkflowButton project={project} /></div>
             </div>
           </div>
+          <ProjectSettings project={project} />
         </section>
 
         <aside className="space-y-4">
