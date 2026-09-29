@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Compass,
   Database,
+  Download,
   ExternalLink,
   Lock,
   RotateCcw,
@@ -36,19 +37,27 @@ export default function HomePage() {
           Biết luôn phần nào đạt, phần nào sẽ bị trừ điểm theo tiêu chí rubric chính thức của môn Khởi nghiệp, không cần chuyển tab thủ công.
         </p>
 
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <Link
             href="/connect-extension"
-            className="flex items-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 transition"
+            className="flex items-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 hover:bg-primary/90 transition active:scale-[0.98]"
           >
             <Compass className="size-5" />
             Cài Extension cho Chrome
           </Link>
+          <a
+            href="/downloads/root-access-extension.zip"
+            download="root-access-extension.zip"
+            className="flex items-center gap-2 rounded-2xl border border-border bg-card/80 px-5 py-3.5 text-sm font-semibold text-foreground hover:bg-card transition"
+          >
+            <Download className="size-4 text-primary" />
+            Tải nhanh (.zip)
+          </a>
           <Link
             href="/pricing"
-            className="flex items-center gap-2 rounded-2xl border border-border bg-card/80 px-6 py-3.5 text-sm font-semibold text-foreground hover:bg-card transition"
+            className="flex items-center gap-2 rounded-2xl border border-border/60 bg-transparent px-5 py-3.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-card/40 transition"
           >
-            Xem bảng giá credit
+            Bảng giá
             <ArrowRight className="size-4" />
           </Link>
         </div>
