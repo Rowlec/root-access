@@ -8,6 +8,20 @@
       "when": 1790016881132,
       "tag": "0000_tricky_vision",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790164372780,
+      "tag": "0001_furry_warpath",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790415529978,
+      "tag": "0002_broad_butterfly",
+      "breakpoints": true
     }
   ]
 }

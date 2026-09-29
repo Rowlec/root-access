@@ -8,11 +8,9 @@ import { SiteHeader } from "@/components/SiteHeader";
 
 export function RootChrome({
   children,
-  isClerkConfigured,
   locale,
 }: {
   children: React.ReactNode;
-  isClerkConfigured: boolean;
   locale: string;
 }) {
   const pathname = usePathname();
@@ -29,7 +27,7 @@ export function RootChrome({
 
   return (
     <div className="relative z-10 flex min-h-full flex-col">
-      <SiteHeader locale={locale} isClerkConfigured={isClerkConfigured} />
+      <SiteHeader locale={locale} />
       <ProductOnboarding />
       {children}
       <FooterDisclaimer />

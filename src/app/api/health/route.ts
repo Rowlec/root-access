@@ -1,14 +1,14 @@
 import { sql } from "drizzle-orm";
 
 import { getDb, isDatabaseConfigured } from "@/db";
-import { isClerkConfigured } from "@/lib/server/auth";
+import { isAuthConfigured } from "@/lib/server/auth";
 import { isPayOSConfigured } from "@/lib/server/payos";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const checks = {
-    auth: isClerkConfigured(),
+    auth: isAuthConfigured(),
     billing: isPayOSConfigured(),
     database: false,
     gemini: Boolean(process.env.GEMINI_API_KEY),

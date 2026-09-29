@@ -2,13 +2,13 @@ import { AppSidebar } from "@/components/app/AppSidebar";
 import { MobileAppNav } from "@/components/app/MobileAppNav";
 import { isDatabaseConfigured } from "@/db";
 import { redirect } from "next/navigation";
-import { ForbiddenError, isClerkConfigured } from "@/lib/server/auth";
+import { ForbiddenError, isAuthConfigured } from "@/lib/server/auth";
 import { getWorkspaceOverview } from "@/lib/server/projects";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   let overview: Awaited<ReturnType<typeof getWorkspaceOverview>> | null = null;
 
-  if (isClerkConfigured() && isDatabaseConfigured()) {
+  if (isAuthConfigured() && isDatabaseConfigured()) {
     try {
       overview = await getWorkspaceOverview();
     } catch (error) {

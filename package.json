@@ -14,7 +14,9 @@
     "db:generate": "drizzle-kit generate",
     "db:check": "node scripts/check-database.mjs",
     "db:migrate": "node scripts/migrate.mjs",
+    "db:seed": "node scripts/seed-data.mjs",
     "db:studio": "drizzle-kit studio",
+    "build:extension": "npm run --prefix extension build",
     "demo:check": "node scripts/check-demo-readiness.mjs",
     "services:check": "node scripts/check-services.mjs",
     "typecheck": "tsc --noEmit",
@@ -22,10 +24,10 @@
     "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.5.12",
     "@hookform/resolvers": "^5.4.0",
     "@payos/node": "^2.0.5",
     "@vercel/analytics": "^2.0.1",
+    "better-auth": "^1.7.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.3",

@@ -1,15 +1,15 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Database, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Compass, Database, ShieldCheck, Sparkles } from "lucide-react";
 
 import { NewProjectForm } from "@/components/app/NewProjectForm";
 import { CreditBalance } from "@/components/app/CreditBalance";
 import { Badge } from "@/components/ui/badge";
 import { isDatabaseConfigured } from "@/db";
-import { isClerkConfigured } from "@/lib/server/auth";
+import { isAuthConfigured } from "@/lib/server/auth";
 import { getWorkspaceOverview } from "@/lib/server/projects";
 
 export default async function AppHomePage() {
-  const backendReady = isClerkConfigured() && isDatabaseConfigured();
+  const backendReady = isAuthConfigured() && isDatabaseConfigured();
   const overview = backendReady ? await getWorkspaceOverview() : null;
 
   return (
@@ -27,6 +27,29 @@ export default async function AppHomePage() {
           <strong className="ml-2 text-lg text-primary"><CreditBalance initialBalance={overview?.wallet?.balance ?? 20} /> credits</strong>
         </div>
       </div>
+
+      {/* Extension Connect Banner */}
+      <section className="mt-6 rounded-2xl border border-primary/40 bg-gradient-to-r from-primary/15 via-primary/5 to-transparent p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="rounded-xl bg-primary/20 p-2.5 text-primary shrink-0">
+            <Compass className="size-5" />
+          </div>
+          <div className="space-y-0.5">
+            <h3 className="text-sm font-semibold text-foreground">
+              Dùng RootAccess Extension trên ChatGPT / Gemini
+            </h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Tự động chèn prompt và chấm bài trực tiếp theo rubric chuẩn EXE101 ngay trong khung chat AI.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/connect-extension"
+          className="inline-flex items-center justify-center gap-1.5 shrink-0 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 shadow transition-colors"
+        >
+          Mở trang kết nối Extension <ArrowRight className="size-3.5" />
+        </Link>
+      </section>
 
       {!backendReady ? (
         <section className="mt-6 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-5">

@@ -5,11 +5,15 @@ import { CreditCard, LoaderCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 export function PurchaseCreditsButton({
-  disabled,
+  disabled = false,
   packageId,
+  label = "Thanh toán với payOS",
+  className = "h-10 w-full",
 }: {
-  disabled: boolean;
+  disabled?: boolean;
   packageId: string;
+  label?: string;
+  className?: string;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -39,9 +43,9 @@ export function PurchaseCreditsButton({
 
   return (
     <div>
-      <Button onClick={purchase} disabled={disabled || pending} className="h-10 w-full">
-        {pending ? <LoaderCircle className="animate-spin" /> : <CreditCard />}
-        Thanh toán với payOS
+      <Button onClick={purchase} disabled={disabled || pending} className={className}>
+        {pending ? <LoaderCircle className="animate-spin" /> : <CreditCard className="size-4 mr-2" />}
+        {label}
       </Button>
       {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
     </div>

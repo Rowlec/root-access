@@ -30,10 +30,9 @@ function readCreditPlan(): CreditPlan {
 
 type SiteHeaderProps = {
   locale: string;
-  isClerkConfigured: boolean;
 };
 
-export function SiteHeader({ locale, isClerkConfigured }: SiteHeaderProps) {
+export function SiteHeader({ locale }: SiteHeaderProps) {
   const [plan, setPlan] = useState<CreditPlan>("free");
   const { getRemaining } = useCreditUsage(plan);
   const tourLabel =
@@ -77,37 +76,32 @@ export function SiteHeader({ locale, isClerkConfigured }: SiteHeaderProps) {
           </span>
         </Link>
 
-        <nav className="flex min-w-0 items-center gap-1 sm:gap-3">
+        <nav className="flex min-w-0 items-center gap-2 sm:gap-4">
           <Link
-            href="/app"
-            className="hidden rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground lg:inline-block"
+            href="/pricing"
+            className="text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            Workspace
+            Bảng giá
           </Link>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-9 rounded-full text-muted-foreground hover:text-foreground"
-            aria-label={tourLabel}
-            title={tourLabel}
-            onClick={() => window.dispatchEvent(new Event(onboardingResetEvent))}
-          >
-            <CircleHelp aria-hidden="true" />
-          </Button>
           <Link
-            href="/checkout"
-            className="flex h-9 items-center gap-1.5 rounded-full border border-border/70 bg-secondary/40 px-3 text-sm font-semibold text-foreground"
-            title="1 review = 1 credit / 1 improve = 1 credit"
+            href="/privacy"
+            className="hidden sm:inline-block text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
-            <Coins aria-hidden="true" className="size-4 text-primary" />
-            <span>{creditLabel}</span>
+            Bảo mật
           </Link>
-          <LocaleSwitcher className="h-9 rounded-full bg-secondary/35 shadow-none" />
-          <AuthControls
-            locale={locale}
-            isClerkConfigured={isClerkConfigured}
-          />
+          <Link
+            href="/account"
+            className="text-xs sm:text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Tài khoản
+          </Link>
+          <Link
+            href="/connect-extension"
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary/20 border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/30"
+          >
+            Cài Extension
+          </Link>
+          <AuthControls locale={locale} />
         </nav>
       </div>
     </header>

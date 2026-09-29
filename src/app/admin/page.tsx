@@ -13,15 +13,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { isDatabaseConfigured } from "@/db";
 import { getAdminDashboardData } from "@/lib/server/admin";
-import { ForbiddenError, isClerkConfigured } from "@/lib/server/auth";
+import { ForbiddenError, isAuthConfigured } from "@/lib/server/auth";
 
 export default async function AdminPage() {
-  if (!isClerkConfigured() || !isDatabaseConfigured()) {
+  if (!isAuthConfigured() || !isDatabaseConfigured()) {
     return (
       <main className="mx-auto min-h-svh max-w-4xl px-6 py-12">
         <Badge variant="secondary">Admin setup</Badge>
         <h1 className="mt-4 text-3xl font-semibold">Dashboard đã sẵn sàng để kết nối</h1>
-        <p className="mt-3 text-muted-foreground">Cấu hình Clerk, DATABASE_URL và ADMIN_USER_IDS, sau đó chạy migration để bật số liệu thật.</p>
+        <p className="mt-3 text-muted-foreground">Cấu hình Better Auth, DATABASE_URL và ADMIN_EMAILS, sau đó chạy migration để bật số liệu thật.</p>
         <Link href="/app" className="mt-6 inline-flex items-center gap-2 text-sm text-primary"><ArrowLeft className="size-4" /> Quay lại workspace</Link>
       </main>
     );

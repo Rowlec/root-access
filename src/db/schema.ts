@@ -6,6 +6,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -32,14 +33,97 @@ export const users = pgTable(
   "users",
   {
     id: uuid("id").defaultRandom().primaryKey(),
-    clerkUserId: text("clerk_user_id").notNull(),
+    authUserId: text("auth_user_id"),
+    legacyClerkUserId: text("clerk_user_id"),
     email: text("email"),
     displayName: text("display_name"),
     role: userRole("role").default("user").notNull(),
     isDisabled: boolean("is_disabled").default(false).notNull(),
     ...timestamps,
   },
-  (table) => [uniqueIndex("users_clerk_user_id_uidx").on(table.clerkUserId)],
+  (table) => [
+    uniqueIndex("users_auth_user_id_uidx").on(table.authUserId),
+    uniqueIndex("users_clerk_user_id_uidx").on(table.legacyClerkUserId),
+  ],
+);
+
+export const authUser = pgTable(
+  "auth_user",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    emailVerified: boolean("email_verified").default(false).notNull(),
+    image: text("image"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [uniqueIndex("auth_user_email_uidx").on(table.email)],
+);
+
+export const authSession = pgTable(
+  "auth_session",
+  {
+    id: text("id").primaryKey(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    token: text("token").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
+      .references(() => authUser.id, { onDelete: "cascade" })
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("auth_session_token_uidx").on(table.token),
+    index("auth_session_user_id_idx").on(table.userId),
+  ],
+);
+
+export const authAccount = pgTable(
+  "auth_account",
+  {
+    id: text("id").primaryKey(),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    userId: text("user_id")
+      .references(() => authUser.id, { onDelete: "cascade" })
+      .notNull(),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", {
+      withTimezone: true,
+    }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+      withTimezone: true,
+    }),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("auth_account_user_id_idx").on(table.userId),
+    uniqueIndex("auth_account_provider_account_uidx").on(
+      table.providerId,
+      table.accountId,
+    ),
+  ],
+);
+
+export const authVerification = pgTable(
+  "auth_verification",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [index("auth_verification_identifier_idx").on(table.identifier)],
 );
 
 export const projects = pgTable(
@@ -49,10 +133,21 @@ export const projects = pgTable(
     userId: uuid("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    title: text("title").notNull(),
-    startupIdea: text("startup_idea").notNull(),
-    industry: text("industry").notNull(),
+    name: text("name").default("").notNull(),
+    idea: text("idea").default("").notNull(),
     targetCustomer: text("target_customer").default("").notNull(),
+    availableData: jsonb("available_data").$type<{
+      surveyCount?: number;
+      interviewCount?: number;
+      keyFindings?: string;
+      freeText?: string;
+      [key: string]: unknown;
+    }>().default({}).notNull(),
+    packId: text("pack_id").default("exe101-cp2").notNull(),
+    // Backward compatibility fields
+    title: text("title").default("").notNull(),
+    startupIdea: text("startup_idea").default("").notNull(),
+    industry: text("industry").default("Khởi nghiệp").notNull(),
     status: projectStatus("status").default("active").notNull(),
     currentSection: text("current_section").default("problem").notNull(),
     progressPercent: integer("progress_percent").default(0).notNull(),
@@ -61,6 +156,7 @@ export const projects = pgTable(
   (table) => [
     index("projects_user_id_idx").on(table.userId),
     index("projects_updated_at_idx").on(table.updatedAt),
+    index("projects_pack_id_idx").on(table.packId),
   ],
 );
 
@@ -234,4 +330,149 @@ export const adminAuditLogs = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [index("admin_audit_logs_admin_idx").on(table.adminUserId)],
+);
+
+export const profiles = pgTable(
+  "profiles",
+  {
+    id: uuid("id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+    displayName: text("display_name"),
+    credits: integer("credits").default(5).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+);
+
+export const packs = pgTable(
+  "packs",
+  {
+    id: text("id").notNull(),
+    version: integer("version").notNull(),
+    course: text("course").notNull(),
+    term: text("term").notNull(),
+    checkpoint: text("checkpoint").notNull(),
+    source: text("source").notNull(),
+    content: jsonb("content").$type<Record<string, unknown>>().notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.id, table.version] }),
+    index("packs_is_active_idx").on(table.isActive),
+  ],
+);
+
+export const promptInsertions = pgTable(
+  "prompt_insertions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+    sectionId: text("section_id").notNull(),
+    kind: text("kind").notNull(), // 'initial' | 'fix'
+    promptText: text("prompt_text").notNull(),
+    site: text("site").notNull(), // 'chatgpt' | 'gemini' | 'unknown'
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("prompt_insertions_project_id_idx").on(table.projectId),
+    index("prompt_insertions_user_id_idx").on(table.userId),
+  ],
+);
+
+export const grades = pgTable(
+  "grades",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+    packId: text("pack_id").notNull(),
+    packVersion: integer("pack_version").notNull(),
+    sectionId: text("section_id").notNull(),
+    site: text("site").notNull(),
+    outputText: text("output_text").notNull(),
+    outputHash: text("output_hash").notNull(),
+    result: jsonb("result").$type<Record<string, unknown>>().notNull(),
+    parentGradeId: uuid("parent_grade_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("grades_project_id_idx").on(table.projectId),
+    index("grades_user_id_idx").on(table.userId),
+    index("grades_parent_grade_id_idx").on(table.parentGradeId),
+  ],
+);
+
+export const fixActionsUsed = pgTable(
+  "fix_actions_used",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    gradeId: uuid("grade_id").references(() => grades.id, { onDelete: "cascade" }).notNull(),
+    actionId: text("action_id").notNull(),
+    type: text("type").notNull(), // 'NEED_DATA' | 'TASK' | 'MARK_ASSUMPTIONS' | 'FOCUS_REWRITE'
+    userInput: jsonb("user_input").$type<Record<string, unknown>>(),
+    promptText: text("prompt_text").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("fix_actions_used_grade_id_idx").on(table.gradeId),
+  ],
+);
+
+export const creditTransactions = pgTable(
+  "credit_transactions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    delta: integer("delta").notNull(),
+    reason: text("reason").notNull(), // 'signup_bonus' | 'grade' | 'refund' | 'purchase' | 'admin'
+    refId: uuid("ref_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("credit_transactions_user_id_idx").on(table.userId),
+  ],
+);
+
+export const siteSelectors = pgTable(
+  "site_selectors",
+  {
+    id: text("id").primaryKey(),
+    version: integer("version").notNull(),
+    content: jsonb("content").$type<Record<string, unknown>>().notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+);
+
+export const events = pgTable(
+  "events",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    props: jsonb("props").$type<Record<string, unknown>>().default({}).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("events_name_idx").on(table.name),
+    index("events_user_id_idx").on(table.userId),
+  ],
+);
+
+export const realResults = pgTable(
+  "real_results",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+    checkpoint: text("checkpoint").notNull(),
+    lecturerFeedback: text("lecturer_feedback").notNull(),
+    actualScore: text("actual_score"),
+    questionsAsked: jsonb("questions_asked").$type<string[]>().default([]).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("real_results_project_id_idx").on(table.projectId),
+    index("real_results_user_id_idx").on(table.userId),
+  ],
 );

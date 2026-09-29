@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
@@ -82,14 +81,10 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale();
   const messages = await getMessages();
-  const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   const content = (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LiquidBackground />
-      <RootChrome
-          locale={locale}
-          isClerkConfigured={Boolean(clerkPublishableKey)}
-      >
+      <RootChrome locale={locale}>
         {children}
       </RootChrome>
     </NextIntlClientProvider>
@@ -102,13 +97,7 @@ export default async function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        {clerkPublishableKey ? (
-          <ClerkProvider publishableKey={clerkPublishableKey}>
-            {content}
-          </ClerkProvider>
-        ) : (
-          content
-        )}
+        {content}
         <Analytics />
       </body>
     </html>

@@ -8,8 +8,12 @@ import { getDb } from "@/db";
 import {
   adminAuditLogs,
   creditLedger,
+  creditTransactions,
   orders,
+  packs,
+  profiles,
   projects,
+  siteSelectors,
   tokenPackages,
   users,
   wallets,
@@ -78,6 +82,19 @@ export async function adjustUserCreditsAction(formData: FormData) {
       referenceType: "admin_user",
       walletId: wallet.id,
     });
+    // Also update profiles table for extension sync
+    await tx
+      .update(profiles)
+      .set({ credits: nextBalance })
+      .where(eq(profiles.id, parsed.data.userId));
+
+    await tx.insert(creditTransactions).values({
+      userId: parsed.data.userId,
+      delta: actualDelta,
+      reason: "admin",
+      refId: admin.id,
+    });
+
     await tx.insert(adminAuditLogs).values({
       action: "credits_adjusted",
       adminUserId: admin.id,
@@ -160,4 +177,67 @@ export async function cancelOrderAction(formData: FormData) {
     await tx.insert(adminAuditLogs).values({ action: "order_cancelled", adminUserId: admin.id, targetId: id.data, targetType: "order" });
   });
   revalidatePath("/admin/orders");
+}
+
+export async function togglePackAction(formData: FormData) {
+  const parsed = z
+    .object({ id: z.string(), active: z.enum(["true", "false"]) })
+    .safeParse({ id: formData.get("id"), active: formData.get("active") });
+  if (!parsed.success) return;
+
+  const admin = await requireAdmin();
+  await getDb()
+    .update(packs)
+    .set({ isActive: parsed.data.active === "true" })
+    .where(eq(packs.id, parsed.data.id));
+
+  await getDb().insert(adminAuditLogs).values({
+    action: "pack_toggled",
+    adminUserId: admin.id,
+    metadata: { active: parsed.data.active },
+    targetId: parsed.data.id,
+    targetType: "pack",
+  });
+  revalidatePath("/admin");
+}
+
+export async function updateSelectorConfigAction(formData: FormData) {
+  const parsed = z
+    .object({ content: z.string() })
+    .safeParse({ content: formData.get("content") });
+  if (!parsed.success) return;
+
+  let parsedJson: any;
+  try {
+    parsedJson = JSON.parse(parsed.data.content);
+  } catch {
+    return;
+  }
+
+  const admin = await requireAdmin();
+  const db = getDb();
+  await db
+    .insert(siteSelectors)
+    .values({
+      id: "default",
+      version: parsedJson.version || 1,
+      content: parsedJson,
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: siteSelectors.id,
+      set: {
+        content: parsedJson,
+        version: (parsedJson.version || 1) + 1,
+      },
+    });
+
+  await db.insert(adminAuditLogs).values({
+    action: "selectors_updated",
+    adminUserId: admin.id,
+    metadata: { version: parsedJson.version },
+    targetId: "default",
+    targetType: "site_selectors",
+  });
+  revalidatePath("/admin");
 }

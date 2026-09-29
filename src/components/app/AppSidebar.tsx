@@ -3,19 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
 import {
   BarChart3,
   Coins,
+  Compass,
   FileSearch,
   LayoutDashboard,
   Lightbulb,
   Plus,
-  Settings,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { CreditBalance } from "@/components/app/CreditBalance";
+import { SidebarAccount } from "@/components/auth/SidebarAccount";
 
 type SidebarProject = {
   id: string;
@@ -41,13 +41,21 @@ export function AppSidebar({
       </Link>
 
       <Link
+        href="/connect-extension"
+        className="mt-2.5 flex h-10 items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors shadow-sm"
+      >
+        <Compass className="size-4 shrink-0 text-primary" />
+        <span>Kết nối Chrome Extension</span>
+      </Link>
+
+      <Link
         href="/app#new-project"
-        className="mt-3 flex h-11 items-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 text-sm font-semibold hover:bg-secondary"
+        className="mt-2 flex h-10 items-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 text-xs font-semibold hover:bg-secondary"
       >
         <Plus className="size-4" /> Dự án mới
       </Link>
 
-      <nav className="mt-5 grid gap-1 text-sm">
+      <nav className="mt-4 grid gap-1 text-sm">
         <Link
           href="/app"
           className={cn(
@@ -97,10 +105,7 @@ export function AppSidebar({
             <BarChart3 className="size-4" /> Admin dashboard
           </Link>
         ) : null}
-        <div className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-secondary/50">
-          <Link href="/app/account" className="flex items-center gap-2"><Settings className="size-4" /> Tài khoản</Link>
-          <UserButton />
-        </div>
+        <SidebarAccount />
       </div>
     </aside>
   );

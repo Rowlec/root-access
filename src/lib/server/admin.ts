@@ -67,7 +67,7 @@ export async function getAdminUsers() {
   return getDb()
     .select({
       balance: wallets.balance,
-      clerkUserId: users.clerkUserId,
+      authUserId: users.authUserId,
       createdAt: users.createdAt,
       displayName: users.displayName,
       email: users.email,

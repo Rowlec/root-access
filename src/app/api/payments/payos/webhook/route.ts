@@ -3,8 +3,10 @@ import { eq, sql } from "drizzle-orm";
 import { getDb, isDatabaseConfigured } from "@/db";
 import {
   creditLedger,
+  creditTransactions,
   orders,
   paymentEvents,
+  profiles,
   usageEvents,
   wallets,
 } from "@/db/schema";
@@ -88,6 +90,21 @@ export async function POST(request: Request) {
       referenceId: order.id,
       referenceType: "order",
       walletId: wallet.id,
+    });
+
+    // Update profile credits used by Extension & Grader
+    await tx
+      .update(profiles)
+      .set({
+        credits: sql`${profiles.credits} + ${order.credits}`,
+      })
+      .where(eq(profiles.id, order.userId));
+
+    await tx.insert(creditTransactions).values({
+      userId: order.userId,
+      delta: order.credits,
+      reason: "purchase",
+      refId: order.id,
     });
 
     await tx

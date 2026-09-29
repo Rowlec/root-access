@@ -9,7 +9,7 @@ import {
   type MeteredAction,
 } from "@/lib/server/credits";
 import {
-  isClerkConfigured,
+  isAuthConfigured,
   UnauthorizedError,
 } from "@/lib/server/auth";
 
@@ -21,7 +21,7 @@ export async function withAiCreditGuard(
     return handler();
   }
 
-  if (!isClerkConfigured()) {
+  if (!isAuthConfigured()) {
     return Response.json(
       { code: "auth_not_configured", message: "Authentication is not configured." },
       { status: 503 },
