@@ -381,16 +381,35 @@ export default function ConnectExtensionPage() {
         </div>
       )}
 
-      {/* Instructions to install unpacked extension */}
-      <div className="rounded-3xl border border-border bg-card/60 p-6 sm:p-8 space-y-4">
-        <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-          <Download size={16} className="text-primary" />
-          Hướng dẫn cài đặt Extension (Bản Unpacked cho sinh viên)
-        </h3>
-        <ol className="list-decimal pl-5 space-y-2 text-xs text-muted-foreground leading-relaxed">
+      {/* Instructions to install extension */}
+      <div className="rounded-3xl border border-border bg-card/60 p-6 sm:p-8 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
+          <div>
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <Download size={16} className="text-primary" />
+              Cài đặt Extension vào trình duyệt
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Hỗ trợ Google Chrome, Microsoft Edge, Brave, Cốc Cốc.
+            </p>
+          </div>
+          <a
+            href="/downloads/root-access-extension.zip"
+            download="root-access-extension.zip"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 shadow transition active:scale-[0.98]"
+          >
+            <Download size={14} />
+            Tải Extension (.zip)
+          </a>
+        </div>
+
+        <ol className="list-decimal pl-5 space-y-2.5 text-xs text-muted-foreground leading-relaxed">
           <li>
-            Mở trình duyệt Google Chrome và truy cập đường dẫn:{" "}
-            <code className="text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+            Bấm nút <strong>&ldquo;Tải Extension (.zip)&rdquo;</strong> ở trên và <strong>giải nén</strong> thư mục vừa tải về.
+          </li>
+          <li>
+            Mở trình duyệt và truy cập đường dẫn:{" "}
+            <code className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono">
               chrome://extensions/
             </code>
           </li>
@@ -398,11 +417,10 @@ export default function ConnectExtensionPage() {
             Bật công tắc <strong>&ldquo;Developer mode&rdquo; (Chế độ dành cho nhà phát triển)</strong> ở góc trên bên phải.
           </li>
           <li>
-            Bấm nút <strong>&ldquo;Load unpacked&rdquo; (Tải tiện ích đã giải nén)</strong> và chọn thư mục{" "}
-            <code className="text-foreground bg-muted px-1.5 py-0.5 rounded">extension/dist</code> trong thư mục mã nguồn dự án.
+            Bấm nút <strong>&ldquo;Load unpacked&rdquo; (Tải tiện ích đã giải nén)</strong> ở góc trái và chọn thư mục vừa giải nén ở Bước 1.
           </li>
           <li>
-            Mở trang <strong>ChatGPT (chatgpt.com)</strong> hoặc <strong>Gemini (gemini.google.com)</strong>, bấm icon RootAccess trên thanh công cụ để mở Side Panel.
+            Mở <strong>ChatGPT (chatgpt.com)</strong> hoặc <strong>Gemini (gemini.google.com)</strong>, bấm icon <strong>RootAccess</strong> trên thanh tiện ích để bắt đầu làm bài!
           </li>
         </ol>
       </div>
