@@ -6,7 +6,10 @@
   "permissions": ["sidePanel", "storage"],
   "host_permissions": [
     "https://chatgpt.com/*",
-    "https://gemini.google.com/*"
+    "https://gemini.google.com/*",
+    "https://root-access.site/*",
+    "https://*.root-access.site/*",
+    "http://localhost:3000/*"
   ],
   "background": {
     "service_worker": "background.js",
@@ -30,6 +33,8 @@
   ],
   "externally_connectable": {
     "matches": [
+      "https://root-access.site/*",
+      "https://*.root-access.site/*",
       "https://root-access-w.vercel.app/*",
       "http://localhost:3000/*"
     ]

@@ -10,7 +10,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
   // First install: open /connect-extension
   if (details.reason === "install") {
-    const webUrl = "http://localhost:3000/connect-extension";
+    const webUrl = "https://root-access.site/connect-extension";
     chrome.tabs.create({ url: webUrl });
   }
 });
@@ -20,6 +20,8 @@ chrome.runtime.onMessageExternal.addListener(
   (message, sender, sendResponse) => {
     // Validate sender origin
     const validOrigins = [
+      "https://root-access.site",
+      "https://www.root-access.site",
       "https://root-access-w.vercel.app",
       "http://localhost:3000",
       "http://127.0.0.1:3000",

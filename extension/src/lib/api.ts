@@ -2,7 +2,7 @@ import { getStoredToken } from "./auth";
 import { GradeResult, Pack, Project, UserSession } from "./types";
 
 export const API_BASE_URL =
-  process.env.VITE_API_URL || "http://localhost:3000";
+  process.env.VITE_API_URL || "https://root-access.site";
 
 async function request<T>(
   endpoint: string,
