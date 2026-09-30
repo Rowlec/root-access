@@ -55,7 +55,16 @@ export async function POST(request: Request) {
     );
   }
   const orderCode = Date.now();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
+  const referer = request.headers.get("referer");
+  let siteUrl = "";
+  if (referer) {
+    try {
+      siteUrl = new URL(referer).origin;
+    } catch {}
+  }
+  if (!siteUrl) {
+    siteUrl = request.headers.get("origin") || process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin;
+  }
   const db = getDb();
 
   const [order] = await db
