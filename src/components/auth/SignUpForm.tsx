@@ -37,7 +37,7 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
   return (
     <section className="glass w-full max-w-md rounded-3xl p-6 sm:p-8">
       <h1 className="text-3xl font-semibold">Tạo tài khoản</h1>
-      <p className="mt-2 text-sm text-muted-foreground">Nhập cùng email Clerk cũ để tự nối lại project và role admin.</p>
+      <p className="mt-2 text-sm text-muted-foreground">Đăng ký tài khoản để nhận ngay 5 lượt chấm proposal miễn phí.</p>
       <form action={submit} className="mt-6 grid gap-4">
         <label className="grid gap-2 text-sm">Tên hiển thị<Input name="name" autoComplete="name" minLength={2} required /></label>
         <label className="grid gap-2 text-sm">Email<Input name="email" type="email" autoComplete="email" required /></label>

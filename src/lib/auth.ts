@@ -16,9 +16,13 @@ const googleConfigured = Boolean(
   process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET,
 );
 const baseUrl =
-  process.env.BETTER_AUTH_URL ??
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  "http://localhost:3000";
+  process.env.BETTER_AUTH_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000");
 
 export const auth = betterAuth({
   appName: "Root Access",
@@ -61,6 +65,8 @@ export const auth = betterAuth({
     baseUrl,
     "https://root-access.site",
     "https://www.root-access.site",
+    "https://*.root-access.site",
+    "https://*.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
   ],
