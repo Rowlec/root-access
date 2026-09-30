@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
-  Check,
-  Clock3,
+  Bot,
+  CheckCircle2,
   Compass,
-  Lightbulb,
+  Download,
   Route,
   Sparkles,
   X,
@@ -22,53 +22,11 @@ import {
   onboardingStorageKey,
   onboardingTourStepCount,
 } from "@/lib/onboarding";
-import { cn } from "@/lib/utils";
 
 type OnboardingProgress = {
   status: "complete" | "tour" | "welcome";
   step: number;
 };
-
-type SpotlightRect = {
-  height: number;
-  left: number;
-  top: number;
-  width: number;
-};
-
-type TourStep = {
-  body: string;
-  completionTarget?: string;
-  helper: string;
-  id: string;
-  route: "generate" | "home" | "improve" | "review";
-  targets: string[];
-  title: string;
-};
-
-function getWorkflowSectionId(pathname: string) {
-  const match = pathname.match(/^\/result\/([^/]+)\/(?:generate|review|improve)$/);
-
-  return match?.[1] ?? "problem";
-}
-
-function getTourRoute(pathname: string) {
-  if (pathname === "/welcome") {
-    return "home" as const;
-  }
-
-  const match = pathname.match(/^\/result\/[^/]+\/(generate|review|improve)$/);
-
-  return match?.[1] as TourStep["route"] | undefined;
-}
-
-function getTourPath(route: TourStep["route"], pathname: string) {
-  if (route === "home") {
-    return "/welcome";
-  }
-
-  return `/result/${getWorkflowSectionId(pathname)}/${route}`;
-}
 
 function readProgress(): OnboardingProgress {
   try {
@@ -117,171 +75,14 @@ function writeProgress(progress: OnboardingProgress) {
 }
 
 export function ProductOnboarding() {
-  const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations("Onboarding");
   const [progress, setProgress] = useState<OnboardingProgress | null>(null);
-  const [spotlightRect, setSpotlightRect] = useState<SpotlightRect | null>(null);
-  const [tourNotice, setTourNotice] = useState<string | null>(null);
-  const [viewport, setViewport] = useState({ height: 0, width: 0 });
   const tourDialogRef = useRef<HTMLDivElement>(null);
-  const tourSteps = useMemo<TourStep[]>(
-    () => [
-      {
-        body: t("tour.steps.projectForm.body"),
-        helper: t("tour.steps.projectForm.helper"),
-        id: "project-form",
-        route: "home",
-        targets: ['[data-onboarding="project-form"]'],
-        title: t("tour.steps.projectForm.title"),
-      },
-      {
-        body: t("tour.steps.generateWorkflow.body"),
-        helper: t("tour.steps.generateWorkflow.helper"),
-        id: "generate-workflow",
-        route: "home",
-        targets: ['[data-onboarding="generate-workflow"]'],
-        title: t("tour.steps.generateWorkflow.title"),
-      },
-      {
-        body: t("tour.steps.workspace.body"),
-        completionTarget: '[data-generation-latest="true"]',
-        helper: t("tour.steps.workspace.helper"),
-        id: "workspace",
-        route: "generate",
-        targets: ['[data-onboarding="ai-workspace"]'],
-        title: t("tour.steps.workspace.title"),
-      },
-      {
-        body: t("tour.steps.review.body"),
-        completionTarget: '[data-review-scores="true"]',
-        helper: t("tour.steps.review.helper"),
-        id: "review",
-        route: "review",
-        targets: ['[data-onboarding="review-entry"]'],
-        title: t("tour.steps.review.title"),
-      },
-      {
-        body: t("tour.steps.improve.body"),
-        helper: t("tour.steps.improve.helper"),
-        id: "improve",
-        route: "improve",
-        targets: ['[data-onboarding="improve-result"]'],
-        title: t("tour.steps.improve.title"),
-      },
-      {
-        body: t("tour.steps.export.body"),
-        helper: t("tour.steps.export.helper"),
-        id: "export",
-        route: "improve",
-        targets: ['[data-onboarding="draft-export"]'],
-        title: t("tour.steps.export.title"),
-      },
-    ],
-    [t],
-  );
-  const activeStep = progress?.status === "tour" ? tourSteps[progress.step] : null;
-  const activeTargetSelectors = activeStep?.targets.join("||") ?? "";
-  const isTourVisible = Boolean(
-    activeStep && activeStep.route === getTourRoute(pathname),
-  );
-  const isWaitingForWorkspace = Boolean(
-    progress?.status === "tour" && progress.step === 2 && pathname === "/welcome",
-  );
-
-  function persistProgress(nextProgress: OnboardingProgress) {
-    writeProgress(nextProgress);
-    setProgress(nextProgress);
-  }
-
-  function completeOnboarding() {
-    persistProgress({ status: "complete", step: tourSteps.length - 1 });
-  }
-
-  function startTour() {
-    const currentRoute = getTourRoute(pathname);
-    const firstStep =
-      currentRoute === "generate"
-        ? 2
-        : currentRoute === "review"
-          ? 3
-          : currentRoute === "improve"
-            ? 4
-            : 0;
-    const nextProgress: OnboardingProgress = {
-      status: "tour",
-      step: firstStep,
-    };
-
-    setTourNotice(null);
-    persistProgress(nextProgress);
-
-    if (!currentRoute) {
-      persistProgress({ status: "tour", step: 0 });
-      router.push("/welcome#goal-form");
-    }
-  }
-
-  function showForm() {
-    document.querySelector("#goal-form")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-    window.requestAnimationFrame(() => {
-      document.querySelector<HTMLElement>("#startupIdea")?.focus();
-    });
-  }
-
-  function goToStep(step: number) {
-    const boundedStep = Math.max(0, Math.min(step, tourSteps.length - 1));
-    const nextStep = tourSteps[boundedStep];
-
-    setTourNotice(null);
-    persistProgress({ status: "tour", step: boundedStep });
-
-    if (nextStep.route === getTourRoute(pathname)) {
-      return;
-    }
-
-    if (nextStep.route === "home") {
-      router.push("/welcome#goal-form");
-      return;
-    }
-
-    router.push(getTourPath(nextStep.route, pathname));
-  }
-
-  function handleNext() {
-    if (!progress || progress.status !== "tour") {
-      return;
-    }
-
-    if (progress.step >= tourSteps.length - 1) {
-      completeOnboarding();
-      return;
-    }
-
-    if (
-      activeStep?.completionTarget &&
-      !document.querySelector(activeStep.completionTarget)
-    ) {
-      setTourNotice(t("tour.completeCurrentAction"));
-      return;
-    }
-
-    const nextStep = progress.step + 1;
-
-    if (nextStep === 2 && pathname === "/welcome") {
-      persistProgress({ status: "tour", step: nextStep });
-      window.requestAnimationFrame(showForm);
-      return;
-    }
-
-    goToStep(nextStep);
-  }
 
   useEffect(() => {
-    const syncProgress = () => setProgress(readProgress());
+    setProgress(readProgress());
+
     const resetOnboarding = () => {
       const nextProgress: OnboardingProgress = {
         status: "welcome",
@@ -291,161 +92,81 @@ export function ProductOnboarding() {
       writeProgress(nextProgress);
       setProgress(nextProgress);
     };
-    const syncTimer = window.setTimeout(syncProgress, 0);
 
     window.addEventListener(onboardingResetEvent, resetOnboarding);
 
     return () => {
-      window.clearTimeout(syncTimer);
       window.removeEventListener(onboardingResetEvent, resetOnboarding);
     };
-  }, [pathname]);
+  }, []);
 
+  function persistProgress(nextProgress: OnboardingProgress) {
+    writeProgress(nextProgress);
+    setProgress(nextProgress);
+  }
+
+  function completeOnboarding() {
+    persistProgress({ status: "complete", step: onboardingTourStepCount - 1 });
+  }
+
+  function startTour() {
+    persistProgress({ status: "tour", step: 0 });
+  }
+
+  function goToExtension() {
+    completeOnboarding();
+    router.push("/connect-extension");
+  }
+
+  // Keyboard accessibility
   useEffect(() => {
-    const noticeTimer = window.setTimeout(() => setTourNotice(null), 0);
+    if (!progress || progress.status === "complete") return;
 
-    return () => window.clearTimeout(noticeTimer);
-  }, [activeStep?.id]);
-
-  useEffect(() => {
-    if (!isTourVisible || !activeTargetSelectors) {
-      return;
-    }
-
-    let animationFrame = 0;
-    let targetElement: HTMLElement | null = null;
-    const targetSelectors = activeTargetSelectors.split("||");
-
-    const updateSpotlight = () => {
-      if (!targetElement) {
-        return;
-      }
-
-      const rect = targetElement.getBoundingClientRect();
-      const padding = 10;
-
-      setSpotlightRect({
-        height: rect.height + padding * 2,
-        left: Math.max(8, rect.left - padding),
-        top: Math.max(8, rect.top - padding),
-        width: Math.min(window.innerWidth - 16, rect.width + padding * 2),
-      });
-      setViewport({ height: window.innerHeight, width: window.innerWidth });
-    };
-    const findTarget = () => {
-      setSpotlightRect(null);
-      setViewport({ height: window.innerHeight, width: window.innerWidth });
-      targetElement =
-        targetSelectors
-          .map((selector) => document.querySelector<HTMLElement>(selector))
-          .find(Boolean) ?? null;
-
-      if (!targetElement) {
-        setSpotlightRect(null);
-        setViewport({ height: window.innerHeight, width: window.innerWidth });
-        return;
-      }
-
-      if (window.innerWidth < 640) {
-        const targetRect = targetElement.getBoundingClientRect();
-        const targetTop = window.scrollY + targetRect.top;
-
-        window.scrollTo({
-          behavior: "smooth",
-          top: Math.max(0, targetTop - 140),
-        });
-      } else {
-        targetElement.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-
-      animationFrame = window.requestAnimationFrame(updateSpotlight);
-    };
-    const targetTimer = window.setTimeout(findTarget, 120);
-
-    window.addEventListener("resize", updateSpotlight);
-    window.addEventListener("scroll", updateSpotlight, true);
-
-    return () => {
-      window.clearTimeout(targetTimer);
-      window.cancelAnimationFrame(animationFrame);
-      window.removeEventListener("resize", updateSpotlight);
-      window.removeEventListener("scroll", updateSpotlight, true);
-    };
-  }, [activeTargetSelectors, isTourVisible]);
-
-  useEffect(() => {
-    if (!isTourVisible && progress?.status !== "welcome") {
-      return;
-    }
-
-    const focusTimer = window.setTimeout(() => tourDialogRef.current?.focus(), 80);
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        const nextProgress: OnboardingProgress = {
-          status: "complete",
-          step: tourSteps.length - 1,
-        };
-        writeProgress(nextProgress);
-        setProgress(nextProgress);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        completeOnboarding();
+      } else if (progress.status === "tour") {
+        if (e.key === "ArrowRight" && progress.step < onboardingTourStepCount - 1) {
+          persistProgress({ status: "tour", step: progress.step + 1 });
+        } else if (e.key === "ArrowLeft" && progress.step > 0) {
+          persistProgress({ status: "tour", step: progress.step - 1 });
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.clearTimeout(focusTimer);
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isTourVisible, progress?.status, tourSteps.length]);
-
-  const tourCardStyle = useMemo<CSSProperties | undefined>(() => {
-    if (viewport.width < 640) {
-      return undefined;
-    }
-
-    const cardWidth = 380;
-    const cardHeight = 380;
-    const gap = 16;
-
-    if (!spotlightRect) {
-      return {
-        left: "50%",
-        top: "50%",
-        transform: "translate(-50%, -50%)",
-        width: cardWidth,
-      };
-    }
-
-    const spaceBelow = viewport.height - (spotlightRect.top + spotlightRect.height);
-    const spaceAbove = spotlightRect.top;
-    const spaceLeft = spotlightRect.left;
-    const spaceRight =
-      viewport.width - (spotlightRect.left + spotlightRect.width);
-    const maxTop = Math.max(gap, viewport.height - cardHeight - gap);
-    const alignedTop = Math.min(Math.max(gap, spotlightRect.top), maxTop);
-    let left = Math.min(
-      Math.max(gap, spotlightRect.left),
-      Math.max(gap, viewport.width - cardWidth - gap),
-    );
-    let top = alignedTop;
-
-    if (spaceBelow >= cardHeight + gap) {
-      top = spotlightRect.top + spotlightRect.height + gap;
-    } else if (spaceAbove >= cardHeight + gap) {
-      top = spotlightRect.top - cardHeight - gap;
-    } else if (spaceLeft >= cardWidth + gap * 2) {
-      left = spotlightRect.left - cardWidth - gap;
-    } else if (spaceRight >= cardWidth + gap * 2) {
-      left = spotlightRect.left + spotlightRect.width + gap;
-    }
-
-    return { left, top, width: cardWidth };
-  }, [spotlightRect, viewport]);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [progress]);
 
   if (!progress || progress.status === "complete") {
     return null;
   }
 
+  const tourSteps = [
+    {
+      icon: Download,
+      title: t("tour.steps.step1.title"),
+      body: t("tour.steps.step1.body"),
+      helper: t("tour.steps.step1.helper"),
+      color: "text-blue-400 bg-blue-500/10 border-blue-500/30",
+    },
+    {
+      icon: Bot,
+      title: t("tour.steps.step2.title"),
+      body: t("tour.steps.step2.body"),
+      helper: t("tour.steps.step2.helper"),
+      color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/30",
+    },
+    {
+      icon: CheckCircle2,
+      title: t("tour.steps.step3.title"),
+      body: t("tour.steps.step3.body"),
+      helper: t("tour.steps.step3.helper"),
+      color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+    },
+  ];
+
+  // 1. Màn hình Chào mừng (Welcome)
   if (progress.status === "welcome") {
     return (
       <div className="fixed inset-0 z-[100] grid place-items-center overflow-x-hidden bg-background/85 p-4 backdrop-blur-md">
@@ -455,21 +176,21 @@ export function ProductOnboarding() {
           aria-modal="true"
           aria-labelledby="onboarding-welcome-title"
           tabIndex={-1}
-          className="glass onboarding-enter max-h-[calc(100svh-2rem)] w-[calc(100vw-2rem)] min-w-0 max-w-2xl overflow-x-hidden overflow-y-auto rounded-3xl p-5 outline-none sm:p-7"
+          className="glass onboarding-enter max-h-[calc(100svh-2rem)] w-[calc(100vw-2rem)] min-w-0 max-w-2xl overflow-x-hidden overflow-y-auto rounded-3xl p-5 outline-none sm:p-7 shadow-2xl border border-border/80"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-3">
-              <Badge variant="secondary" className="gap-1.5">
-                <Sparkles aria-hidden="true" className="size-3.5" />
+              <Badge variant="secondary" className="gap-1.5 px-3 py-1">
+                <Sparkles aria-hidden="true" className="size-3.5 text-primary" />
                 {t("welcome.badge")}
               </Badge>
               <h2
                 id="onboarding-welcome-title"
-                className="max-w-xl text-2xl font-semibold leading-tight text-foreground sm:text-3xl"
+                className="max-w-xl text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
               >
                 {t("welcome.title")}
               </h2>
-              <p className="max-w-xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+              <p className="max-w-xl text-xs sm:text-sm leading-relaxed text-muted-foreground">
                 {t("welcome.description")}
               </p>
             </div>
@@ -477,209 +198,204 @@ export function ProductOnboarding() {
               type="button"
               variant="ghost"
               size="icon"
-              className="shrink-0 rounded-full"
+              className="shrink-0 rounded-full text-muted-foreground hover:text-foreground"
               aria-label={t("actions.skip")}
               title={t("actions.skip")}
               onClick={completeOnboarding}
             >
-              <X aria-hidden="true" />
+              <X aria-hidden="true" className="size-5" />
             </Button>
           </div>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
-              <Compass aria-hidden="true" className="size-5 text-primary" />
-              <p className="mt-2 text-sm font-semibold text-foreground">
+            <div className="rounded-2xl border border-border/70 bg-card/60 p-4 space-y-2">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-400">
+                <Compass aria-hidden="true" className="size-5" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">
                 {t("welcome.accomplishTitle")}
               </p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 {t("welcome.accomplishBody")}
               </p>
             </div>
-            <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
-              <Clock3 aria-hidden="true" className="size-5 text-primary" />
-              <p className="mt-2 text-sm font-semibold text-foreground">
+
+            <div className="rounded-2xl border border-border/70 bg-card/60 p-4 space-y-2">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400">
+                <Sparkles aria-hidden="true" className="size-5" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">
                 {t("welcome.timeTitle")}
               </p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 {t("welcome.timeBody")}
               </p>
             </div>
-            <div className="rounded-2xl border border-border/70 bg-secondary/30 p-3">
-              <Route aria-hidden="true" className="size-5 text-primary" />
-              <p className="mt-2 text-sm font-semibold text-foreground">
+
+            <div className="rounded-2xl border border-border/70 bg-card/60 p-4 space-y-2">
+              <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400">
+                <Route aria-hidden="true" className="size-5" />
+              </div>
+              <p className="text-sm font-semibold text-foreground">
                 {t("welcome.workflowTitle")}
               </p>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              <p className="text-xs leading-relaxed text-muted-foreground">
                 {t("welcome.workflowBody")}
               </p>
             </div>
           </div>
 
-          <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between pt-2 border-t border-border/60">
             <Button
               type="button"
               variant="outline"
-              className="btn-glass h-11 rounded-full px-5"
+              className="h-11 rounded-2xl px-5 text-xs font-semibold text-muted-foreground hover:text-foreground"
               onClick={completeOnboarding}
             >
               {t("actions.skip")}
             </Button>
-            <Button
-              type="button"
-              className="btn-liquid btn-action h-11 rounded-full px-5 text-primary-foreground"
-              onClick={startTour}
-            >
-              {t("actions.start")}
-              <ArrowRight aria-hidden="true" />
-            </Button>
+
+            <div className="flex flex-col sm:flex-row items-center gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="h-11 w-full sm:w-auto rounded-2xl px-5 text-xs font-semibold"
+                onClick={startTour}
+              >
+                {t("actions.start")}
+                <ArrowRight aria-hidden="true" className="ml-1.5 size-4" />
+              </Button>
+              <Button
+                type="button"
+                className="h-11 w-full sm:w-auto rounded-2xl px-6 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/25"
+                onClick={goToExtension}
+              >
+                <Download aria-hidden="true" className="mr-1.5 size-4" />
+                {t("actions.installNow")}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  if (isWaitingForWorkspace) {
-    return (
-      <div className="onboarding-enter fixed inset-x-4 bottom-4 z-[90] ml-auto max-w-md rounded-2xl border border-primary/35 bg-background/95 p-4 shadow-2xl backdrop-blur-xl sm:left-auto">
-        <div className="flex items-start gap-3">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-            <Check aria-hidden="true" className="size-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-foreground">{t("waiting.title")}</p>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              {t("waiting.body")}
-            </p>
-          </div>
-        </div>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
-          <Button
-            type="button"
-            variant="ghost"
-            className="h-9 rounded-full"
-            onClick={completeOnboarding}
-          >
-            {t("actions.skip")}
-          </Button>
-          <Button
-            type="button"
-            className="btn-liquid h-9 rounded-full px-4 text-primary-foreground"
-            onClick={showForm}
-          >
-            {t("actions.goToForm")}
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isTourVisible || !activeStep) {
-    return null;
-  }
+  // 2. Màn hình Tour 3 bước trực quan (Interactive Step Guide)
+  const currentStepData = tourSteps[progress.step] ?? tourSteps[0];
+  const StepIcon = currentStepData.icon;
 
   return (
-    <>
-      <div className="pointer-events-none fixed inset-0 z-[70]" aria-hidden="true" />
-      {spotlightRect ? (
-        <div
-          aria-hidden="true"
-          data-onboarding-spotlight={activeStep.id}
-          className="onboarding-spotlight pointer-events-none fixed z-[75] rounded-3xl border-2 border-primary"
-          style={spotlightRect}
-        />
-      ) : (
-        <div className="pointer-events-none fixed inset-0 z-[74] bg-background/75 backdrop-blur-sm" />
-      )}
+    <div className="fixed inset-0 z-[100] grid place-items-center overflow-x-hidden bg-background/85 p-4 backdrop-blur-md">
       <div
         ref={tourDialogRef}
         role="dialog"
-        aria-modal="false"
-        aria-labelledby="onboarding-tour-title"
+        aria-modal="true"
+        aria-labelledby="onboarding-step-title"
         tabIndex={-1}
-        className={cn(
-          "glass onboarding-enter fixed z-[80] max-h-[calc(100svh-2rem)] overflow-y-auto rounded-3xl p-4 outline-none sm:p-5",
-          "inset-x-4 bottom-4 sm:inset-x-auto sm:bottom-auto",
-        )}
-        style={tourCardStyle}
+        className="glass onboarding-enter max-h-[calc(100svh-2rem)] w-[calc(100vw-2rem)] min-w-0 max-w-xl overflow-x-hidden overflow-y-auto rounded-3xl p-6 outline-none sm:p-8 shadow-2xl border border-border/80 space-y-6"
       >
-        <div className="flex items-center justify-between gap-3">
-          <Badge variant="secondary">
-            {t("tour.progress", {
-              current: progress.step + 1,
-              total: tourSteps.length,
-            })}
-          </Badge>
+        <div className="flex items-center justify-between border-b border-border/60 pb-4">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs px-2.5 py-0.5">
+              {t("tour.progress", { current: progress.step + 1, total: onboardingTourStepCount })}
+            </Badge>
+            <div className="flex gap-1.5 ml-2">
+              {tourSteps.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-label={`Bước ${i + 1}`}
+                  onClick={() => persistProgress({ status: "tour", step: i })}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    i === progress.step
+                      ? "w-6 bg-primary"
+                      : i < progress.step
+                        ? "w-3 bg-primary/50"
+                        : "w-3 bg-muted"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
           <Button
             type="button"
             variant="ghost"
-            size="sm"
-            className="rounded-full"
+            size="icon"
+            className="rounded-full text-muted-foreground hover:text-foreground"
             onClick={completeOnboarding}
           >
-            {t("actions.skip")}
+            <X className="size-5" />
           </Button>
         </div>
 
-        <div className="mt-4">
-          <h2 id="onboarding-tour-title" className="text-xl font-semibold text-foreground">
-            {activeStep.title}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {activeStep.body}
-          </p>
-          <div className="mt-3 flex items-start gap-2 rounded-2xl border border-primary/30 bg-primary/10 px-3 py-2 text-sm leading-6 text-muted-foreground">
-            <Lightbulb aria-hidden="true" className="mt-1 size-4 shrink-0 text-primary" />
-            <p>{activeStep.helper}</p>
+        <div className="space-y-4 py-2">
+          <div className={`inline-flex items-center justify-center p-3.5 rounded-2xl border ${currentStepData.color}`}>
+            <StepIcon className="size-8" />
           </div>
-          {tourNotice ? (
-            <p role="status" className="mt-3 text-sm leading-6 text-amber-200">
-              {tourNotice}
+
+          <div className="space-y-2">
+            <h3
+              id="onboarding-step-title"
+              className="text-xl font-bold tracking-tight text-foreground sm:text-2xl"
+            >
+              {currentStepData.title}
+            </h3>
+            <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
+              {currentStepData.body}
             </p>
-          ) : null}
+          </div>
+
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-xs leading-relaxed text-primary-foreground/90">
+            <span className="font-semibold text-primary block mb-1">Mẹo thực hiện:</span>
+            {currentStepData.helper}
+          </div>
         </div>
 
-        <div className="mt-4 flex gap-1.5" aria-hidden="true">
-          {tourSteps.map((step, index) => (
-            <span
-              key={step.id}
-              className={cn(
-                "h-1.5 flex-1 rounded-full bg-secondary transition-colors duration-300",
-                index <= progress.step && "bg-primary",
-              )}
-            />
-          ))}
-        </div>
+        <div className="flex items-center justify-between pt-4 border-t border-border/60">
+          {progress.step > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 rounded-xl px-4 text-xs font-semibold"
+              onClick={() => persistProgress({ status: "tour", step: progress.step - 1 })}
+            >
+              <ArrowLeft className="mr-1.5 size-4" />
+              {t("actions.back")}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              className="h-10 rounded-xl px-4 text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => persistProgress({ status: "welcome", step: 0 })}
+            >
+              {t("actions.back")}
+            </Button>
+          )}
 
-        <div className="mt-5 flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="btn-glass h-10 rounded-full px-4"
-            disabled={progress.step === 0}
-            onClick={() => goToStep(progress.step - 1)}
-          >
-            <ArrowLeft aria-hidden="true" />
-            {t("actions.back")}
-          </Button>
-          <Button
-            type="button"
-            className="btn-liquid h-10 rounded-full px-4 text-primary-foreground"
-            onClick={handleNext}
-          >
-            {progress.step === tourSteps.length - 1
-              ? t("actions.finish")
-              : progress.step === 1
-                ? t("actions.continueInForm")
-                : t("actions.next")}
-            {progress.step === tourSteps.length - 1 ? (
-              <Check aria-hidden="true" />
+          <div className="flex items-center gap-2">
+            {progress.step < onboardingTourStepCount - 1 ? (
+              <Button
+                type="button"
+                className="h-10 rounded-xl px-5 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => persistProgress({ status: "tour", step: progress.step + 1 })}
+              >
+                {t("actions.next")}
+                <ArrowRight className="ml-1.5 size-4" />
+              </Button>
             ) : (
-              <ArrowRight aria-hidden="true" />
+              <Button
+                type="button"
+                className="h-10 rounded-xl px-5 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/25"
+                onClick={goToExtension}
+              >
+                <Download className="mr-1.5 size-4" />
+                {t("actions.finish")}
+              </Button>
             )}
-          </Button>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

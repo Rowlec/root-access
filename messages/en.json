@@ -12,64 +12,43 @@
   },
   "Onboarding": {
     "welcome": {
-      "badge": "1-minute product tour",
+      "badge": "Chrome Extension for EXE101 Capstone",
       "title": "Welcome to Root Access",
-      "description": "Root Access helps you improve how you use AI for a Startup Proposal, one focused section at a time. You stay in control of the thinking and final writing.",
-      "accomplishTitle": "What you will achieve",
-      "accomplishBody": "A stronger proposal section, clear weaknesses, and a better prompt for the next attempt.",
-      "timeTitle": "Estimated time",
-      "timeBody": "About one minute for this tour; then choose which section to create, review, or improve.",
-      "workflowTitle": "Main workflow",
-      "workflowBody": "Add context → create output → review → improve when needed → export a draft."
+      "description": "Root Access works as a Chrome Side Panel directly alongside ChatGPT or Gemini. It helps your team write each proposal section and grades it against the official EXE101 rubric.",
+      "accomplishTitle": "Side-by-side Workflow",
+      "accomplishBody": "No more tab hopping. It automatically types rubric-aligned prompts and reads responses right in your chat screen.",
+      "timeTitle": "9 Rubric Criteria",
+      "timeBody": "Instantly see what passes and what fails, catch invented facts, and anticipate tough questions from evaluators.",
+      "workflowTitle": "3 Simple Steps",
+      "workflowBody": "Install Extension → Open ChatGPT/Gemini → Insert prompt & Grade response to view your rubric scores."
     },
     "tour": {
-      "progress": "Step {current} of {total}",
-      "completeCurrentAction": "Complete the highlighted action first, then select Next.",
+      "progress": "Step {current}/{total}",
       "steps": {
-        "projectForm": {
-          "title": "Start with useful project context",
-          "body": "Describe the startup idea, industry, and target customer. Root Access keeps this context consistent across the proposal.",
-          "helper": "Specific context produces more relevant prompts and more accurate review feedback."
+        "step1": {
+          "title": "Step 1: Install Chrome Extension",
+          "body": "Download the extension package directly from our website, extract it, and load it into Chrome via Developer Mode in 30 seconds.",
+          "helper": "Works smoothly on Google Chrome, Brave, and Microsoft Edge."
         },
-        "generateWorkflow": {
-          "title": "Open the step-by-step workspace",
-          "body": "Submit your context to start the first section. The tour resumes once the workspace opens.",
-          "helper": "Each section has three clear steps: create output, review it, and improve when needed."
+        "step2": {
+          "title": "Step 2: Open ChatGPT or Gemini",
+          "body": "Open chatgpt.com or gemini.google.com. Click the Root Access icon to reveal the Side Panel on the right side of your browser.",
+          "helper": "Your account syncs automatically with 5 free grading credits upon sign up."
         },
-        "workspace": {
-          "title": "Create a guided output",
-          "body": "Check the instructions for the current section, edit them if needed, then select Create output. You can still edit the output before reviewing it.",
-          "helper": "This creates working material only; you do not need to trust or use an AI answer as-is."
-        },
-        "review": {
-          "title": "Review the AI output",
-          "body": "Select Review my work to check six business criteria and see evidence for strengths, weaknesses, and missing facts.",
-          "helper": "Review turns an AI answer into something you can verify rather than content you accept blindly."
-        },
-        "improve": {
-          "title": "Improve only when feedback makes it useful",
-          "body": "Create a better instruction from the weaknesses found, or keep the current output and move to the next section.",
-          "helper": "There are no hidden AI calls: Root Access uses another AI request only when you select Improve prompt."
-        },
-        "export": {
-          "title": "Export a draft when it is useful",
-          "body": "The Export current draft button becomes available as soon as there is content, so you can export TXT, DOCX, or PDF before every section is complete.",
-          "helper": "Always verify facts, add your reasoning, and rewrite the final submission in your own voice."
+        "step3": {
+          "title": "Step 3: Insert Prompt & Grade Rubric",
+          "body": "Select a proposal section (Target Customer, Problem, Solution...), click 'Insert Prompt'. Once AI finishes generating, click 'Grade Answer' to get instant feedback!",
+          "helper": "Highlights invented numbers, warnings, likely panel questions, and 1-click fix actions."
         }
       }
     },
-    "waiting": {
-      "title": "Tour paused at the workspace step",
-      "body": "Add your context and select Start proposal review. The tour will resume on the create-output screen."
-    },
     "actions": {
       "start": "Show me how it works",
-      "skip": "Skip tour",
+      "skip": "Close",
       "back": "Back",
       "next": "Next",
-      "finish": "Finish tour",
-      "continueInForm": "Open workspace",
-      "goToForm": "Go to form"
+      "finish": "Install Extension Now",
+      "installNow": "Install Extension Now"
     }
   },
   "Hero": {

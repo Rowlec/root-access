@@ -12,64 +12,43 @@
   },
   "Onboarding": {
     "welcome": {
-      "badge": "Tour sản phẩm 1 phút",
+      "badge": "Tiện ích Chrome môn Khởi nghiệp EXE101",
       "title": "Chào mừng bạn đến với Root Access",
-      "description": "Root Access giúp bạn sử dụng AI tốt hơn cho Startup Proposal, tập trung từng section một. Bạn vẫn là người kiểm soát tư duy và bài viết cuối cùng.",
-      "accomplishTitle": "Bạn sẽ đạt được gì",
-      "accomplishBody": "Một proposal section mạnh hơn, biết rõ điểm yếu và có prompt tốt hơn cho lần thử tiếp theo.",
-      "timeTitle": "Thời gian dự kiến",
-      "timeBody": "Khoảng 1 phút để xem tour; sau đó bạn tự chọn phần nào cần tạo, review hoặc cải thiện.",
-      "workflowTitle": "Quy trình chính",
-      "workflowBody": "Nhập context → tạo output → review → cải thiện khi cần → xuất bản nháp."
+      "description": "Root Access hoạt động như một tiện ích Chrome Extension trực tiếp bên cạnh ChatGPT hoặc Gemini. Giúp nhóm của bạn viết từng phần Proposal và chấm điểm theo đúng Rubric môn EXE101.",
+      "accomplishTitle": "Viết & Chấm trực tiếp",
+      "accomplishBody": "Không cần copy paste qua lại giữa nhiều tab. AI tự điền prompt chuẩn và đọc câu trả lời ngay cạnh màn hình chat.",
+      "timeTitle": "Rubric 9 tiêu chí",
+      "timeBody": "Biết ngay phần nào Đạt, phần nào Chưa đạt, bắt lỗi số liệu bịa và cảnh báo trước câu hỏi phản biện của hội đồng.",
+      "workflowTitle": "Quy trình 3 bước",
+      "workflowBody": "Cài Extension → Mở ChatGPT/Gemini → Chèn prompt & Bấm Chấm bài để xem ngay bảng điểm."
     },
     "tour": {
       "progress": "Bước {current}/{total}",
-      "completeCurrentAction": "Hãy hoàn thành thao tác đang được hướng dẫn trước, rồi bấm Tiếp theo.",
       "steps": {
-        "projectForm": {
-          "title": "Bắt đầu bằng project context hữu ích",
-          "body": "Mô tả ý tưởng startup, lĩnh vực và khách hàng mục tiêu. Root Access giữ bối cảnh này nhất quán xuyên suốt proposal.",
-          "helper": "Context càng cụ thể thì prompt càng sát và feedback review càng chính xác."
+        "step1": {
+          "title": "Bước 1: Cài đặt Chrome Extension",
+          "body": "Tải file tiện ích trực tiếp từ website của Root Access, giải nén và nạp vào trình duyệt Chrome qua chế độ Developer Mode trong 30 giây.",
+          "helper": "Hỗ trợ mượt mà trên Google Chrome, Cốc Cốc, Brave hoặc Microsoft Edge."
         },
-        "generateWorkflow": {
-          "title": "Mở workspace theo từng bước",
-          "body": "Gửi context để bắt đầu phần đầu tiên. Tour sẽ tiếp tục khi workspace mở ra.",
-          "helper": "Mỗi section chỉ có ba bước rõ ràng: tạo output, review và cải thiện khi cần."
+        "step2": {
+          "title": "Bước 2: Mở ChatGPT hoặc Gemini",
+          "body": "Mở tab chatgpt.com hoặc gemini.google.com. Bấm icon Root Access trên thanh công cụ để mở Side Panel bên phải màn hình.",
+          "helper": "Tài khoản của bạn tự động đồng bộ và nhận ngay 5 lượt chấm bài miễn phí khi đăng ký."
         },
-        "workspace": {
-          "title": "Tạo output có định hướng",
-          "body": "Kiểm tra hướng dẫn cho section hiện tại, chỉnh khi cần rồi chọn Tạo output. Output vẫn có thể sửa trước khi review.",
-          "helper": "Bước này chỉ tạo một bản làm việc; bạn chưa cần tin hoặc dùng ngay nội dung AI tạo ra."
-        },
-        "review": {
-          "title": "Review output của AI",
-          "body": "Chọn Review bài của tôi để kiểm tra sáu tiêu chí nghiệp vụ và xem bằng chứng cho điểm mạnh, yếu, hoặc dữ kiện còn thiếu.",
-          "helper": "Review biến câu trả lời AI thành điều bạn có thể kiểm chứng, thay vì nội dung phải chấp nhận một cách mù quáng."
-        },
-        "improve": {
-          "title": "Cải thiện chỉ khi feedback cho thấy cần thiết",
-          "body": "Bạn có thể tạo một hướng dẫn tốt hơn từ điểm yếu đã phát hiện, hoặc giữ output hiện tại và sang section kế tiếp.",
-          "helper": "Không có lần gọi AI ẩn: chỉ khi bạn chọn Cải thiện prompt thì hệ thống mới dùng thêm lượt AI."
-        },
-        "export": {
-          "title": "Xuất bản nháp vào đúng lúc",
-          "body": "Nút Xuất bản nháp mở ngay khi đã có nội dung để bạn xuất TXT, DOCX hoặc PDF; không cần đợi hoàn thành tất cả section.",
-          "helper": "Luôn kiểm chứng dữ kiện, thêm lập luận của bạn và viết lại bản nộp cuối bằng giọng văn của chính mình."
+        "step3": {
+          "title": "Bước 3: Chèn Prompt & Chấm theo Rubric",
+          "body": "Chọn phần proposal cần làm (Khách hàng, Vấn đề, Giải pháp...), bấm 'Chèn vào ô chat'. Sau khi AI trả lời xong, bấm 'Chấm bài này' để nhận kết quả phân tích sâu!",
+          "helper": "Hệ thống sẽ chỉ ra lỗi bịa số liệu, câu hỏi hội đồng sẽ hỏi và cung cấp nút sửa lỗi một chạm."
         }
       }
     },
-    "waiting": {
-      "title": "Tour đang chờ ở bước workspace",
-      "body": "Điền context rồi chọn Bắt đầu proposal review. Tour sẽ tiếp tục ở màn hình tạo output."
-    },
     "actions": {
-      "start": "Chỉ tôi cách sử dụng",
-      "skip": "Bỏ qua tour",
+      "start": "Xem 3 bước sử dụng",
+      "skip": "Bỏ qua",
       "back": "Quay lại",
       "next": "Tiếp theo",
-      "finish": "Hoàn thành tour",
-      "continueInForm": "Mở workspace",
-      "goToForm": "Đi tới form"
+      "finish": "Cài đặt Extension ngay",
+      "installNow": "Cài đặt Extension ngay"
     }
   },
   "Hero": {
