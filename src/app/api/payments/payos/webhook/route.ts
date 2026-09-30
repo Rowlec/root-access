@@ -12,6 +12,10 @@ import {
 } from "@/db/schema";
 import { getPayOS, isPayOSConfigured } from "@/lib/server/payos";
 
+export async function GET() {
+  return Response.json({ ok: true, message: "PayOS webhook endpoint is active." });
+}
+
 export async function POST(request: Request) {
   if (!isDatabaseConfigured() || !isPayOSConfigured()) {
     return Response.json({ message: "Billing is not configured." }, { status: 503 });
