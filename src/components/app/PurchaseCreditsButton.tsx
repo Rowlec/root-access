@@ -4,6 +4,8 @@ import { useState } from "react";
 import { CreditCard, LoaderCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { startGlobalLoading, stopGlobalLoading } from "@/components/loading/GlobalLoading";
+
 export function PurchaseCreditsButton({
   disabled = false,
   packageId,
@@ -21,6 +23,7 @@ export function PurchaseCreditsButton({
   async function purchase() {
     setPending(true);
     setError(null);
+    startGlobalLoading("Đang tạo liên kết thanh toán PayOS...");
 
     try {
       const response = await fetch("/api/payments/create", {
@@ -36,6 +39,7 @@ export function PurchaseCreditsButton({
 
       window.location.assign(data.checkoutUrl);
     } catch (purchaseError) {
+      stopGlobalLoading();
       setError(purchaseError instanceof Error ? purchaseError.message : "Không thể tạo phiên thanh toán.");
       setPending(false);
     }

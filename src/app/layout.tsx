@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { LiquidBackground } from "@/components/LiquidBackground";
 import { RootChrome } from "@/components/RootChrome";
+import { GlobalLoadingProvider } from "@/components/loading/GlobalLoading";
 import "./globals.css";
 
 const inter = Inter({
@@ -83,10 +84,12 @@ export default async function RootLayout({
   const messages = await getMessages();
   const content = (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <LiquidBackground />
-      <RootChrome locale={locale}>
-        {children}
-      </RootChrome>
+      <GlobalLoadingProvider>
+        <LiquidBackground />
+        <RootChrome locale={locale}>
+          {children}
+        </RootChrome>
+      </GlobalLoadingProvider>
     </NextIntlClientProvider>
   );
 

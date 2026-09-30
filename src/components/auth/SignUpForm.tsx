@@ -8,6 +8,7 @@ import { LoaderCircle, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { startGlobalLoading, stopGlobalLoading } from "@/components/loading/GlobalLoading";
 
 export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
@@ -17,6 +18,7 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
   async function submit(formData: FormData) {
     setPending(true);
     setError(null);
+    startGlobalLoading("Đang khởi tạo tài khoản Root Access...");
     const result = await authClient.signUp.email({
       callbackURL: "/connect-extension",
       email: String(formData.get("email") ?? ""),
@@ -25,6 +27,7 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
     });
 
     if (result.error) {
+      stopGlobalLoading();
       setError(result.error.message || "Không thể tạo tài khoản.");
       setPending(false);
       return;
@@ -46,7 +49,17 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
         <Button className="btn-liquid h-11" disabled={pending}>{pending ? <LoaderCircle className="animate-spin" /> : <UserPlus />}Đăng ký</Button>
       </form>
       {googleEnabled ? (
-        <Button type="button" variant="outline" className="mt-3 h-11 w-full" onClick={() => authClient.signIn.social({ callbackURL: "/app", provider: "google" })}>Đăng ký với Google</Button>
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-3 h-11 w-full"
+          onClick={() => {
+            startGlobalLoading("Đang kết nối tài khoản Google...");
+            authClient.signIn.social({ callbackURL: "/app", provider: "google" });
+          }}
+        >
+          Đăng ký với Google
+        </Button>
       ) : null}
       <p className="mt-5 text-center text-sm text-muted-foreground">Đã có tài khoản? <Link href="/sign-in" className="font-medium text-primary">Đăng nhập</Link></p>
     </section>

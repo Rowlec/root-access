@@ -8,6 +8,7 @@ import { LoaderCircle, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
+import { startGlobalLoading, stopGlobalLoading } from "@/components/loading/GlobalLoading";
 
 export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
   const searchParams = useSearchParams();
@@ -19,6 +20,7 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
   async function submit(formData: FormData) {
     setPending(true);
     setError(null);
+    startGlobalLoading("Đang xác thực thông tin đăng nhập...");
     const result = await authClient.signIn.email({
       callbackURL,
       email: String(formData.get("email") ?? ""),
@@ -26,6 +28,7 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
     });
 
     if (result.error) {
+      stopGlobalLoading();
       setError(result.error.message || "Email hoặc mật khẩu không đúng.");
       setPending(false);
       return;
@@ -50,7 +53,10 @@ export function SignInForm({ googleEnabled }: { googleEnabled: boolean }) {
           type="button"
           variant="outline"
           className="mt-3 h-11 w-full"
-          onClick={() => authClient.signIn.social({ callbackURL, provider: "google" })}
+          onClick={() => {
+            startGlobalLoading("Đang chuyển hướng sang Google...");
+            authClient.signIn.social({ callbackURL, provider: "google" });
+          }}
         >
           Tiếp tục với Google
         </Button>

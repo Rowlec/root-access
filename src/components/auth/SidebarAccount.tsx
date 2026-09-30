@@ -5,6 +5,7 @@ import { LogOut, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { authClient } from "@/lib/auth-client";
+import { startGlobalLoading } from "@/components/loading/GlobalLoading";
 
 export function SidebarAccount() {
   const router = useRouter();
@@ -16,7 +17,17 @@ export function SidebarAccount() {
         <Settings className="size-4 shrink-0" />
         <span className="truncate">{session?.user.name || "Tài khoản"}</span>
       </Link>
-      <button type="button" aria-label="Đăng xuất" title="Đăng xuất" onClick={async () => { await authClient.signOut(); router.push("/sign-in"); router.refresh(); }}>
+      <button
+        type="button"
+        aria-label="Đăng xuất"
+        title="Đăng xuất"
+        onClick={async () => {
+          startGlobalLoading("Đang đăng xuất...");
+          await authClient.signOut();
+          router.push("/sign-in");
+          router.refresh();
+        }}
+      >
         <LogOut className="size-4 text-muted-foreground" />
       </button>
     </div>
