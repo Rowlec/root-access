@@ -32,6 +32,14 @@ export const auth = betterAuth({
       verification: authVerification,
     },
   }),
+  account: {
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ["google"],
+      requireLocalEmailVerified: false,
+      updateUserInfoOnLink: true,
+    },
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
@@ -51,6 +59,8 @@ export const auth = betterAuth({
     : undefined,
   trustedOrigins: [
     baseUrl,
+    "https://root-access.site",
+    "https://www.root-access.site",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
   ],
