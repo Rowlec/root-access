@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowRight,
   Check,
   CheckCircle2,
@@ -14,6 +15,7 @@ import {
   ExternalLink,
   KeyRound,
   Loader2,
+  Puzzle,
   RefreshCw,
   Sparkles,
 } from "lucide-react";
@@ -25,6 +27,8 @@ export default function ConnectExtensionPage() {
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
+  const [rawError, setRawError] = useState<string | null>(null);
+  const [showTechnicalError, setShowTechnicalError] = useState(false);
   const [extensionId, setExtensionId] = useState<string>("");
   const [copiedToken, setCopiedToken] = useState(false);
   const [showManualSection, setShowManualSection] = useState(false);
@@ -54,11 +58,12 @@ export default function ConnectExtensionPage() {
     const idToUse = (targetExtId ?? extensionId).trim();
     setConnecting(true);
     setErrorNotice(null);
+    setRawError(null);
 
     if (!idToUse) {
       setConnecting(false);
       setErrorNotice(
-        "Chưa có Extension ID. Vui lòng nhập Extension ID từ chrome://extensions/ hoặc dùng Token bên dưới.",
+        "Chưa có Extension ID. Vui lòng cài đặt Extension trước hoặc sao chép Token thủ công bên dưới.",
       );
       return;
     }
@@ -84,25 +89,30 @@ export default function ConnectExtensionPage() {
           (response: any) => {
             const lastError = (window as any).chrome?.runtime?.lastError;
             if (lastError || !response?.ok) {
+              const errorMsg = lastError?.message || "Extension chưa phản hồi";
               console.warn(
                 "Could not connect to extension with ID:",
                 idToUse,
                 lastError,
               );
+              setRawError(errorMsg);
               setErrorNotice(
-                `Chưa gửi được sang Extension ID "${idToUse}". Hãy kiểm tra lại ID trong chrome://extensions/ hoặc sao chép Token thủ công.`,
+                "Trình duyệt chưa phát hiện thấy Extension đang hoạt động trên máy bạn.",
               );
               setConnected(false);
             } else {
               setConnected(true);
               setErrorNotice(null);
+              setRawError(null);
             }
             setConnecting(false);
           },
         );
       } catch (err: any) {
+        const errorMsg = err?.message || String(err);
+        setRawError(errorMsg);
         setErrorNotice(
-          "Không thể gửi thông tin tới Extension: " + (err.message || String(err)),
+          "Trình duyệt chưa phát hiện thấy Extension đang hoạt động trên máy bạn.",
         );
         setConnecting(false);
       }
@@ -137,27 +147,50 @@ export default function ConnectExtensionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-xl px-4 py-12 sm:px-6 space-y-8">
-      <div className="text-center space-y-2">
+    <div className="mx-auto max-w-xl px-4 py-10 sm:px-6 space-y-6">
+      {/* Stepper Header */}
+      <div className="text-center space-y-3">
         <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Compass size={32} />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          Kết nối Chrome Extension
-        </h1>
-        <p className="text-xs text-muted-foreground max-w-md mx-auto">
-          Đăng nhập tài khoản RootAccess để extension tự động nhận phiên làm việc và 5 lượt chấm miễn phí của bạn.
-        </p>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+            Kết nối Chrome Extension
+          </h1>
+          <p className="text-xs text-muted-foreground max-w-md mx-auto">
+            Đồng bộ tài khoản Root Access để Extension tự động nhận lượt chấm miễn phí của bạn.
+          </p>
+        </div>
+
+        {/* Stepper Tracker */}
+        <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/80 px-4 py-1.5 text-xs text-muted-foreground shadow-sm">
+          <Link
+            href="/install-extension"
+            className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+          >
+            <span className="flex size-5 items-center justify-center rounded-full bg-muted text-[11px] text-muted-foreground">
+              1
+            </span>
+            Cài đặt Extension
+          </Link>
+          <span className="text-border">/</span>
+          <span className="flex items-center gap-1.5 font-bold text-primary">
+            <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[11px] text-primary-foreground">
+              2
+            </span>
+            Kết nối tài khoản (Hiện tại)
+          </span>
+        </div>
       </div>
 
       {!session ? (
         <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-6 text-center shadow-lg">
           <div className="space-y-2">
             <h2 className="text-base font-semibold text-foreground">
-              Đăng nhập tài khoản RootAccess
+              Đăng nhập tài khoản Root Access
             </h2>
             <p className="text-xs text-muted-foreground">
-              Đăng nhập nhanh bằng tài khoản Google trường FPT hoặc Email cá nhân.
+              Đăng nhập bằng tài khoản Google hoặc Email của bạn để đồng bộ với Extension.
             </p>
           </div>
 
@@ -165,7 +198,12 @@ export default function ConnectExtensionPage() {
             <Button
               type="button"
               className="w-full h-11 text-xs font-semibold gap-2"
-              onClick={() => authClient.signIn.social({ callbackURL: "/connect-extension", provider: "google" })}
+              onClick={() =>
+                authClient.signIn.social({
+                  callbackURL: "/connect-extension",
+                  provider: "google",
+                })
+              }
             >
               <svg className="size-4" viewBox="0 0 24 24">
                 <path
@@ -213,13 +251,13 @@ export default function ConnectExtensionPage() {
             </div>
             <button
               onClick={() => authClient.signOut()}
-              className="text-xs text-muted-foreground hover:text-red-400"
+              className="text-xs text-muted-foreground hover:text-red-400 transition-colors"
             >
               Đăng xuất
             </button>
           </div>
 
-          {/* Option 1: Automatic Connection (Default & Clean) */}
+          {/* Connected State */}
           {connected ? (
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-center space-y-4">
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
@@ -231,7 +269,7 @@ export default function ConnectExtensionPage() {
                 </h3>
                 <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
                   Tài khoản <strong>{session.user.email}</strong> đã được đồng bộ tự động sang Extension. 
-                  Khung tiện ích RootAccess bên phải đã sẵn sàng sử dụng. Bạn <strong>không cần sao chép hay dán mã gì nữa</strong>.
+                  Tiện ích Root Access bên cạnh ChatGPT & Gemini đã sẵn sàng làm bài!
                 </p>
               </div>
 
@@ -277,33 +315,80 @@ export default function ConnectExtensionPage() {
                   </p>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 space-y-3">
-                  <div className="flex items-start gap-2.5 text-amber-300">
-                    <Compass size={18} className="shrink-0 mt-0.5" />
-                    <div className="space-y-1 text-xs">
-                      <p className="font-semibold">
-                        Chưa tự động gửi được tới Extension
-                      </p>
-                      <p className="text-slate-300 leading-relaxed">
-                        {errorNotice || "Vui lòng kiểm tra lại Extension ID hoặc dùng cách nhập Token thủ công bên dưới."}
-                      </p>
+                <div className="space-y-3">
+                  {/* RED NOTE: Alert users to install extension first */}
+                  <div className="rounded-2xl border-2 border-rose-500/50 bg-rose-500/10 p-4 space-y-3 shadow-md">
+                    <div className="flex items-start gap-2.5 text-rose-300">
+                      <AlertTriangle size={20} className="shrink-0 mt-0.5 text-rose-400" />
+                      <div className="space-y-1 text-xs">
+                        <p className="font-bold text-rose-200 text-sm">
+                          LƯU Ý QUAN TRỌNG: Bạn hãy cài đặt Extension trước!
+                        </p>
+                        <p className="text-rose-100/90 leading-relaxed">
+                          Nếu bạn <strong>chưa cài đặt Extension</strong> lên trình duyệt Chrome, hệ thống sẽ không thể tìm thấy tiện ích để tự động kết nối.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-1 flex flex-wrap items-center gap-2">
+                      <Link
+                        href="/install-extension"
+                        className="inline-flex items-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2.5 text-xs font-bold text-white shadow transition-colors"
+                      >
+                        <Download size={14} />
+                        <span>Xem hướng dẫn tải & cài đặt Extension (1 phút) ➔</span>
+                      </Link>
                     </div>
                   </div>
 
-                  <button
-                    onClick={() =>
-                      tryConnect(session.session.token, session.user, extensionId)
-                    }
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-amber-500 transition-colors"
-                  >
-                    <RefreshCw size={13} /> Thử kết nối tự động lại
-                  </button>
+                  {/* Amber Notice Card */}
+                  <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
+                    <div className="flex items-start gap-2.5 text-amber-300">
+                      <Compass size={18} className="shrink-0 mt-0.5" />
+                      <div className="space-y-1 text-xs">
+                        <p className="font-semibold">
+                          Chưa tự động gửi được tới Extension
+                        </p>
+                        <p className="text-slate-300 leading-relaxed">
+                          {errorNotice || "Trình duyệt chưa phát hiện thấy Extension đang hoạt động trên máy bạn."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {rawError ? (
+                      <div className="text-[11px] text-muted-foreground">
+                        <button
+                          type="button"
+                          onClick={() => setShowTechnicalError(!showTechnicalError)}
+                          className="text-amber-400/80 hover:text-amber-300 underline underline-offset-2 flex items-center gap-1"
+                        >
+                          <span>{showTechnicalError ? "Ẩn chi tiết kỹ thuật" : "Chi tiết lỗi kỹ thuật"}</span>
+                          {showTechnicalError ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                        </button>
+                        {showTechnicalError ? (
+                          <pre className="mt-1.5 p-2 rounded-lg bg-black/40 border border-border text-[10px] font-mono text-slate-400 overflow-x-auto whitespace-pre-wrap">
+                            {rawError}
+                          </pre>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    <button
+                      onClick={() =>
+                        tryConnect(session.session.token, session.user, extensionId)
+                      }
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-amber-500 transition-colors shadow"
+                    >
+                      <RefreshCw size={13} />
+                      <span>Tôi đã cài Extension rồi ➔ Thử kết nối lại</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Option 2: Manual Token Fallback (Collapsible if already connected) */}
+          {/* Option 2: Manual Token (Reliable 100%) */}
           <div className="rounded-2xl border border-border bg-card/40 p-4 space-y-3">
             <button
               type="button"
@@ -313,7 +398,7 @@ export default function ConnectExtensionPage() {
               <span className="flex items-center gap-2">
                 <KeyRound size={14} className="text-primary" />
                 {connected
-                  ? "Tùy chọn phụ: Xem Session Token hoặc nhập thủ công"
+                  ? "Tùy chọn phụ: Xem Token kết nối hoặc nhập thủ công"
                   : "Cách 2: Nhập Token kết nối thủ công (100% thành công)"}
               </span>
               {showManualSection ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -353,7 +438,7 @@ export default function ConnectExtensionPage() {
 
                 <div className="space-y-1 pt-1">
                   <label className="text-[11px] text-muted-foreground">
-                    Cấu hình Chrome Extension ID (Mặc định: <code>lhkeijkblmnfnlifbmmneocfonbegkhoj</code>):
+                    Cấu hình Extension ID (Nếu bạn nạp unpacked có ID riêng):
                   </label>
                   <div className="flex items-center gap-2">
                     <input
@@ -381,48 +466,23 @@ export default function ConnectExtensionPage() {
         </div>
       )}
 
-      {/* Instructions to install extension */}
-      <div className="rounded-3xl border border-border bg-card/60 p-6 sm:p-8 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-4">
-          <div>
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Download size={16} className="text-primary" />
-              Cài đặt Extension vào trình duyệt
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Hỗ trợ Google Chrome, Microsoft Edge, Brave, Cốc Cốc.
-            </p>
-          </div>
-          <a
-            href="/downloads/root-access-extension.zip"
-            download="root-access-extension.zip"
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 shadow transition active:scale-[0.98]"
-          >
-            <Download size={14} />
-            Tải Extension (.zip)
-          </a>
+      {/* Helpful Link to Installation Guide */}
+      <div className="rounded-2xl border border-border bg-card/50 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="space-y-1">
+          <p className="font-bold text-foreground flex items-center gap-2">
+            <Puzzle size={15} className="text-primary" />
+            <span>Chưa cài đặt Extension hoặc cần xem lại hướng dẫn?</span>
+          </p>
+          <p className="text-muted-foreground text-[11px]">
+            Tải file zip, giải nén và nạp vào Chrome chỉ mất 1 phút với 4 bước minh họa chi tiết.
+          </p>
         </div>
-
-        <ol className="list-decimal pl-5 space-y-2.5 text-xs text-muted-foreground leading-relaxed">
-          <li>
-            Bấm nút <strong>&ldquo;Tải Extension (.zip)&rdquo;</strong> ở trên và <strong>giải nén</strong> thư mục vừa tải về.
-          </li>
-          <li>
-            Mở trình duyệt và truy cập đường dẫn:{" "}
-            <code className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-mono">
-              chrome://extensions/
-            </code>
-          </li>
-          <li>
-            Bật công tắc <strong>&ldquo;Developer mode&rdquo; (Chế độ dành cho nhà phát triển)</strong> ở góc trên bên phải.
-          </li>
-          <li>
-            Bấm nút <strong>&ldquo;Load unpacked&rdquo; (Tải tiện ích đã giải nén)</strong> ở góc trái và chọn thư mục vừa giải nén ở Bước 1.
-          </li>
-          <li>
-            Mở <strong>ChatGPT (chatgpt.com)</strong> hoặc <strong>Gemini (gemini.google.com)</strong>, bấm icon <strong>RootAccess</strong> trên thanh tiện ích để bắt đầu làm bài!
-          </li>
-        </ol>
+        <Button asChild variant="outline" size="sm" className="shrink-0 text-xs gap-1.5">
+          <Link href="/install-extension">
+            <span>Mở trang hướng dẫn cài đặt</span>
+            <ArrowRight size={13} />
+          </Link>
+        </Button>
       </div>
     </div>
   );

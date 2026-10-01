@@ -96,7 +96,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
             Tài khoản
           </Link>
           <Link
-            href="/connect-extension"
+            href="/install-extension"
             className="inline-flex items-center gap-1.5 rounded-full bg-primary/20 border border-primary/40 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/30"
           >
             Cài Extension

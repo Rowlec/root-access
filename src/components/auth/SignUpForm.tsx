@@ -20,7 +20,7 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
     setError(null);
     startGlobalLoading("Đang khởi tạo tài khoản Root Access...");
     const result = await authClient.signUp.email({
-      callbackURL: "/connect-extension",
+      callbackURL: "/install-extension",
       email: String(formData.get("email") ?? ""),
       name: String(formData.get("name") ?? ""),
       password: String(formData.get("password") ?? ""),
@@ -33,7 +33,7 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
       return;
     }
 
-    router.push("/connect-extension");
+    router.push("/install-extension");
     router.refresh();
   }
 
@@ -55,7 +55,7 @@ export function SignUpForm({ googleEnabled }: { googleEnabled: boolean }) {
           className="mt-3 h-11 w-full"
           onClick={() => {
             startGlobalLoading("Đang kết nối tài khoản Google...");
-            authClient.signIn.social({ callbackURL: "/app", provider: "google" });
+            authClient.signIn.social({ callbackURL: "/install-extension", provider: "google" });
           }}
         >
           Đăng ký với Google
