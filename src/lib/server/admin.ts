@@ -6,6 +6,7 @@ import { getDb } from "@/db";
 import {
   adminAuditLogs,
   orders,
+  profiles,
   projects,
   tokenPackages,
   usageEvents,
@@ -19,9 +20,10 @@ export async function getAdminDashboardData() {
   const admin = await requireAdmin();
   const db = getDb();
 
-  const [userCount, projectCount, paidSummary, recentOrders, eventFunnel] =
+  const [userCount, adminCount, projectCount, paidSummary, recentOrders, eventFunnel] =
     await Promise.all([
       db.select({ value: count() }).from(users),
+      db.select({ value: count() }).from(users).where(eq(users.role, "admin")),
       db.select({ value: count() }).from(projects),
       db
         .select({
@@ -56,6 +58,7 @@ export async function getAdminDashboardData() {
       projects: Number(projectCount[0]?.value ?? 0),
       revenueVnd: Number(paidSummary[0]?.revenueVnd ?? 0),
       users: Number(userCount[0]?.value ?? 0),
+      admins: Number(adminCount[0]?.value ?? 1),
     },
     recentOrders,
     eventFunnel,
@@ -64,9 +67,10 @@ export async function getAdminDashboardData() {
 
 export async function getAdminUsers() {
   await requireAdmin();
-  return getDb()
+  const rows = await getDb()
     .select({
-      balance: wallets.balance,
+      walletBalance: wallets.balance,
+      profileCredits: profiles.credits,
       authUserId: users.authUserId,
       createdAt: users.createdAt,
       displayName: users.displayName,
@@ -77,7 +81,19 @@ export async function getAdminUsers() {
     })
     .from(users)
     .leftJoin(wallets, eq(wallets.userId, users.id))
+    .leftJoin(profiles, eq(profiles.id, users.id))
     .orderBy(desc(users.createdAt));
+
+  return rows.map((r) => ({
+    authUserId: r.authUserId,
+    createdAt: r.createdAt,
+    displayName: r.displayName,
+    email: r.email,
+    id: r.id,
+    isDisabled: r.isDisabled,
+    role: r.role,
+    balance: r.profileCredits ?? r.walletBalance ?? 5,
+  }));
 }
 
 export async function getAdminProjects() {
