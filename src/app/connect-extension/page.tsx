@@ -17,7 +17,6 @@ import {
   Loader2,
   Puzzle,
   RefreshCw,
-  Sparkles,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
@@ -33,9 +32,14 @@ export default function ConnectExtensionPage() {
   const [copiedToken, setCopiedToken] = useState(false);
   const [showManualSection, setShowManualSection] = useState(false);
 
-  // Initialize extension ID from URL param, localStorage, or env default
+  // Initialize extension ID & connection state from URL param, localStorage, or env default
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const isAlreadyConnected = localStorage.getItem("ra_extension_connected") === "true";
+      if (isAlreadyConnected) {
+        setConnected(true);
+      }
+
       const params = new URLSearchParams(window.location.search);
       const urlExtId = params.get("extId");
       if (urlExtId) {
@@ -54,11 +58,75 @@ export default function ConnectExtensionPage() {
     }
   }, []);
 
+  // Listen to messages from content-web.js (Extension bridge)
+  useEffect(() => {
+    const handleExtensionBridge = (event: MessageEvent) => {
+      if (event.data?.source !== "ROOT_ACCESS_EXTENSION") return;
+
+      if (event.data.extId) {
+        setExtensionId(event.data.extId);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("ra_extension_id", event.data.extId);
+        }
+      }
+
+      if (event.data.type === "RA_EXTENSION_STATUS") {
+        if (event.data.hasSession) {
+          setConnected(true);
+          setConnecting(false);
+          setErrorNotice(null);
+          if (typeof window !== "undefined") {
+            localStorage.setItem("ra_extension_connected", "true");
+          }
+        } else if (session?.session?.token) {
+          // Extension is detected but lacks session; sync token now
+          window.postMessage(
+            {
+              source: "ROOT_ACCESS_WEB",
+              type: "SET_SESSION",
+              token: session.session.token,
+              user: session.user,
+            },
+            "*",
+          );
+        }
+      }
+
+      if (event.data.type === "RA_SESSION_SAVED") {
+        setConnected(true);
+        setConnecting(false);
+        setErrorNotice(null);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("ra_extension_connected", "true");
+        }
+      }
+    };
+
+    window.addEventListener("message", handleExtensionBridge);
+    // Ping extension bridge
+    window.postMessage({ source: "ROOT_ACCESS_WEB", type: "CHECK_EXTENSION" }, "*");
+
+    return () => window.removeEventListener("message", handleExtensionBridge);
+  }, [session]);
+
   const tryConnect = async (token: string, user: any, targetExtId?: string) => {
     const idToUse = (targetExtId ?? extensionId).trim();
     setConnecting(true);
     setErrorNotice(null);
     setRawError(null);
+
+    // Also send through postMessage bridge
+    if (typeof window !== "undefined") {
+      window.postMessage(
+        {
+          source: "ROOT_ACCESS_WEB",
+          type: "SET_SESSION",
+          token,
+          user,
+        },
+        "*",
+      );
+    }
 
     if (!idToUse) {
       setConnecting(false);
@@ -97,13 +165,16 @@ export default function ConnectExtensionPage() {
               );
               setRawError(errorMsg);
               setErrorNotice(
-                "Trình duyệt chưa phát hiện thấy Extension đang hoạt động trên máy bạn.",
+                "Trình duyệt chưa phát hiện thấy Extension qua ID này.",
               );
-              setConnected(false);
+              // Do not force setConnected(false) if user already has it open
             } else {
               setConnected(true);
               setErrorNotice(null);
               setRawError(null);
+              if (typeof window !== "undefined") {
+                localStorage.setItem("ra_extension_connected", "true");
+              }
             }
             setConnecting(false);
           },
@@ -112,7 +183,7 @@ export default function ConnectExtensionPage() {
         const errorMsg = err?.message || String(err);
         setRawError(errorMsg);
         setErrorNotice(
-          "Trình duyệt chưa phát hiện thấy Extension đang hoạt động trên máy bạn.",
+          "Trình duyệt chưa phát hiện thấy Extension qua ID này.",
         );
         setConnecting(false);
       }
@@ -125,7 +196,7 @@ export default function ConnectExtensionPage() {
   };
 
   useEffect(() => {
-    if (session?.session?.token && extensionId) {
+    if (session?.session?.token && extensionId && !connected) {
       tryConnect(session.session.token, session.user, extensionId);
     }
   }, [session, extensionId]);
@@ -250,7 +321,12 @@ export default function ConnectExtensionPage() {
               </p>
             </div>
             <button
-              onClick={() => authClient.signOut()}
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  localStorage.removeItem("ra_extension_connected");
+                }
+                authClient.signOut();
+              }}
               className="text-xs text-muted-foreground hover:text-red-400 transition-colors"
             >
               Đăng xuất
@@ -265,11 +341,11 @@ export default function ConnectExtensionPage() {
               </div>
               <div className="space-y-1.5">
                 <h3 className="text-base sm:text-lg font-bold text-emerald-300">
-                  Đã tự động kết nối thành công! ✓
+                  Đã kết nối thành công với Extension! ✓
                 </h3>
                 <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
-                  Tài khoản <strong>{session.user.email}</strong> đã được đồng bộ tự động sang Extension. 
-                  Tiện ích Root Access bên cạnh ChatGPT & Gemini đã sẵn sàng làm bài!
+                  Tài khoản <strong>{session.user.email}</strong> đã được đồng bộ sang Extension. 
+                  Tiện ích Root Access bên cạnh ChatGPT & Gemini đã sẵn sàng hỗ trợ bạn làm đề án!
                 </p>
               </div>
 
@@ -315,42 +391,52 @@ export default function ConnectExtensionPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {/* RED NOTE: Alert users to install extension first */}
-                  <div className="rounded-2xl border-2 border-rose-500/50 bg-rose-500/10 p-4 space-y-3 shadow-md">
-                    <div className="flex items-start gap-2.5 text-rose-300">
-                      <AlertTriangle size={20} className="shrink-0 mt-0.5 text-rose-400" />
+                <div className="space-y-4">
+                  {/* REASSURING GREEN CONFIRMATION CARD: When user already sees sidepanel is open */}
+                  <div className="rounded-2xl border-2 border-emerald-500/50 bg-emerald-500/10 p-5 space-y-3 shadow-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="size-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                        <CheckCircle2 size={20} />
+                      </div>
                       <div className="space-y-1 text-xs">
-                        <p className="font-bold text-rose-200 text-sm">
-                          LƯU Ý QUAN TRỌNG: Bạn hãy cài đặt Extension trước!
+                        <p className="font-bold text-emerald-200 text-sm">
+                          Tiện ích bên phải đã hiển thị sẵn sàng?
                         </p>
-                        <p className="text-rose-100/90 leading-relaxed">
-                          Nếu bạn <strong>chưa cài đặt Extension</strong> lên trình duyệt Chrome, hệ thống sẽ không thể tìm thấy tiện ích để tự động kết nối.
+                        <p className="text-emerald-100/90 leading-relaxed">
+                          Nếu khung tiện ích bên phải đã mở và hiển thị dòng chữ <em>&ldquo;Mở ChatGPT hoặc Gemini&rdquo;</em> (hoặc các phần đề án), tức là tài khoản của bạn <strong>đã được kết nối thành công!</strong>
                         </p>
                       </div>
                     </div>
 
-                    <div className="pt-1 flex flex-wrap items-center gap-2">
-                      <Link
-                        href="/install-extension"
-                        className="inline-flex items-center gap-2 rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2.5 text-xs font-bold text-white shadow transition-colors"
-                      >
-                        <Download size={14} />
-                        <span>Xem hướng dẫn tải & cài đặt Extension (1 phút) ➔</span>
-                      </Link>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setConnected(true);
+                        setErrorNotice(null);
+                        if (typeof window !== "undefined") {
+                          localStorage.setItem("ra_extension_connected", "true");
+                        }
+                      }}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 py-3 px-4 text-xs font-bold text-white shadow-md transition-all cursor-pointer"
+                    >
+                      <Check size={16} />
+                      <span>Tiện ích bên phải đã mở rồi ➔ Xác nhận & Bắt đầu làm bài</span>
+                    </button>
                   </div>
 
                   {/* Amber Notice Card */}
                   <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
                     <div className="flex items-start gap-2.5 text-amber-300">
                       <Compass size={18} className="shrink-0 mt-0.5" />
-                      <div className="space-y-1 text-xs">
-                        <p className="font-semibold">
+                      <div className="space-y-1.5 text-xs">
+                        <p className="font-semibold text-amber-200">
                           Chưa tự động gửi được tới Extension
                         </p>
                         <p className="text-slate-300 leading-relaxed">
                           {errorNotice || "Trình duyệt chưa phát hiện thấy Extension đang hoạt động trên máy bạn."}
+                        </p>
+                        <p className="text-[11px] text-amber-300/90 leading-relaxed bg-black/20 p-2.5 rounded-lg border border-amber-500/20">
+                          💡 <strong>Mẹo:</strong> Hiện tượng này xảy ra khi bạn mở trang web trước rồi mới bật tiện ích bên phải sau. Nếu tiện ích bên phải đã mở rồi, bạn chỉ cần bấm nút màu xanh <strong>&ldquo;Tiện ích bên phải đã mở rồi ➔ Xác nhận&rdquo;</strong> ở trên để tiếp tục!
                         </p>
                       </div>
                     </div>
@@ -380,8 +466,25 @@ export default function ConnectExtensionPage() {
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-amber-500 transition-colors shadow"
                     >
                       <RefreshCw size={13} />
-                      <span>Tôi đã cài Extension rồi ➔ Thử kết nối lại</span>
+                      <span>Thử gửi lại tín hiệu kết nối</span>
                     </button>
+                  </div>
+
+                  {/* Guide link for users who haven't installed yet */}
+                  <div className="rounded-2xl border border-border bg-card/60 p-4 space-y-2">
+                    <div className="flex items-start gap-2.5 text-xs text-muted-foreground">
+                      <AlertTriangle size={16} className="shrink-0 mt-0.5 text-muted-foreground" />
+                      <p>
+                        Nếu bạn chưa tải hoặc chưa cài tiện ích vào Chrome, hãy tải file zip và cài đặt trước.
+                      </p>
+                    </div>
+                    <Link
+                      href="/install-extension"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                    >
+                      <Download size={13} />
+                      <span>Xem hướng dẫn tải & cài đặt Extension (1 phút) ➔</span>
+                    </Link>
                   </div>
                 </div>
               )}

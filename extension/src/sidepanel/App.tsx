@@ -195,7 +195,12 @@ export function App() {
 
   // Check if current tab is ChatGPT or Gemini for sections and grading
   if (!siteId) {
-    return <UnsupportedSiteNotice />;
+    return (
+      <UnsupportedSiteNotice
+        userEmail={sessionUser?.email}
+        credits={sessionUser?.credits}
+      />
+    );
   }
 
   // S4: Section Detail (Prompt viewer & insert)
