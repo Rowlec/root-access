@@ -6,6 +6,7 @@ import { getDb } from "@/db";
 import {
   conversations,
   creditLedger,
+  creditTransactions,
   projectMembers,
   projects,
   usageEvents,
@@ -50,7 +51,12 @@ export async function getWorkspaceOverview() {
     }
   }
 
-  return { projects: allProjects, user, wallet: wallet[0] };
+  const currentBalance = user.profile?.credits ?? wallet[0]?.balance ?? 5;
+  const currentWallet = wallet[0]
+    ? { ...wallet[0], balance: currentBalance }
+    : ({ id: "default", userId: user.id, balance: currentBalance } as any);
+
+  return { projects: allProjects, user, wallet: currentWallet };
 }
 
 export async function createProject(input: {
@@ -285,21 +291,29 @@ export async function getAllOwnedProjects() {
 export async function getCreditHistory() {
   const user = await ensureCurrentUser();
   const db = getDb();
-  const [wallet] = await db
-    .select()
-    .from(wallets)
-    .where(eq(wallets.userId, user.id))
-    .limit(1);
-  const entries = wallet
-    ? await db
-        .select()
-        .from(creditLedger)
-        .where(eq(creditLedger.walletId, wallet.id))
-        .orderBy(desc(creditLedger.createdAt))
-        .limit(100)
-    : [];
+  const currentBalance = user.profile?.credits ?? user.wallet?.balance ?? 5;
 
-  return { entries, user, wallet };
+  const txs = await db
+    .select()
+    .from(creditTransactions)
+    .where(eq(creditTransactions.userId, user.id))
+    .orderBy(desc(creditTransactions.createdAt))
+    .limit(100);
+
+  let runningBalance = currentBalance;
+  const entries = txs.map((tx) => {
+    const balanceAfter = runningBalance;
+    runningBalance -= tx.delta;
+    return {
+      id: tx.id,
+      amount: tx.delta,
+      balanceAfter,
+      reason: tx.reason,
+      createdAt: tx.createdAt,
+    };
+  });
+
+  return { entries, user, wallet: { balance: currentBalance } };
 }
 
 export async function getProjectWorkflowState(projectId: string) {

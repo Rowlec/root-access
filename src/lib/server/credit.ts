@@ -2,7 +2,7 @@ import "server-only";
 
 import { eq, sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { creditTransactions, profiles } from "@/db/schema";
+import { creditTransactions, profiles, wallets } from "@/db/schema";
 
 export async function ensureProfile(userId: string, displayName?: string | null) {
   const db = getDb();
@@ -96,9 +96,11 @@ export async function consumeCredit(
     const ok = Boolean(res[0]?.ok);
     if (ok) {
       const creditsLeft = await getProfileCredits(userId);
+      await db.update(wallets).set({ balance: creditsLeft }).where(eq(wallets.userId, userId)).catch(() => {});
       return { success: true, creditsLeft };
     } else {
       const creditsLeft = await getProfileCredits(userId);
+      await db.update(wallets).set({ balance: creditsLeft }).where(eq(wallets.userId, userId)).catch(() => {});
       return { success: false, creditsLeft };
     }
   } catch {
@@ -119,6 +121,12 @@ export async function consumeCredit(
         .update(profiles)
         .set({ credits: newBalance })
         .where(eq(profiles.id, userId));
+
+      await tx
+        .update(wallets)
+        .set({ balance: newBalance })
+        .where(eq(wallets.userId, userId))
+        .catch(() => {});
 
       await tx.insert(creditTransactions).values({
         userId,
@@ -143,6 +151,7 @@ export async function refundCredit(
       sql`SELECT refund_credit(${userId}::uuid, ${refId ? sql`${refId}::uuid` : null}) as ok;`,
     );
     const creditsLeft = await getProfileCredits(userId);
+    await db.update(wallets).set({ balance: creditsLeft }).where(eq(wallets.userId, userId)).catch(() => {});
     return { success: true, creditsLeft };
   } catch {
     return await db.transaction(async (tx) => {
@@ -157,6 +166,12 @@ export async function refundCredit(
         .update(profiles)
         .set({ credits: newBalance })
         .where(eq(profiles.id, userId));
+
+      await tx
+        .update(wallets)
+        .set({ balance: newBalance })
+        .where(eq(wallets.userId, userId))
+        .catch(() => {});
 
       await tx.insert(creditTransactions).values({
         userId,
@@ -183,6 +198,7 @@ export async function addCredit(
       sql`SELECT add_credit(${userId}::uuid, ${delta}, ${reason}, ${refId ? sql`${refId}::uuid` : null}) as new_balance;`,
     );
     const newBalance = Number(res[0]?.new_balance ?? 0);
+    await db.update(wallets).set({ balance: newBalance }).where(eq(wallets.userId, userId)).catch(() => {});
     return { success: true, creditsLeft: newBalance };
   } catch {
     return await db.transaction(async (tx) => {
@@ -197,6 +213,12 @@ export async function addCredit(
         .update(profiles)
         .set({ credits: newBalance })
         .where(eq(profiles.id, userId));
+
+      await tx
+        .update(wallets)
+        .set({ balance: newBalance })
+        .where(eq(wallets.userId, userId))
+        .catch(() => {});
 
       await tx.insert(creditTransactions).values({
         userId,

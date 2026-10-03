@@ -225,7 +225,7 @@ export const wallets = pgTable(
     userId: uuid("user_id")
       .references(() => users.id, { onDelete: "cascade" })
       .notNull(),
-    balance: integer("balance").default(20).notNull(),
+    balance: integer("balance").default(5).notNull(),
     ...timestamps,
   },
   (table) => [uniqueIndex("wallets_user_id_uidx").on(table.userId)],

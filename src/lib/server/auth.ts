@@ -165,7 +165,7 @@ export async function ensureCurrentUser(customHeaders?: Headers) {
 
     const [insertedWallet] = await tx
       .insert(wallets)
-      .values({ userId: appUser.id })
+      .values({ userId: appUser.id, balance: 5 })
       .onConflictDoNothing({ target: wallets.userId })
       .returning();
 
@@ -173,8 +173,8 @@ export async function ensureCurrentUser(customHeaders?: Headers) {
       await tx
         .insert(creditLedger)
         .values({
-          amount: 20,
-          balanceAfter: insertedWallet.balance,
+          amount: 5,
+          balanceAfter: 5,
           idempotencyKey: `signup:${appUser.id}`,
           reason: "signup_bonus",
           referenceId: appUser.id,
@@ -214,6 +214,15 @@ export async function ensureCurrentUser(customHeaders?: Headers) {
         reason: "signup_bonus",
         refId: appUser.id,
       });
+    }
+
+    // Always keep wallet.balance synchronized with profile.credits (Single source of truth)
+    if (wallet && profile && wallet.balance !== profile.credits) {
+      await tx
+        .update(wallets)
+        .set({ balance: profile.credits, updatedAt: new Date() })
+        .where(eq(wallets.id, wallet.id));
+      wallet.balance = profile.credits;
     }
 
     return { ...appUser, session, wallet, profile };

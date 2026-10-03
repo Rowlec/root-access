@@ -9,8 +9,9 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const user = await ensureCurrentUser();
+    const balance = user.profile?.credits ?? user.wallet?.balance ?? 5;
     return Response.json(
-      { balance: user.wallet.balance },
+      { balance },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

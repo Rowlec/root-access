@@ -30,7 +30,7 @@ export default async function AppHomePage() {
         <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm shadow-sm">
           <span className="text-xs text-[var(--muted)] block">Ví của bạn</span>
           <strong className="text-lg font-bold text-[var(--accent)]">
-            <CreditBalance initialBalance={overview?.wallet?.balance ?? 20} /> credits
+            <CreditBalance initialBalance={overview?.wallet?.balance ?? 5} /> credits
           </strong>
         </div>
       </div>
@@ -73,7 +73,7 @@ export default async function AppHomePage() {
       {/* Main Content Area: Project List or Idea Studio */}
       <DashboardProjectsView
         projects={overview?.projects ?? []}
-        walletBalance={overview?.wallet?.balance ?? 20}
+        walletBalance={overview?.wallet?.balance ?? 5}
       />
     </main>
   );

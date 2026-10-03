@@ -9,7 +9,11 @@ const reasonLabels: Record<string, string> = {
   ai_usage: "Sử dụng AI",
   credit_purchase: "Mua credit",
   manual_adjustment: "Admin điều chỉnh",
-  signup_bonus: "Credit đăng ký",
+  signup_bonus: "Tặng khi đăng ký tài khoản",
+  grade: "Chấm câu trả lời theo rubric",
+  refund: "Hoàn credit do lỗi hệ thống",
+  purchase: "Nạp thêm credit",
+  admin: "Admin điều chỉnh",
 };
 
 export default async function CreditsPage() {
@@ -30,7 +34,7 @@ export default async function CreditsPage() {
         ))}
         {!entries.length ? <p className="p-8 text-center text-sm text-muted-foreground">Chưa có giao dịch.</p> : null}
       </div>
-      <Button asChild className="mt-5"><Link href="/app/billing">Mua thêm credits <ArrowRight /></Link></Button>
+      <Button asChild className="mt-5"><Link href="/pricing">Mua thêm credits <ArrowRight /></Link></Button>
     </main>
   );
 }

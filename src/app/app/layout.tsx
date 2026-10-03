@@ -20,13 +20,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-svh overflow-hidden bg-[var(--bg)] text-[var(--ink)]">
       <AppSidebar
-        balance={overview?.wallet?.balance ?? 20}
+        balance={overview?.wallet?.balance ?? 5}
         isAdmin={overview?.user.role === "admin"}
         projects={(overview?.projects ?? []).map(({ id, title }) => ({ id, title }))}
       />
       <div className="min-w-0 flex-1 overflow-y-auto">
         <MobileAppNav
-          balance={overview?.wallet?.balance ?? 20}
+          balance={overview?.wallet?.balance ?? 5}
           projects={(overview?.projects ?? []).map(({ id, title }) => ({ id, title }))}
         />
         {children}
