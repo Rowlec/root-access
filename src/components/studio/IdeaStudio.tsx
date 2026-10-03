@@ -202,6 +202,50 @@ export function IdeaStudio({
     );
   };
 
+  // Custom options state for Entry C & B
+  const [customStrengthInput, setCustomStrengthInput] = useState("");
+  const [showCustomStrength, setShowCustomStrength] = useState(false);
+
+  const [customConstraintInput, setCustomConstraintInput] = useState("");
+  const [showCustomConstraint, setShowCustomConstraint] = useState(false);
+
+  const [customDomainInput, setCustomDomainInput] = useState("");
+  const [showCustomDomain, setShowCustomDomain] = useState(false);
+
+  const addCustomStrength = () => {
+    const val = customStrengthInput.trim();
+    if (!val) return;
+    if (!selectedStrengths.includes(val)) {
+      setSelectedStrengths((prev) => [...prev, val]);
+    }
+    setCustomStrengthInput("");
+    setShowCustomStrength(false);
+  };
+
+  const addCustomConstraint = () => {
+    const val = customConstraintInput.trim();
+    if (!val) return;
+    if (!selectedConstraints.includes(val)) {
+      setSelectedConstraints((prev) => [...prev, val]);
+    }
+    setCustomConstraintInput("");
+    setShowCustomConstraint(false);
+  };
+
+  const addCustomDomain = () => {
+    const val = customDomainInput.trim();
+    if (!val) return;
+    if (!selectedDomains.includes(val)) {
+      if (selectedDomains.length < 2) {
+        setSelectedDomains((prev) => [...prev, val]);
+      } else {
+        setSelectedDomains((prev) => [prev[1], val]);
+      }
+    }
+    setCustomDomainInput("");
+    setShowCustomDomain(false);
+  };
+
   // Entry A clarify fetch
   const handleClarifyEntryA = async () => {
     if (!q1Idea.trim()) return;
@@ -677,11 +721,12 @@ export function IdeaStudio({
             {/* ENTRY C FORM */}
             {entry === "C" && (
               <div className="space-y-5 rounded-2xl border border-border bg-card p-5">
+                {/* 1. STRENGTHS */}
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-foreground">
                     1. Nhóm có ai làm được việc gì tốt nhất?
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 items-center">
                     {STRENGTH_OPTIONS.map((st) => (
                       <button
                         key={st}
@@ -689,21 +734,90 @@ export function IdeaStudio({
                         onClick={() => toggleStrength(st)}
                         className={`rounded-full px-3.5 py-1.5 text-xs border transition-colors ${
                           selectedStrengths.includes(st)
-                            ? "border-primary bg-primary text-primary-foreground"
+                            ? "border-primary bg-primary text-primary-foreground font-medium"
                             : "border-border bg-background hover:bg-secondary text-foreground"
                         }`}
                       >
                         {st}
                       </button>
                     ))}
+
+                    {/* Custom added strengths */}
+                    {selectedStrengths
+                      .filter((st) => !STRENGTH_OPTIONS.includes(st))
+                      .map((st) => (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => toggleStrength(st)}
+                          className="rounded-full px-3.5 py-1.5 text-xs border transition-colors border-primary bg-primary text-primary-foreground font-medium flex items-center gap-1.5"
+                        >
+                          <span>{st}</span>
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedStrengths((prev) => prev.filter((x) => x !== st));
+                            }}
+                            className="hover:opacity-75 font-bold ml-0.5"
+                            title="Xóa tùy chọn này"
+                          >
+                            ✕
+                          </span>
+                        </button>
+                      ))}
+
+                    {/* Add Custom Strength */}
+                    {showCustomStrength ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          autoFocus
+                          value={customStrengthInput}
+                          onChange={(e) => setCustomStrengthInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addCustomStrength();
+                            } else if (e.key === "Escape") {
+                              setShowCustomStrength(false);
+                            }
+                          }}
+                          placeholder="Nhập thế mạnh khác..."
+                          className="rounded-full px-3 py-1.5 text-xs border border-primary bg-background text-foreground focus:outline-none w-44"
+                        />
+                        <button
+                          type="button"
+                          onClick={addCustomStrength}
+                          className="rounded-full px-3 py-1.5 text-xs bg-primary text-primary-foreground font-semibold hover:bg-primary/90"
+                        >
+                          Thêm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomStrength(false)}
+                          className="text-xs text-muted-foreground hover:text-foreground px-1"
+                        >
+                          Hủy
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomStrength(true)}
+                        className="rounded-full px-3.5 py-1.5 text-xs border border-dashed border-border bg-background hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                      >
+                        + Tùy chọn khác
+                      </button>
+                    )}
                   </div>
                 </div>
 
+                {/* 2. CONSTRAINTS */}
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-foreground">
                     2. Nhóm có giới hạn hoặc điều kiện gì?
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 items-center">
                     {CONSTRAINT_OPTIONS.map((c) => (
                       <button
                         key={c}
@@ -711,21 +825,90 @@ export function IdeaStudio({
                         onClick={() => toggleConstraint(c)}
                         className={`rounded-full px-3.5 py-1.5 text-xs border transition-colors ${
                           selectedConstraints.includes(c)
-                            ? "border-primary bg-primary text-primary-foreground"
+                            ? "border-primary bg-primary text-primary-foreground font-medium"
                             : "border-border bg-background hover:bg-secondary text-foreground"
                         }`}
                       >
                         {c}
                       </button>
                     ))}
+
+                    {/* Custom added constraints */}
+                    {selectedConstraints
+                      .filter((c) => !CONSTRAINT_OPTIONS.includes(c))
+                      .map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => toggleConstraint(c)}
+                          className="rounded-full px-3.5 py-1.5 text-xs border transition-colors border-primary bg-primary text-primary-foreground font-medium flex items-center gap-1.5"
+                        >
+                          <span>{c}</span>
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedConstraints((prev) => prev.filter((x) => x !== c));
+                            }}
+                            className="hover:opacity-75 font-bold ml-0.5"
+                            title="Xóa tùy chọn này"
+                          >
+                            ✕
+                          </span>
+                        </button>
+                      ))}
+
+                    {/* Add Custom Constraint */}
+                    {showCustomConstraint ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          autoFocus
+                          value={customConstraintInput}
+                          onChange={(e) => setCustomConstraintInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addCustomConstraint();
+                            } else if (e.key === "Escape") {
+                              setShowCustomConstraint(false);
+                            }
+                          }}
+                          placeholder="Nhập giới hạn khác..."
+                          className="rounded-full px-3 py-1.5 text-xs border border-primary bg-background text-foreground focus:outline-none w-44"
+                        />
+                        <button
+                          type="button"
+                          onClick={addCustomConstraint}
+                          className="rounded-full px-3 py-1.5 text-xs bg-primary text-primary-foreground font-semibold hover:bg-primary/90"
+                        >
+                          Thêm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomConstraint(false)}
+                          className="text-xs text-muted-foreground hover:text-foreground px-1"
+                        >
+                          Hủy
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomConstraint(true)}
+                        className="rounded-full px-3.5 py-1.5 text-xs border border-dashed border-border bg-background hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                      >
+                        + Tùy chọn khác
+                      </button>
+                    )}
                   </div>
                 </div>
 
+                {/* 3. DOMAINS */}
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-foreground">
                     3. Lĩnh vực nhóm quan tâm:
                   </label>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 items-center">
                     {DOMAIN_OPTIONS.map((d) => (
                       <button
                         key={d}
@@ -733,14 +916,96 @@ export function IdeaStudio({
                         onClick={() => toggleDomain(d)}
                         className={`rounded-full px-3.5 py-1.5 text-xs border transition-colors ${
                           selectedDomains.includes(d)
-                            ? "border-primary bg-primary text-primary-foreground"
+                            ? "border-primary bg-primary text-primary-foreground font-medium"
                             : "border-border bg-background hover:bg-secondary text-foreground"
                         }`}
                       >
                         {d}
                       </button>
                     ))}
+
+                    {/* Custom added domains */}
+                    {selectedDomains
+                      .filter((d) => !DOMAIN_OPTIONS.includes(d))
+                      .map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => toggleDomain(d)}
+                          className="rounded-full px-3.5 py-1.5 text-xs border transition-colors border-primary bg-primary text-primary-foreground font-medium flex items-center gap-1.5"
+                        >
+                          <span>{d}</span>
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDomains((prev) => prev.filter((x) => x !== d));
+                            }}
+                            className="hover:opacity-75 font-bold ml-0.5"
+                            title="Xóa tùy chọn này"
+                          >
+                            ✕
+                          </span>
+                        </button>
+                      ))}
+
+                    {/* Add Custom Domain */}
+                    {showCustomDomain ? (
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="text"
+                          autoFocus
+                          value={customDomainInput}
+                          onChange={(e) => setCustomDomainInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addCustomDomain();
+                            } else if (e.key === "Escape") {
+                              setShowCustomDomain(false);
+                            }
+                          }}
+                          placeholder="Nhập lĩnh vực khác..."
+                          className="rounded-full px-3 py-1.5 text-xs border border-primary bg-background text-foreground focus:outline-none w-44"
+                        />
+                        <button
+                          type="button"
+                          onClick={addCustomDomain}
+                          className="rounded-full px-3 py-1.5 text-xs bg-primary text-primary-foreground font-semibold hover:bg-primary/90"
+                        >
+                          Thêm
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomDomain(false)}
+                          className="text-xs text-muted-foreground hover:text-foreground px-1"
+                        >
+                          Hủy
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomDomain(true)}
+                        className="rounded-full px-3.5 py-1.5 text-xs border border-dashed border-border bg-background hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+                      >
+                        + Tùy chọn khác
+                      </button>
+                    )}
                   </div>
+                </div>
+
+                {/* 4. OPTIONAL NOTE / CUSTOM IDEA */}
+                <div className="space-y-2 pt-2 border-t border-border/60">
+                  <label className="text-sm font-semibold text-foreground flex items-center justify-between">
+                    <span>4. Ghi chú thêm hoặc ý tưởng ban đầu (Tùy chọn):</span>
+                  </label>
+                  <textarea
+                    value={observedProblem}
+                    onChange={(e) => setObservedProblem(e.target.value)}
+                    placeholder="Nếu nhóm đã có sẵn ý tưởng sơ bộ hoặc mong muốn cụ thể nào, hãy ghi vào đây..."
+                    rows={2}
+                    className="w-full rounded-xl border border-input bg-background p-3 text-xs text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+                  />
                 </div>
 
                 <div className="pt-2">

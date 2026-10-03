@@ -521,12 +521,12 @@ export function WebWriteWorkspace({
                 {generatingPrompt ? (
                   <>
                     <Loader2 className="size-3.5 animate-spin" />
-                    Đang dựng prompt v2...
+                    Đang dựng prompt...
                   </>
                 ) : (
                   <>
                     <Wand2 className="size-3.5" />
-                    Tạo prompt chuẩn v2
+                    Tạo prompt chuẩn
                   </>
                 )}
               </button>
@@ -547,7 +547,7 @@ export function WebWriteWorkspace({
               <div className="space-y-3 pt-3 border-t border-[var(--line-2)]">
                 <div className="flex items-center justify-between">
                   <span className="text-[2xs] font-bold text-[var(--muted)] uppercase">
-                    Nội dung prompt v2 (&le; 25 dòng):
+                    Nội dung prompt (&le; 25 dòng):
                   </span>
                   <button
                     onClick={handleCopyAndOpenChatGPT}
