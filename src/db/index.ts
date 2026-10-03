@@ -25,7 +25,9 @@ export function getDb(): Database {
 
   if (!globalThis.__rootAccessSql) {
     globalThis.__rootAccessSql = postgres(databaseUrl, {
-      max: 1,
+      max: 10,
+      idle_timeout: 20,
+      connect_timeout: 10,
       prepare: false,
     });
   }

@@ -39,7 +39,16 @@ export async function GET(
       });
     }
 
-    return jsonResponse(content, { status: 200 }, request);
+    return jsonResponse(
+      content,
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400",
+        },
+      },
+      request,
+    );
   } catch (err: any) {
     return jsonResponse(
       { error: err.message || "Failed to fetch pack" },
