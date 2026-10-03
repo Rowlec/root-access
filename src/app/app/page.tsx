@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Compass, Database, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, Compass, Database, ShieldCheck } from "lucide-react";
 
-import { NewProjectForm } from "@/components/app/NewProjectForm";
 import { CreditBalance } from "@/components/app/CreditBalance";
-import { Badge } from "@/components/ui/badge";
+import { DashboardProjectsView } from "@/components/app/DashboardProjectsView";
 import { isDatabaseConfigured } from "@/db";
 import { isAuthConfigured } from "@/lib/server/auth";
 import { getWorkspaceOverview } from "@/lib/server/projects";
@@ -13,102 +12,69 @@ export default async function AppHomePage() {
   const overview = backendReady ? await getWorkspaceOverview() : null;
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8 lg:px-10 lg:py-10">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8 lg:px-10 lg:py-10 space-y-8">
+      {/* Top Header */}
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--line-2)] pb-6">
         <div>
-          <Badge variant="secondary">AI workspace có hướng dẫn</Badge>
-          <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">Hôm nay bạn muốn hoàn thành gì?</h1>
-          <p className="mt-2 max-w-2xl text-muted-foreground">
-            Root Access biến một mục tiêu mơ hồ thành các bước có thể làm, kiểm tra và cải thiện.
+          <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            Không gian làm việc
+          </span>
+          <h1 className="mt-2 text-3xl sm:text-4xl font-serif font-bold text-[var(--ink)]">
+            <span className="mark-highlight">Dự án của bạn</span>
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm text-[var(--muted)] leading-relaxed">
+            Lên kế hoạch, xem toàn bộ proposal và chấm bài chuẩn rubric môn EXE.
           </p>
         </div>
-        <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm">
-          <span className="text-muted-foreground">Số dư</span>
-          <strong className="ml-2 text-lg text-primary"><CreditBalance initialBalance={overview?.wallet?.balance ?? 20} /> credits</strong>
+
+        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 py-3 text-sm shadow-sm">
+          <span className="text-xs text-[var(--muted)] block">Ví của bạn</span>
+          <strong className="text-lg font-bold text-[var(--accent)]">
+            <CreditBalance initialBalance={overview?.wallet?.balance ?? 20} /> credits
+          </strong>
         </div>
       </div>
 
-      {/* Extension Connect Banner */}
-      <section className="mt-6 rounded-2xl border border-primary/40 bg-gradient-to-r from-primary/15 via-primary/5 to-transparent p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+      {/* Extension Install Banner */}
+      <section className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-start gap-3">
-          <div className="rounded-xl bg-primary/20 p-2.5 text-primary shrink-0">
+          <div className="rounded-lg bg-[var(--accent-weak)] p-2.5 text-[var(--accent)] shrink-0">
             <Compass className="size-5" />
           </div>
-          <div className="space-y-0.5">
-            <h3 className="text-sm font-semibold text-foreground">
-              Dùng RootAccess Extension trên ChatGPT / Gemini
+          <div>
+            <h3 className="text-sm font-semibold text-[var(--ink)]">
+              Cài tiện ích RootAccess trên ChatGPT / Gemini
             </h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Tự động chèn prompt và chấm bài trực tiếp theo rubric chuẩn EXE101 ngay trong khung chat AI.
+            <p className="text-xs text-[var(--muted)] leading-relaxed mt-0.5">
+              Hỏi nhanh thông tin, tự động chèn prompt và chấm bài trực tiếp từng câu ngay cạnh cửa sổ chat.
             </p>
           </div>
         </div>
         <Link
           href="/connect-extension"
-          className="inline-flex items-center justify-center gap-1.5 shrink-0 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 shadow transition-colors"
+          className="inline-flex items-center justify-center gap-1.5 shrink-0 rounded-lg bg-[var(--accent)] px-4 py-2 text-xs font-medium text-white hover:opacity-90 transition-opacity"
         >
-          Mở trang kết nối Extension <ArrowRight className="size-3.5" />
+          Cài tiện ích RootAccess <ArrowRight className="size-3.5" />
         </Link>
       </section>
 
-      {!backendReady ? (
-        <section className="mt-6 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-5">
+      {!backendReady && (
+        <section className="rounded-xl border border-[var(--mid)] bg-[var(--mid-bg)] p-4 text-[var(--mid)]">
           <div className="flex items-start gap-3">
-            <Database className="mt-0.5 size-5 text-amber-300" />
-            <div>
-              <h2 className="font-semibold">Workspace preview đang hoạt động</h2>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                Thêm DATABASE_URL và chạy migration để bật lưu dự án, credit và analytics server-side.
-              </p>
+            <Database className="mt-0.5 size-5 shrink-0" />
+            <div className="text-xs">
+              <strong className="font-semibold block text-sm">Chưa kết nối cơ sở dữ liệu</strong>
+              Cần cấu hình DATABASE_URL để kích hoạt lưu trữ dự án, studio và lịch sử chấm.
             </div>
           </div>
         </section>
-      ) : null}
+      )}
 
-      <section id="new-project" className="glass mt-8 rounded-3xl p-5 sm:p-7">
-        <div className="mb-6 flex items-start gap-3">
-          <div className="rounded-xl bg-primary/15 p-2 text-primary"><Sparkles /></div>
-          <div>
-            <h2 className="text-xl font-semibold">Tạo project mới</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Không cần nghĩ prompt. Hãy mô tả bài toán bằng ngôn ngữ của bạn.</p>
-          </div>
-        </div>
-        <NewProjectForm disabled={!backendReady} />
-      </section>
-
-      <section className="mt-8">
-        <h2 className="text-xl font-semibold">Dự án gần đây</h2>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          {overview?.projects.length ? (
-            overview.projects.slice(0, 6).map((project) => (
-              <Link key={project.id} href={`/app/projects/${project.id}`} className="group rounded-2xl border border-border bg-card/70 p-5 hover:border-primary/50">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="font-semibold">{project.title}</h3>
-                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{project.startupIdea}</p>
-                  </div>
-                  <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                </div>
-                <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-                  <CheckCircle2 className="size-3.5 text-primary" /> {project.progressPercent}% hoàn thành
-                </div>
-              </Link>
-            ))
-          ) : (
-            <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground md:col-span-2">
-              Dự án đầu tiên của bạn sẽ xuất hiện ở đây.
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="mt-8 grid gap-3 sm:grid-cols-3">
-        {["AI chia mục tiêu thành từng bước", "Rubric chỉ ra output còn yếu ở đâu", "Dữ liệu và credit được bảo vệ phía server"].map((label) => (
-          <div key={label} className="flex items-start gap-2 rounded-xl border border-border bg-card/50 p-4 text-sm">
-            <ShieldCheck className="size-4 shrink-0 text-primary" /> {label}
-          </div>
-        ))}
-      </section>
+      {/* Main Content Area: Project List or Idea Studio */}
+      <DashboardProjectsView
+        projects={overview?.projects ?? []}
+        walletBalance={overview?.wallet?.balance ?? 20}
+      />
     </main>
   );
 }

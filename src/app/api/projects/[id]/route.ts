@@ -49,27 +49,62 @@ export async function PATCH(
     const [existing] = await db
       .select()
       .from(projects)
-      .where(and(eq(projects.id, id), eq(projects.userId, user.id)))
+      .where(eq(projects.id, id))
       .limit(1);
 
     if (!existing) {
       return jsonResponse({ code: "NOT_FOUND", message: "Dự án không tồn tại" }, { status: 404 }, request);
     }
 
+    if (existing.userId !== user.id) {
+      const { projectMembers } = await import("@/db/schema");
+      const [member] = await db
+        .select()
+        .from(projectMembers)
+        .where(and(eq(projectMembers.projectId, id), eq(projectMembers.userId, user.id)))
+        .limit(1);
+
+      if (!member || member.role !== "owner") {
+        return jsonResponse({ code: "FORBIDDEN", message: "Bạn không có quyền sửa dự án này" }, { status: 403 }, request);
+      }
+    }
+
     const updates: Record<string, unknown> = {
       updatedAt: new Date(),
     };
 
-    if (body.name !== undefined) {
-      updates.name = body.name;
-      updates.title = body.name;
+    if (body.name !== undefined || body.title !== undefined) {
+      const n = body.name ?? body.title;
+      updates.name = n;
+      updates.title = n;
     }
-    if (body.idea !== undefined) {
-      updates.idea = body.idea;
-      updates.startupIdea = body.idea;
+    if (body.one_liner !== undefined || body.oneLiner !== undefined || body.idea !== undefined || body.startupIdea !== undefined) {
+      const o = body.one_liner ?? body.oneLiner ?? body.idea ?? body.startupIdea;
+      updates.oneLiner = o;
+      updates.idea = o;
+      updates.startupIdea = o;
     }
-    if (body.target_customer !== undefined || body.targetCustomer !== undefined) {
-      updates.targetCustomer = body.target_customer ?? body.targetCustomer;
+    if (body.niche !== undefined || body.target_customer !== undefined || body.targetCustomer !== undefined) {
+      const n = body.niche ?? body.target_customer ?? body.targetCustomer;
+      updates.niche = n;
+      updates.targetCustomer = n;
+    }
+    if (body.domain !== undefined || body.industry !== undefined) {
+      const d = body.domain ?? body.industry;
+      updates.domain = d;
+      updates.industry = d;
+    }
+    if (body.observed_problem !== undefined || body.observedProblem !== undefined) {
+      updates.observedProblem = body.observed_problem ?? body.observedProblem;
+    }
+    if (body.biggest_assumption !== undefined || body.biggestAssumption !== undefined) {
+      updates.biggestAssumption = body.biggest_assumption ?? body.biggestAssumption;
+    }
+    if (body.team_strengths !== undefined || body.teamStrengths !== undefined) {
+      updates.teamStrengths = body.team_strengths ?? body.teamStrengths;
+    }
+    if (body.constraints !== undefined) {
+      updates.constraints = body.constraints;
     }
     if (body.available_data !== undefined || body.availableData !== undefined) {
       updates.availableData = body.available_data ?? body.availableData;

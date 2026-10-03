@@ -71,4 +71,10 @@ export class GeminiAdapter implements SiteAdapter {
 
     return { ok: true, text };
   }
+
+  getLastAssistantElement(): HTMLElement | null {
+    const messages = findAll(this.selectors.assistantMessage);
+    if (messages.length === 0) return null;
+    return messages[messages.length - 1];
+  }
 }

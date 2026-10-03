@@ -17,6 +17,7 @@
     "db:seed": "node scripts/seed-data.mjs",
     "db:studio": "drizzle-kit studio",
     "build:extension": "npm run --prefix extension build",
+    "eval:grade": "node scripts/eval-grade.mjs",
     "demo:check": "node scripts/check-demo-readiness.mjs",
     "services:check": "node scripts/check-services.mjs",
     "typecheck": "tsc --noEmit",

@@ -80,9 +80,15 @@ export function ManualFallbackAnswerInput({
 export function UnsupportedSiteNotice({
   userEmail,
   credits,
+  projectName,
+  packName,
+  nextSectionTitle,
 }: {
   userEmail?: string | null;
   credits?: number | null;
+  projectName?: string | null;
+  packName?: string | null;
+  nextSectionTitle?: string | null;
 }) {
   const openUrl = (url: string) => {
     if (chrome?.tabs?.create) {
@@ -93,48 +99,74 @@ export function UnsupportedSiteNotice({
   };
 
   return (
-    <div className="flex h-[75vh] flex-col items-center justify-center p-5 text-center space-y-4">
-      {/* Connected Account Badge */}
-      <div className="w-full max-w-xs rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-left space-y-1">
+    <div className="flex min-h-[80vh] flex-col justify-between p-4 space-y-4">
+      {/* Top Project & Account Banner */}
+      <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-3.5 space-y-2 text-xs">
         <div className="flex items-center justify-between">
-          <span className="font-semibold text-xs text-emerald-300 flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
-            Đã kết nối tài khoản ✓
+          <span className="font-semibold text-[var(--ok)] flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-[var(--ok)] animate-pulse" />
+            Tài khoản đã kết nối
           </span>
           {typeof credits === "number" && (
-            <span className="font-bold text-xs text-emerald-400 font-mono">
-              {credits} lượt chấm
+            <span className="font-bold text-[var(--accent)] font-mono">
+              {credits} credits
             </span>
           )}
         </div>
-        {userEmail ? (
-          <p className="text-[11px] text-slate-300 font-medium truncate">
-            {userEmail}
-          </p>
-        ) : null}
+        {userEmail && (
+          <p className="text-[11px] text-[var(--muted)] truncate">{userEmail}</p>
+        )}
       </div>
 
-      <div className="rounded-2xl bg-white/5 p-4 border border-white/10">
-        <ExternalLink size={28} className="text-blue-400" />
-      </div>
+      {/* Project Status Info (Spec B12: Hiện tiến độ + Phần tiếp theo) */}
+      {projectName && (
+        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 space-y-2.5 text-xs text-left shadow-sm">
+          <span className="text-[2xs] font-bold uppercase tracking-wider text-[var(--muted)]">
+            Dự án hiện tại
+          </span>
+          <h4 className="font-serif font-bold text-sm text-[var(--ink)] truncate">
+            {projectName}
+          </h4>
+          {packName && (
+            <div className="text-[11px] text-[var(--muted)]">{packName}</div>
+          )}
+          {nextSectionTitle && (
+            <div className="mt-2 rounded-lg bg-[var(--accent-weak)] p-2.5 border border-purple-200">
+              <span className="font-semibold text-[var(--accent)] block text-[11px]">
+                Phần tiếp theo cần viết:
+              </span>
+              <span className="font-bold text-[var(--ink)] text-xs">
+                {nextSectionTitle}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
-      <div className="space-y-1.5">
-        <h3 className="text-base font-semibold text-white">Mở ChatGPT hoặc Gemini</h3>
-        <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-          RootAccess hoạt động trực tiếp bên cạnh trang chat của ChatGPT hoặc Gemini. Vui lòng mở một trong hai trang để bắt đầu viết và chấm đề án.
+      {/* Main Guidance */}
+      <div className="space-y-2 text-center py-2">
+        <div className="inline-flex size-10 items-center justify-center rounded-xl bg-[var(--sunken)] text-[var(--accent)] mx-auto">
+          <ExternalLink size={20} />
+        </div>
+        <h3 className="text-sm font-serif font-bold text-[var(--ink)]">
+          Mở ChatGPT để bắt đầu
+        </h3>
+        <p className="text-xs text-[var(--muted)] max-w-xs mx-auto leading-relaxed">
+          RootAccess chạy ngay bên cạnh trang chat của ChatGPT hoặc Gemini để tự động chèn prompt và gạch chân lỗi câu từ.
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 w-full max-w-xs pt-1">
+      {/* Actions */}
+      <div className="space-y-2 pt-2">
         <button
           onClick={() => openUrl("https://chatgpt.com")}
-          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600/25 border border-emerald-500/50 px-4 py-2.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-600/40 transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] text-white py-3 text-xs font-bold hover:opacity-90 shadow-sm transition-opacity"
         >
           Mở ChatGPT (chatgpt.com)
         </button>
         <button
           onClick={() => openUrl("https://gemini.google.com")}
-          className="flex items-center justify-center gap-2 rounded-xl bg-blue-600/25 border border-blue-500/50 px-4 py-2.5 text-xs font-semibold text-blue-300 hover:bg-blue-600/40 transition-colors"
+          className="w-full flex items-center justify-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] py-2.5 text-xs font-semibold hover:bg-[var(--sunken)] transition-colors"
         >
           Mở Gemini (gemini.google.com)
         </button>

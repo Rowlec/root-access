@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { fixActionsUsed, grades, packs, promptInsertions } from "@/db/schema";
+import { fixActionsUsed, grades, packs, projects, promptInsertions, tasks } from "@/db/schema";
 import { GradeResult } from "@/lib/grader/types";
 import { Pack } from "@/lib/packs-schema";
 import { buildFixPrompt } from "@/lib/prompts/builder";
@@ -74,13 +74,21 @@ export async function POST(request: Request) {
       }
     }
 
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, gradeRow.projectId))
+      .limit(1);
+
     const promptText = buildFixPrompt({
       sectionTitle: section.title,
       criterionName: criterionDef.name,
       totDescription: criterionDef.levels.TOT,
       currentReason: gradedCriterion?.reason ?? fixAction?.explanation ?? "Chưa đạt yêu cầu tối đa của tiêu chí.",
+      evidenceQuote: gradedCriterion?.evidence_quote,
       userInputText,
       actionType: fixAction?.type,
+      niche: project?.niche || project?.targetCustomer,
     });
 
     // 1. Insert prompt_insertions (kind: 'fix')
@@ -104,6 +112,17 @@ export async function POST(request: Request) {
       userInput: typeof userInput === "object" ? userInput : { raw: userInput },
       promptText,
     });
+
+    // 3. If action is TASK, add to tasks table
+    if (fixAction?.type === "TASK" && fixAction.label) {
+      await db.insert(tasks).values({
+        projectId: gradeRow.projectId,
+        sectionId: gradeRow.sectionId,
+        title: fixAction.label,
+        source: "fix_action",
+        done: false,
+      });
+    }
 
     return jsonResponse(
       {

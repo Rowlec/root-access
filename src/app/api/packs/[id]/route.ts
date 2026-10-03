@@ -27,10 +27,15 @@ export async function GET(
 
     const content = JSON.parse(JSON.stringify(row.content)) as any;
 
-    // Spec Mục 10: Do not send internal fix_hints to client
+    // Spec Mục 10: Do not send internal fix_hints or anchors to client
     if (Array.isArray(content?.sections)) {
       content.sections.forEach((sec: any) => {
         delete sec.fix_hints;
+        if (Array.isArray(sec.criteria)) {
+          sec.criteria.forEach((crit: any) => {
+            delete crit.anchors;
+          });
+        }
       });
     }
 

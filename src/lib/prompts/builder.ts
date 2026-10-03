@@ -2,8 +2,13 @@ import { Criterion, Pack, Section } from "../packs-schema";
 
 export interface ProjectPromptInput {
   name: string;
-  idea: string;
-  targetCustomer: string;
+  idea?: string;
+  one_liner?: string;
+  targetCustomer?: string;
+  niche?: string;
+  domain?: string;
+  saved_summary?: string;
+  intake_answers?: Record<string, any>;
   availableData?: {
     surveyCount?: number;
     interviewCount?: number;
@@ -25,11 +30,11 @@ export function formatAvailableData(data?: ProjectPromptInput["availableData"]):
   if (data.interviewCount && Number(data.interviewCount) > 0) {
     parts.push(`Phỏng vấn sâu: ${data.interviewCount} người`);
   }
-  if (data.keyFindings && data.keyFindings.trim()) {
-    parts.push(`Kết quả chính: ${data.keyFindings.trim()}`);
+  if (data.keyFindings && String(data.keyFindings).trim()) {
+    parts.push(`Kết quả chính: ${String(data.keyFindings).trim()}`);
   }
-  if (data.freeText && data.freeText.trim()) {
-    parts.push(`Ghi chú khác: ${data.freeText.trim()}`);
+  if (data.freeText && String(data.freeText).trim()) {
+    parts.push(`Ghi chú khác: ${String(data.freeText).trim()}`);
   }
 
   return parts.length > 0
@@ -42,80 +47,144 @@ export function buildInitialPrompt(
   section: Section,
   project: ProjectPromptInput,
 ): string {
+  const name = project.name?.trim() || "Dự án";
+  const oneLiner = (project.one_liner || project.idea || "").trim();
+  const niche = (project.niche || project.targetCustomer || "").trim();
+
+  // Process intake questions into known / unknown blocks
+  const knownItems: string[] = [];
+  const unknownItems: string[] = [];
+
+  const answers = project.intake_answers || {};
+
+  if (section.intake && section.intake.length > 0) {
+    for (const q of section.intake) {
+      const val = answers[q.id];
+      const isUnknown =
+        val === undefined ||
+        val === null ||
+        val === "" ||
+        val === q.unknown_label ||
+        (Array.isArray(val) && val.length === 0);
+
+      if (isUnknown) {
+        unknownItems.push(`- ${q.prompt_label || q.question}`);
+      } else {
+        const displayVal = Array.isArray(val) ? val.join(", ") : String(val);
+        knownItems.push(`- ${q.prompt_label || q.question}: ${displayVal}`);
+      }
+    }
+  } else if (project.availableData) {
+    const data = project.availableData;
+    if (data.surveyCount && Number(data.surveyCount) > 0) {
+      knownItems.push(`- Khảo sát: ${data.surveyCount} người tham gia`);
+    }
+    if (data.interviewCount && Number(data.interviewCount) > 0) {
+      knownItems.push(`- Phỏng vấn sâu: ${data.interviewCount} người`);
+    }
+    if (data.keyFindings && String(data.keyFindings).trim()) {
+      knownItems.push(`- Kết quả chính: ${String(data.keyFindings).trim()}`);
+    }
+    if (data.freeText && String(data.freeText).trim()) {
+      knownItems.push(`- Ghi chú: ${String(data.freeText).trim()}`);
+    }
+  }
+
+  const parts: string[] = [];
+
+  parts.push(
+    `Bạn là trợ lý giúp nhóm sinh viên viết phần "${section.title}" trong Startup Proposal môn ${pack.course} (${pack.checkpoint}).`,
+  );
+
+  // <the_du_an>
+  const theDuAnLines: string[] = [];
+  theDuAnLines.push(`${name}: ${oneLiner}`);
+  if (niche) {
+    theDuAnLines.push(`Ngách: ${niche}`);
+  }
+  if (project.saved_summary && project.saved_summary.trim()) {
+    theDuAnLines.push(`Đã chốt ở các phần trước: ${project.saved_summary.trim()}`);
+  }
+  parts.push(`<the_du_an>\n${theDuAnLines.join("\n")}\n</the_du_an>`);
+
+  // <du_lieu_nhom>
+  if (knownItems.length > 0) {
+    parts.push(`<du_lieu_nhom>\n${knownItems.join("\n")}\n</du_lieu_nhom>`);
+  }
+
+  // <chua_co_du_lieu>
+  if (unknownItems.length > 0) {
+    parts.push(`<chua_co_du_lieu>\n${unknownItems.join("\n")}\n</chua_co_du_lieu>`);
+  }
+
+  // Tiêu chí tốt
   const criteriaText = section.criteria
     .map((c) => `- ${c.name}: ${c.levels.TOT}`)
     .join("\n");
+  parts.push(`Một phần "${section.title}" tốt cần:\n${criteriaText}`);
 
-  const commonMistakesText = section.common_mistakes
-    .map((m) => `- ${m}`)
-    .join("\n");
+  // Cách viết
+  const rules = [
+    `- Chỉ dùng số liệu và lời khách hàng có trong <du_lieu_nhom>, vì hội đồng sẽ hỏi nguồn.`,
+    `- Chỗ cần dữ liệu mà chưa có, ghi [CẦN DỮ LIỆU: cần thu thập gì].`,
+    `- Nhận định chưa kiểm chứng thì đánh dấu [GIẢ ĐỊNH].`,
+    `- Giữ đúng ngách ở trên, không mở rộng sang nhóm khách hàng khác.`,
+  ];
+  if (unknownItems.length >= 2) {
+    rules.push(`- Nếu thiếu thông tin quan trọng, hãy hỏi tôi tối đa 2 câu trước khi viết.`);
+  }
+  parts.push(`Cách viết:\n${rules.join("\n")}`);
 
-  const availableDataText = formatAvailableData(project.availableData);
+  // Cấu trúc đầu ra
+  const headings = section.criteria.map((c) => `### ${c.name}`).join("\n");
+  parts.push(`Trình bày bằng tiếng Việt, mỗi tiêu chí là một tiêu đề nhỏ:\n${headings}`);
 
-  return `Bạn đang giúp một nhóm sinh viên viết phần "${section.title}" trong Startup Proposal cho môn ${pack.course} – ${pack.checkpoint}.
-
-THÔNG TIN DỰ ÁN (do nhóm cung cấp):
-- Tên dự án: ${project.name}
-- Ý tưởng: ${project.idea}
-- Khách hàng mục tiêu: ${project.targetCustomer}
-- Dữ liệu nhóm đã có:
-- ${availableDataText}
-
-YÊU CẦU CỦA PHẦN NÀY:
-${section.requirement}
-
-BÀI VIẾT CẦN ĐẠT CÁC TIÊU CHÍ SAU:
-${criteriaText}
-
-TRÁNH CÁC LỖI HAY GẶP:
-${commonMistakesText}
-
-QUY TẮC BẮT BUỘC:
-1. Chỉ dùng số liệu có trong "Dữ liệu nhóm đã có". KHÔNG tự tạo số liệu, khảo sát, phỏng vấn, trích dẫn hay nguồn mới.
-2. Chỗ nào cần số liệu mà nhóm chưa có, ghi rõ: [CẦN DỮ LIỆU: mô tả dữ liệu cần thu thập].
-3. Mọi nhận định chưa được kiểm chứng phải đánh dấu [GIẢ ĐỊNH].
-4. Viết bằng tiếng Việt, ngắn gọn, đúng trọng tâm phần "${section.title}".`;
+  return parts.join("\n\n");
 }
 
 export function buildFixPrompt(params: {
   sectionTitle: string;
   criterionName: string;
-  totDescription: string;
+  totDescription?: string;
   currentReason: string;
+  evidenceQuote?: string;
   userInputText?: string | null;
   actionType?: string;
+  niche?: string;
 }): string {
   const {
     sectionTitle,
     criterionName,
-    totDescription,
     currentReason,
+    evidenceQuote,
     userInputText,
     actionType,
+    niche,
   } = params;
 
-  let actionSpecificInstruction = "";
-  if (actionType === "MARK_ASSUMPTIONS") {
-    actionSpecificInstruction = "\n- Rà soát toàn bộ bài viết, đánh dấu [GIẢ ĐỊNH] cho mọi nhận định chưa kiểm chứng và gỡ bỏ các số liệu bịa đặt không có nguồn.";
-  } else if (actionType === "FOCUS_REWRITE") {
-    actionSpecificInstruction = "\n- Viết lại thật súc tích, đi thẳng vào trọng tâm vấn đề của khách hàng, lược bỏ hoàn toàn các câu văn sáo rỗng hoặc lan man.";
-  } else if (actionType === "TASK") {
-    actionSpecificInstruction = "\n- Đánh dấu rõ các lỗ hổng thông tin bằng [CẦN DỮ LIỆU: ...] để nhóm thực hiện khảo sát bổ sung.";
+  const lines: string[] = [];
+  lines.push(`Sửa lại phần "${sectionTitle}" cho tiêu chí "${criterionName}".`);
+
+  if (evidenceQuote && evidenceQuote.trim()) {
+    lines.push(`Câu có vấn đề: "${evidenceQuote.trim()}".`);
+  }
+  lines.push(`Lý do: ${currentReason.trim()}`);
+
+  if (userInputText && userInputText.trim()) {
+    lines.push(`Dữ liệu bổ sung từ nhóm: ${userInputText.trim()}`);
   }
 
-  const userInputBlock = userInputText && userInputText.trim()
-    ? `\nDỮ LIỆU THẬT NHÓM VỪA CUNG CẤP:\n${userInputText.trim()}\n`
-    : "";
+  if (actionType === "MARK_ASSUMPTIONS") {
+    lines.push(`Đánh dấu [GIẢ ĐỊNH] cho mọi nhận định chưa kiểm chứng và thay số liệu thiếu nguồn bằng [CẦN DỮ LIỆU: ...].`);
+  } else if (actionType === "FOCUS_REWRITE" && niche) {
+    lines.push(`Viết lại chỉ tập trung cho ngách "${niche}", không lan man sang đối tượng khác.`);
+  } else if (actionType === "NEED_DATA") {
+    lines.push(`Chèn chính xác dữ liệu nhóm vừa cung cấp vào đúng ngữ cảnh.`);
+  }
 
-  return `Sửa lại phần "${sectionTitle}" trong câu trả lời trước của bạn.
-Chỉ tập trung cải thiện tiêu chí: ${criterionName} – ${totDescription}.
-Vấn đề hiện tại: ${currentReason}
-${userInputBlock}
-QUY TẮC:
-- Giữ nguyên các ý đã tốt, chỉ sửa phần liên quan tới tiêu chí trên.${actionSpecificInstruction}
-- Chỉ dùng số liệu có trong dữ liệu nhóm cung cấp hoặc đã có trong câu trả lời trước.
-- KHÔNG tạo số liệu, khảo sát, trích dẫn mới. Thiếu thì ghi [CẦN DỮ LIỆU: ...].
-- Trả về toàn bộ phần "${sectionTitle}" sau khi sửa.`;
+  lines.push(`Trả lại toàn bộ phần ${sectionTitle} sau khi sửa, giữ nguyên các ý khác.`);
+
+  return lines.join("\n");
 }
 
 export interface ValidationIssue {

@@ -1,5 +1,15 @@
-import React, { useState } from "react";
-import { ArrowLeft, CheckCircle2, ChevronRight, Loader2, RotateCcw, Sparkles } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  CheckCircle2,
+  ChevronRight,
+  ExternalLink,
+  Loader2,
+  RotateCcw,
+  Save,
+} from "lucide-react";
 import { api } from "../../lib/api";
 import { readLastAnswerFromTab } from "../../lib/messages";
 import { track } from "../../lib/tracking";
@@ -33,6 +43,22 @@ export function GradeResultScreen({
   onOutOfCredits: () => void;
 }) {
   const [regrading, setRegrading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Trigger in-page quote highlights on mount (Spec 5.1)
+  useEffect(() => {
+    if (chrome?.tabs?.query) {
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]?.id) {
+          chrome.tabs.sendMessage(tabs[0].id, {
+            type: "HIGHLIGHT_QUOTES",
+            items: result.criteria,
+          });
+        }
+      });
+    }
+  }, [result]);
 
   const passingCount = result.criteria.filter(
     (c) => c.level === "DAT" || c.level === "TOT",
@@ -80,17 +106,44 @@ export function GradeResultScreen({
     }
   };
 
+  const handleSaveSection = async () => {
+    setSaving(true);
+    try {
+      let chatUrl: string | undefined = undefined;
+      if (chrome?.tabs?.query) {
+        const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tabs[0]?.url) {
+          chatUrl = tabs[0].url;
+        }
+      }
+
+      await api.saveSection(project.id, section.id, {
+        savedText: result.output_text || "",
+        gradeId: result.grade_id,
+        status: isAllPassed ? "passed" : "drafting",
+        chatUrl,
+      });
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      alert("Lỗi lưu phần: " + (err.message || String(err)));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="flex h-screen flex-col overflow-y-auto p-4 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/10 pb-3">
+      <div className="flex items-center justify-between border-b border-[var(--line-2)] pb-3">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 hover:text-white"
+          className="flex items-center gap-1.5 text-xs font-semibold text-[var(--muted)] hover:text-[var(--ink)]"
         >
           <ArrowLeft size={16} /> Danh sách phần
         </button>
-        <span className="text-[11px] text-slate-400 font-medium">
+        <span className="text-[11px] text-[var(--accent)] font-medium">
           {section.title}
         </span>
       </div>
@@ -99,35 +152,67 @@ export function GradeResultScreen({
       <div
         className={`rounded-2xl border p-4 space-y-2 ${
           isAllPassed
-            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-            : "border-blue-500/30 bg-blue-500/10 text-blue-200"
+            ? "border-green-300 bg-[var(--ok-bg)] text-[var(--ok)]"
+            : "border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink)]"
         }`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {isAllPassed ? (
-              <CheckCircle2 className="size-5 text-emerald-400" />
-            ) : (
-              <Sparkles className="size-5 text-blue-400" />
-            )}
-            <h3 className="text-sm font-bold text-white">
-              {isAllPassed ? "Phần này đã Đạt chuẩn!" : "Kết quả đánh giá theo Rubric"}
+            <CheckCircle2
+              className={`size-5 ${
+                isAllPassed ? "text-[var(--ok)]" : "text-[var(--accent)]"
+              }`}
+            />
+            <h3 className="text-sm font-bold text-[var(--ink)]">
+              {isAllPassed
+                ? `Phần ${section.title} đã đạt!`
+                : "Kết quả chấm bài theo Rubric"}
             </h3>
           </div>
-          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-black/30 border border-white/10">
-            {passingCount}/{totalCriteria} Tiêu chí Đạt
+          <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-[var(--surface)] border border-[var(--line)] text-[var(--ink)]">
+            {passingCount}/{totalCriteria} Đạt
           </span>
         </div>
-        <p className="text-xs text-slate-300 leading-relaxed">
+        <p className="text-xs text-[var(--ink-2)] leading-relaxed">
           {isAllPassed
-            ? "Tuyệt vời! Không còn tiêu chí nào Chưa đạt. Bạn có thể chuyển sang phần tiếp theo hoặc hoàn thiện thêm."
-            : "Dưới đây là chi tiết từng tiêu chí và các nút sửa cụ thể giúp bài viết hoàn thiện hơn."}
+            ? "Không còn tiêu chí nào Chưa đạt. Bạn có thể bấm 'Lưu bản đạt' bên dưới để lưu vào hồ sơ đề án."
+            : "Một số câu cần sửa theo gợi ý dưới đây để bài viết khớp ngách và số liệu hơn."}
         </p>
+      </div>
+
+      {/* Action: Lưu bản đạt / Lưu bản này (Spec Mục 5 & 9.4) */}
+      <div className="flex gap-2">
+        <button
+          onClick={handleSaveSection}
+          disabled={saving}
+          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl text-xs font-bold transition-all shadow-sm ${
+            isAllPassed
+              ? "bg-[var(--ok-bg)] text-[var(--ok)] border border-green-400 hover:bg-green-100"
+              : "bg-[var(--surface)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--sunken)]"
+          }`}
+        >
+          {saving ? (
+            <>
+              <Loader2 className="animate-spin size-3.5" />
+              Đang lưu...
+            </>
+          ) : saveSuccess ? (
+            <>
+              <Check className="size-3.5" />
+              Đã lưu bản này vào đề án!
+            </>
+          ) : (
+            <>
+              <Save className="size-3.5" />
+              {isAllPassed ? "Lưu bản đạt cho phần này" : "Lưu bản nháp này"}
+            </>
+          )}
+        </button>
       </div>
 
       {/* Criteria Breakdown */}
       <div className="space-y-2">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)] px-1">
           Chi tiết từng tiêu chí
         </h4>
         <div className="space-y-2">
@@ -145,8 +230,8 @@ export function GradeResultScreen({
       {/* Fix Actions */}
       {result.fix_actions && result.fix_actions.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">
-            Gợi ý hành động sửa (Chọn để chèn prompt sửa)
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)] px-1">
+            Gợi ý hành động sửa
           </h4>
           <div className="space-y-2">
             {result.fix_actions.map((fa) => (
@@ -166,11 +251,11 @@ export function GradeResultScreen({
       )}
 
       {/* Regrade Button */}
-      <div className="mt-auto pt-3 border-t border-white/10 space-y-2">
+      <div className="mt-auto pt-3 border-t border-[var(--line-2)] space-y-2">
         <button
           onClick={handleRegrade}
           disabled={regrading}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500 disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2.5 text-xs font-semibold text-white shadow hover:opacity-90 disabled:opacity-50"
         >
           {regrading ? (
             <Loader2 className="animate-spin size-4" />
@@ -179,7 +264,7 @@ export function GradeResultScreen({
           )}
           {regrading
             ? "Đang chấm lại..."
-            : `Chấm lại câu trả lời mới (còn ${creditsLeft} credit)`}
+            : `Chấm lại câu trả lời mới · 1 credit`}
         </button>
       </div>
     </div>

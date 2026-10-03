@@ -1,0 +1,32 @@
+[
+  {
+    "id": "sample-01-ideal",
+    "section_id": "customer",
+    "project": {
+      "name": "Bếp 15'",
+      "one_liner": "Giao nguyên liệu đã sơ chế, chia phần 1 người, nấu xong trong 15 phút",
+      "niche": "Sinh viên năm 2-3 ở trọ quanh cơ sở FPT, có bếp, về sau 18h"
+    },
+    "input_text": "### Chân dung cụ thể\nKhách hàng trọng tâm của Bếp 15' là sinh viên năm 2-3 đang thuê trọ tại khu vực xung quanh cơ sở FPT, phòng trọ có khu bếp riêng và thường đi học, đi làm thêm về sau 18h.\n\n### Bằng chứng thực tế\nTrong 6 cuộc phỏng vấn trực tiếp mà nhóm đã thực hiện tại khu trọ, bạn sinh viên tên Linh chia sẻ: 'Về tới phòng 8h tối mệt rã rời, mở tủ lạnh thấy trống nên lại úp mì tôm hoặc gọi đồ ship đắt đỏ'. 5 bạn khác cũng có tình trạng tương tự.\n\n### Hành vi hiện tại\nHiện tại các bạn thường mua đồ ăn nhanh qua ShopeeFood/GrabFood (tốn 40-50k/bữa) hoặc ăn mì ăn liền qua bữa. Nhóm bạn tự nấu thì thường lười đi chợ vào buổi tối muộn vì chợ xa và nguyên liệu bán theo mớ lớn dễ hỏng.",
+    "expected": {
+      "customer-specific": "TOT",
+      "customer-evidence": "TOT",
+      "customer-current-behavior": "TOT"
+    }
+  },
+  {
+    "id": "sample-02-niche-drift",
+    "section_id": "customer",
+    "project": {
+      "name": "Bếp 15'",
+      "one_liner": "Giao nguyên liệu đã sơ chế, chia phần 1 người, nấu xong trong 15 phút",
+      "niche": "Sinh viên năm 2-3 ở trọ quanh cơ sở FPT, có bếp, về sau 18h"
+    },
+    "input_text": "### Chân dung cụ thể\nKhách hàng của chúng tôi là tất cả mọi người có nhu cầu ăn uống nhanh gọn, bao gồm sinh viên, người đi làm văn phòng tại các toà nhà cao ốc, và các gia đình trẻ bận rộn trên địa bàn toàn thành phố Hà Nội.\n\n### Bằng chứng thực tế\nTheo báo cáo thị trường Euromonitor năm 2025, có khoảng 70% người dân thành thị không có thời gian nấu ăn hàng ngày và thị trường giao thực phẩm đạt 2 tỷ USD.\n\n### Hành vi hiện tại\nHọ đang đặt đồ ăn ngoài quán hoặc tự nấu ăn vào cuối tuần.",
+    "expected": {
+      "customer-specific": "CHUA_DAT",
+      "customer-evidence": "CHUA_DAT",
+      "customer-current-behavior": "DAT"
+    }
+  }
+]

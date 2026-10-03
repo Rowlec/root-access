@@ -18,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-svh overflow-hidden bg-background/70">
+    <div className="flex h-svh overflow-hidden bg-[var(--bg)] text-[var(--ink)]">
       <AppSidebar
         balance={overview?.wallet?.balance ?? 20}
         isAdmin={overview?.user.role === "admin"}

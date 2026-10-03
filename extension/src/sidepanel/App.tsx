@@ -195,10 +195,18 @@ export function App() {
 
   // Check if current tab is ChatGPT or Gemini for sections and grading
   if (!siteId) {
+    const nextSec =
+      currentPack?.sections?.find((s) => sectionStatuses[s.id] !== "DAT") ||
+      currentPack?.sections?.[0];
     return (
       <UnsupportedSiteNotice
         userEmail={sessionUser?.email}
         credits={sessionUser?.credits}
+        projectName={activeProject?.name}
+        packName={
+          currentPack ? `${currentPack.course} – ${currentPack.checkpoint}` : null
+        }
+        nextSectionTitle={nextSec?.title}
       />
     );
   }

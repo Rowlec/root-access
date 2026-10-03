@@ -63,16 +63,12 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/45 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/app" className="flex shrink-0 items-center gap-2.5">
-          <Image
-            src="/logo.png"
-            alt="Root Access logo"
-            width={40}
-            height={22}
-            className="h-6 w-auto shrink-0 drop-shadow-[0_0_12px_oklch(0.62_0.2_300/0.6)]"
-            priority
-          />
-          <span className="hidden font-display text-base font-semibold tracking-tight text-foreground sm:inline">
-            Root Access
+          <div className="relative flex size-7 items-center justify-center rounded bg-[#1C1A17] text-white font-serif font-bold text-base shadow-sm">
+            R
+            <span className="absolute -bottom-0.5 left-1 right-1 h-1 bg-[#FFE27A] rounded-full" />
+          </div>
+          <span className="font-serif font-bold text-lg text-foreground tracking-tight">
+            RootAccess
           </span>
         </Link>
 

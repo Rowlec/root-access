@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Lora } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
@@ -11,6 +11,12 @@ import "./globals.css";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin", "vietnamese"],
+});
+
+const lora = Lora({
+  variable: "--font-lora",
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "600", "700"],
 });
 
 function getSiteUrl() {
@@ -96,10 +102,10 @@ export default async function RootLayout({
   return (
     <html
       lang={locale}
-      className={`${inter.variable} dark h-full scroll-smooth antialiased`}
+      className={`${inter.variable} ${lora.variable} h-full scroll-smooth antialiased`}
       data-scroll-behavior="smooth"
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
         {content}
         <Analytics />
       </body>

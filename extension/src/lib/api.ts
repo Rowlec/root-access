@@ -145,4 +145,30 @@ export const api = {
   async getSelectors(): Promise<any> {
     return request("/api/selectors");
   },
+
+  async getIntake(projectId: string, sectionId: string): Promise<any> {
+    return request(`/api/projects/${projectId}/sections/${sectionId}/intake`);
+  },
+
+  async saveIntake(projectId: string, sectionId: string, answers: Record<string, any>): Promise<any> {
+    return request(`/api/projects/${projectId}/sections/${sectionId}/intake`, {
+      method: "PUT",
+      body: JSON.stringify({ answers }),
+    });
+  },
+
+  async saveSection(
+    projectId: string,
+    sectionId: string,
+    data: { savedText: string; gradeId?: string; status?: string; chatUrl?: string },
+  ): Promise<any> {
+    return request(`/api/projects/${projectId}/sections/${sectionId}/save`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getProjectOverview(projectId: string): Promise<any> {
+    return request(`/api/projects/${projectId}/overview`);
+  },
 };

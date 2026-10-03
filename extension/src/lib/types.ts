@@ -10,8 +10,17 @@ export interface Project {
   userId: string;
   name: string;
   idea: string;
+  startupIdea?: string;
   targetCustomer: string;
-  availableData: {
+  oneLiner?: string;
+  domain?: string;
+  niche?: string;
+  observedProblem?: string;
+  biggestAssumption?: string;
+  teamStrengths?: string[];
+  constraints?: string[];
+  createdVia?: string;
+  availableData?: {
     surveyCount?: number;
     interviewCount?: number;
     keyFindings?: string;
@@ -36,6 +45,16 @@ export interface Criterion {
   levels: CriterionLevel;
 }
 
+export interface IntakeQuestion {
+  id: string;
+  question: string;
+  type: "number" | "text" | "quote" | "single" | "multi";
+  options?: string[];
+  unknown_label?: string;
+  if_unknown_task?: string;
+  prompt_label?: string;
+}
+
 export interface Section {
   id: string;
   title: string;
@@ -43,6 +62,7 @@ export interface Section {
   requirement: string;
   criteria: Criterion[];
   common_mistakes: string[];
+  intake?: IntakeQuestion[];
 }
 
 export interface Pack {
@@ -52,6 +72,7 @@ export interface Pack {
   term: string;
   checkpoint: string;
   source: string;
+  ends_at?: string;
   sections: Section[];
 }
 
@@ -101,5 +122,6 @@ export interface GradeResult {
   fix_actions: FixAction[];
   likely_questions: string[];
   compare_with_parent: CompareWithParent | null;
+  output_text?: string;
   credits_left: number;
 }

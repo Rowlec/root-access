@@ -22,6 +22,13 @@
       "when": 1790415529978,
       "tag": "0002_broad_butterfly",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791004602656,
+      "tag": "0003_perpetual_angel",
+      "breakpoints": true
     }
   ]
 }

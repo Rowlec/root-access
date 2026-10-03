@@ -17,6 +17,8 @@ export interface SiteAdapter {
   getLastAssistantMessage(): Promise<
     { ok: true; text: string } | { ok: false; error: AdapterError }
   >;
+  /** Trả về phần tử HTML của câu trả lời cuối cùng để gạch chân */
+  getLastAssistantElement(): HTMLElement | null;
   /** AI còn đang trả lời (stream) không? Nếu có thì panel khoá nút "Chấm". */
   isGenerating(): boolean;
 }

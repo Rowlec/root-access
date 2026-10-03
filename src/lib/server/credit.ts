@@ -54,10 +54,41 @@ export async function getProfileCredits(userId: string): Promise<number> {
 export async function consumeCredit(
   userId: string,
   refId?: string,
-): Promise<{ success: boolean; creditsLeft: number }> {
+  projectId?: string,
+): Promise<{ success: boolean; creditsLeft: number; coveredByTeamPass?: boolean }> {
   const db = getDb();
 
-  // Try calling the atomic stored function first
+  // 1. Check if project has an active team pass with available grades
+  if (projectId) {
+    try {
+      const { teamPasses } = await import("@/db/schema");
+      const { and, eq, gt } = await import("drizzle-orm");
+      const [activePass] = await db
+        .select()
+        .from(teamPasses)
+        .where(
+          and(
+            eq(teamPasses.projectId, projectId),
+            gt(teamPasses.endsAt, new Date()),
+          ),
+        )
+        .limit(1);
+
+      if (activePass && activePass.gradesUsed < activePass.gradeCap) {
+        await db
+          .update(teamPasses)
+          .set({ gradesUsed: activePass.gradesUsed + 1 })
+          .where(eq(teamPasses.id, activePass.id));
+
+        const creditsLeft = await getProfileCredits(userId);
+        return { success: true, creditsLeft, coveredByTeamPass: true };
+      }
+    } catch (e) {
+      console.warn("Error checking team pass in consumeCredit:", e);
+    }
+  }
+
+  // 2. Try calling the atomic stored function first
   try {
     const res = await db.execute(
       sql`SELECT consume_credit(${userId}::uuid, ${refId ? sql`${refId}::uuid` : null}) as ok;`,

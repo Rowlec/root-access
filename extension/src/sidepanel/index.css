@@ -1,16 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #090d16;
-  --bg-card: rgba(18, 24, 38, 0.85);
-  --border: rgba(255, 255, 255, 0.1);
-  --text: #f1f5f9;
-  --text-muted: #94a3b8;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
+  /* Default dark panel mode */
+  --bg: #1E1E1E;
+  --surface: #262626;
+  --surface-2: #2B2B2B;
+  --sunken: #191919;
+  --ink: #EDEDED;
+  --ink-2: #D6D6D6;
+  --muted: #A8A8A8;
+  --line: #363636;
+  --line-2: #444444;
+  --accent: #A99DFF;
+  --accent-weak: #2C2846;
+  --mark: rgba(255, 226, 122, 0.22);
+  --bad: #FF9E91;
+  --bad-bg: #3A1F1C;
+  --mid: #F4C76E;
+  --mid-bg: #382C14;
+  --ok: #74D6A1;
+  --ok-bg: #18322A;
+  --focus: rgba(169, 157, 255, 0.35);
+
+  --bg-card: var(--surface);
+  --border: var(--line);
+  --text: var(--ink);
+  --text-muted: var(--muted);
+  --primary: var(--accent);
+}
+
+.theme-light, [data-theme="light"] {
+  --bg: #F6F4EF;
+  --surface: #FFFFFF;
+  --surface-2: #FBFAF7;
+  --sunken: #EFECE5;
+  --ink: #1C1A17;
+  --ink-2: #3B3833;
+  --muted: #67625A;
+  --line: #E4DFD5;
+  --line-2: #D3CCC0;
+  --accent: #4B37C8;
+  --accent-weak: #EEEBFC;
+  --mark: #FFE27A;
+  --bad: #B42318;
+  --bad-bg: #FDECEA;
+  --mid: #8A4B00;
+  --mid-bg: #FEF1D6;
+  --ok: #0F6E44;
+  --ok-bg: #E3F3EA;
+  --focus: rgba(75, 55, 200, 0.28);
+
+  --bg-card: var(--surface);
+  --border: var(--line);
+  --text: var(--ink);
+  --text-muted: var(--muted);
+  --primary: var(--accent);
 }
 
 body {
@@ -19,7 +63,7 @@ body {
   background-color: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 13px;
+  font-size: 14.5px;
   line-height: 1.5;
   width: 100%;
   height: 100vh;
@@ -33,7 +77,7 @@ body {
 
 button {
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 button:disabled {
@@ -41,48 +85,42 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Glassmorphism card */
 .card {
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 12px;
   padding: 14px;
 }
 
 .badge-chua-dat {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: var(--bad-bg);
+  color: var(--bad);
+  border: 1px solid var(--bad);
 }
 
 .badge-dat {
-  background: rgba(245, 158, 11, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: var(--mid-bg);
+  color: var(--mid);
+  border: 1px solid var(--mid);
 }
 
 .badge-tot {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: var(--ok-bg);
+  color: var(--ok);
+  border: 1px solid var(--ok);
 }
 
-/* Custom scrollbars */
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
-  height: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
+  background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
+  background: var(--line);
+  border-radius: 3px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--muted);
 }

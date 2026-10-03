@@ -52,6 +52,17 @@ chrome.runtime.onMessageExternal.addListener(
       return true; // async sendResponse
     }
 
+    if (message.type === "RA_OPEN_CHATGPT" || message.type === "RA_SET_PROJECT") {
+      const projectId = message.projectId;
+      chrome.storage.local.set({ ra_selected_project_id: projectId }, () => {
+        if (message.type === "RA_OPEN_CHATGPT") {
+          chrome.tabs.create({ url: message.url || "https://chatgpt.com" });
+        }
+        sendResponse({ ok: true });
+      });
+      return true;
+    }
+
     sendResponse({ ok: false, error: "UNKNOWN_MESSAGE_TYPE" });
   },
 );

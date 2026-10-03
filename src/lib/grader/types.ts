@@ -83,10 +83,9 @@ export const LlmGradeOutputSchema = z.object({
   criteria: z.array(
     z.object({
       id: z.string(),
-      name: z.string(),
-      level: CriterionLevelEnum,
-      reason: z.string(),
       evidence_quote: z.string().default(""),
+      reason: z.string(),
+      level: CriterionLevelEnum,
     }),
   ),
   fix_actions: z

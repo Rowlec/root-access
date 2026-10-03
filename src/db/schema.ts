@@ -144,6 +144,14 @@ export const projects = pgTable(
       [key: string]: unknown;
     }>().default({}).notNull(),
     packId: text("pack_id").default("exe101-cp2").notNull(),
+    oneLiner: text("one_liner").default("").notNull(),
+    domain: text("domain").default("").notNull(),
+    niche: text("niche").default("").notNull(),
+    observedProblem: text("observed_problem").default("").notNull(),
+    biggestAssumption: text("biggest_assumption").default("").notNull(),
+    teamStrengths: jsonb("team_strengths").$type<string[]>().default([]).notNull(),
+    constraints: jsonb("constraints").$type<string[]>().default([]).notNull(),
+    createdVia: text("created_via").default("studio").notNull(),
     // Backward compatibility fields
     title: text("title").default("").notNull(),
     startupIdea: text("startup_idea").default("").notNull(),
@@ -352,6 +360,7 @@ export const packs = pgTable(
     checkpoint: text("checkpoint").notNull(),
     source: text("source").notNull(),
     content: jsonb("content").$type<Record<string, unknown>>().notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }),
     isActive: boolean("is_active").default(true).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -393,6 +402,8 @@ export const grades = pgTable(
     outputHash: text("output_hash").notNull(),
     result: jsonb("result").$type<Record<string, unknown>>().notNull(),
     parentGradeId: uuid("parent_grade_id"),
+    promptVersion: text("prompt_version").default("v2").notNull(),
+    model: text("model").default("gemini-2.5-flash").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
@@ -474,5 +485,155 @@ export const realResults = pgTable(
   (table) => [
     index("real_results_project_id_idx").on(table.projectId),
     index("real_results_user_id_idx").on(table.userId),
+  ],
+);
+
+export const studioSessions = pgTable(
+  "studio_sessions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    entry: text("entry").notNull(), // 'A' | 'B' | 'C'
+    answers: jsonb("answers").$type<Record<string, unknown>>().default({}).notNull(),
+    suggestions: jsonb("suggestions").$type<Record<string, unknown>>().default({}).notNull(),
+    chosen: jsonb("chosen").$type<Record<string, unknown>>().default({}).notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    index("studio_sessions_user_id_idx").on(table.userId),
+  ],
+);
+
+export const sectionIntakes = pgTable(
+  "section_intakes",
+  {
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    sectionId: text("section_id").notNull(),
+    answers: jsonb("answers").$type<Record<string, unknown>>().default({}).notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.projectId, table.sectionId] }),
+  ],
+);
+
+export const projectSections = pgTable(
+  "project_sections",
+  {
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    sectionId: text("section_id").notNull(),
+    status: text("status").default("todo").notNull(), // 'todo' | 'drafting' | 'passed'
+    savedText: text("saved_text"),
+    savedGradeId: uuid("saved_grade_id"),
+    chatUrl: text("chat_url"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.projectId, table.sectionId] }),
+  ],
+);
+
+export const tasks = pgTable(
+  "tasks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    sectionId: text("section_id"),
+    title: text("title").notNull(),
+    source: text("source").default("intake").notNull(), // 'intake' | 'fix_action'
+    done: boolean("done").default(false).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("tasks_project_id_idx").on(table.projectId),
+  ],
+);
+
+export const projectMembers = pgTable(
+  "project_members",
+  {
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    role: text("role").default("member").notNull(), // 'owner' | 'member'
+    joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.projectId, table.userId] }),
+    index("project_members_user_id_idx").on(table.userId),
+  ],
+);
+
+export const projectInvites = pgTable(
+  "project_invites",
+  {
+    token: text("token").primaryKey(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    createdBy: uuid("created_by")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedBy: uuid("used_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("project_invites_project_id_idx").on(table.projectId),
+  ],
+);
+
+export const teamPasses = pgTable(
+  "team_passes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    packId: text("pack_id").notNull(),
+    boughtBy: uuid("bought_by")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    price: integer("price").notNull(),
+    startsAt: timestamp("starts_at", { withTimezone: true }).defaultNow().notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    gradeCap: integer("grade_cap").default(150).notNull(),
+    gradesUsed: integer("grades_used").default(0).notNull(),
+    fullCheckCap: integer("full_check_cap").default(3).notNull(),
+    fullChecksUsed: integer("full_checks_used").default(0).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("team_passes_project_id_idx").on(table.projectId),
+  ],
+);
+
+export const fullChecks = pgTable(
+  "full_checks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    sectionIds: jsonb("section_ids").$type<string[]>().default([]).notNull(),
+    result: jsonb("result").$type<Record<string, unknown>>().notNull(),
+    promptVersion: text("prompt_version").default("v2").notNull(),
+    model: text("model").notNull(),
+    creditsSpent: integer("credits_spent").default(5).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("full_checks_project_id_idx").on(table.projectId),
   ],
 );

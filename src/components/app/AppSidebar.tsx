@@ -34,25 +34,28 @@ export function AppSidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="hidden h-svh w-72 shrink-0 flex-col border-r border-border/70 bg-background/80 p-3 backdrop-blur-xl md:flex">
+    <aside className="hidden h-svh w-72 shrink-0 flex-col border-r border-border/70 bg-card p-3 md:flex">
       <Link href="/app" className="flex items-center gap-2.5 px-2 py-2">
-        <Image src="/logo.png" alt="Root Access" width={38} height={22} className="h-6 w-auto" />
-        <span className="font-semibold">Root Access</span>
+        <div className="relative flex size-7 items-center justify-center rounded bg-[#1C1A17] text-white font-serif font-bold text-base shadow-sm">
+          R
+          <span className="absolute -bottom-0.5 left-1 right-1 h-1 bg-[#FFE27A] rounded-full" />
+        </div>
+        <span className="font-serif font-bold text-lg text-foreground tracking-tight">RootAccess</span>
       </Link>
 
       <Link
         href="/connect-extension"
-        className="mt-2.5 flex h-10 items-center gap-2 rounded-xl border border-primary/40 bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors shadow-sm"
+        className="mt-2.5 flex h-10 items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-3 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors shadow-sm"
       >
         <Compass className="size-4 shrink-0 text-primary" />
-        <span>Kết nối Chrome Extension</span>
+        <span>Cài tiện ích RootAccess</span>
       </Link>
 
       <Link
         href="/app#new-project"
-        className="mt-2 flex h-10 items-center gap-2 rounded-xl border border-border bg-secondary/50 px-3 text-xs font-semibold hover:bg-secondary"
+        className="mt-2 flex h-10 items-center gap-2 rounded-xl border border-border bg-secondary/60 px-3 text-xs font-semibold hover:bg-secondary transition-colors"
       >
-        <Plus className="size-4" /> Dự án mới
+        <Plus className="size-4" /> Tạo dự án
       </Link>
 
       <nav className="mt-4 grid gap-1 text-sm">
@@ -60,21 +63,18 @@ export function AppSidebar({
           href="/app"
           className={cn(
             "flex items-center gap-2 rounded-lg px-3 py-2 text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
-            pathname === "/app" && "bg-secondary/60 text-foreground",
+            pathname === "/app" && "bg-secondary/70 font-medium text-foreground",
           )}
         >
-          <LayoutDashboard className="size-4" /> Tổng quan
+          <LayoutDashboard className="size-4" /> Dự án của tôi
         </Link>
-        <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-muted-foreground">
-          <Lightbulb className="size-4" /> Idea validation
-        </div>
-        <div className="flex items-center gap-2 rounded-lg px-3 py-2 text-muted-foreground">
-          <FileSearch className="size-4" /> Proposal review
-        </div>
       </nav>
 
       <div className="mt-5 min-h-0 flex-1 overflow-y-auto">
-        <div className="flex items-center justify-between px-3"><p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Lịch sử dự án</p><Link href="/app/projects" className="text-xs text-primary">Tất cả</Link></div>
+        <div className="flex items-center justify-between px-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Danh sách dự án</p>
+          <Link href="/app" className="text-xs text-primary font-medium hover:underline">Tất cả</Link>
+        </div>
         <div className="mt-2 grid gap-1">
           {projects.length ? (
             projects.map((project) => (
@@ -82,26 +82,26 @@ export function AppSidebar({
                 key={project.id}
                 href={`/app/projects/${project.id}`}
                 className={cn(
-                  "truncate rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
-                  pathname.includes(project.id) && "bg-secondary/60 text-foreground",
+                  "truncate rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-secondary/50 hover:text-foreground transition-colors",
+                  pathname.includes(project.id) && "bg-secondary/70 font-medium text-foreground",
                 )}
               >
                 {project.title}
               </Link>
             ))
           ) : (
-            <p className="px-3 py-2 text-sm text-muted-foreground">Chưa có dự án</p>
+            <p className="px-3 py-2 text-xs text-muted-foreground">Chưa có dự án nào</p>
           )}
         </div>
       </div>
 
       <div className="grid gap-1 border-t border-border/70 pt-3 text-sm">
-        <Link href="/app/credits" className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-secondary/50">
-          <span className="flex items-center gap-2"><Coins className="size-4 text-primary" /> Credits</span>
+        <Link href="/app/credits" className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-secondary/50 transition-colors">
+          <span className="flex items-center gap-2"><Coins className="size-4 text-primary" /> Credit và gói nhóm</span>
           <strong><CreditBalance initialBalance={balance} /></strong>
         </Link>
         {isAdmin ? (
-          <Link href="/admin" className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-secondary/50">
+          <Link href="/admin" className="flex items-center gap-2 rounded-lg px-3 py-2 hover:bg-secondary/50 transition-colors">
             <BarChart3 className="size-4" /> Admin dashboard
           </Link>
         ) : null}

@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
-import { packs, projects, promptInsertions } from "@/db/schema";
+import { packs, projects, promptInsertions, sectionIntakes, projectSections } from "@/db/schema";
 import { Pack } from "@/lib/packs-schema";
 import { buildInitialPrompt } from "@/lib/prompts/builder";
 import { ensureCurrentUser } from "@/lib/server/auth";
@@ -58,10 +58,36 @@ export async function POST(request: Request) {
       );
     }
 
+    const [intakeRow] = await db
+      .select()
+      .from(sectionIntakes)
+      .where(and(eq(sectionIntakes.projectId, projectId), eq(sectionIntakes.sectionId, sectionId)))
+      .limit(1);
+
+    const savedSections = await db
+      .select({
+        sectionId: projectSections.sectionId,
+        savedText: projectSections.savedText,
+      })
+      .from(projectSections)
+      .where(and(eq(projectSections.projectId, projectId), eq(projectSections.status, "passed")));
+
+    const savedSummary = savedSections
+      .filter((s) => s.sectionId !== sectionId && s.savedText)
+      .map((s) => `${s.sectionId}: ${s.savedText?.slice(0, 100)}...`)
+      .join("; ");
+
+    const intakeAnswers = body.intake_answers ?? intakeRow?.answers ?? {};
+
     const promptText = buildInitialPrompt(packContent, section, {
       name: project.name,
       idea: project.idea,
+      one_liner: project.oneLiner || project.idea,
       targetCustomer: project.targetCustomer,
+      niche: project.niche || project.targetCustomer,
+      domain: project.domain || project.industry,
+      intake_answers: intakeAnswers,
+      saved_summary: savedSummary,
       availableData: project.availableData,
     });
 
