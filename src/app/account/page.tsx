@@ -160,7 +160,7 @@ export default async function AccountPage() {
 
                     <span
                       className={`font-bold text-sm ${
-                        isPositive ? "text-emerald-400" : "text-slate-300"
+                        isPositive ? "text-[var(--ok)]" : "text-[var(--ink-2)]"
                       }`}
                     >
                       {isPositive ? `+${tx.delta}` : tx.delta}

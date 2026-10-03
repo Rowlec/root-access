@@ -335,15 +335,15 @@ export default function ConnectExtensionPage() {
 
           {/* Connected State */}
           {connected ? (
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6 text-center space-y-4">
-              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+            <div className="rounded-2xl border border-emerald-300 bg-[var(--ok-bg)]/60 p-6 text-center space-y-4 shadow-xs">
+              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-100 text-[var(--ok)] border border-emerald-200">
                 <CheckCircle2 size={32} />
               </div>
               <div className="space-y-1.5">
-                <h3 className="text-base sm:text-lg font-bold text-emerald-300">
+                <h3 className="text-base sm:text-lg font-bold text-[var(--ok)]">
                   Đã kết nối thành công với Extension! ✓
                 </h3>
-                <p className="text-xs text-slate-300 max-w-md mx-auto leading-relaxed">
+                <p className="text-xs text-[var(--ink-2)] max-w-md mx-auto leading-relaxed">
                   Tài khoản <strong>{session.user.email}</strong> đã được đồng bộ sang Extension. 
                   Tiện ích Root Access bên cạnh ChatGPT & Gemini đã sẵn sàng hỗ trợ bạn làm đề án!
                 </p>
@@ -393,16 +393,16 @@ export default function ConnectExtensionPage() {
               ) : (
                 <div className="space-y-4">
                   {/* REASSURING GREEN CONFIRMATION CARD: When user already sees sidepanel is open */}
-                  <div className="rounded-2xl border-2 border-emerald-500/50 bg-emerald-500/10 p-5 space-y-3 shadow-lg">
+                  <div className="rounded-2xl border-2 border-emerald-300 bg-[var(--ok-bg)]/70 p-5 space-y-3 shadow-xs">
                     <div className="flex items-start gap-3">
-                      <div className="size-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <div className="size-9 rounded-xl bg-emerald-100 text-[var(--ok)] border border-emerald-200 flex items-center justify-center shrink-0 mt-0.5">
                         <CheckCircle2 size={20} />
                       </div>
                       <div className="space-y-1 text-xs">
-                        <p className="font-bold text-emerald-200 text-sm">
+                        <p className="font-bold text-[var(--ok)] text-sm">
                           Tiện ích bên phải đã hiển thị sẵn sàng?
                         </p>
-                        <p className="text-emerald-100/90 leading-relaxed">
+                        <p className="text-[var(--ink-2)] leading-relaxed">
                           Nếu khung tiện ích bên phải đã mở và hiển thị dòng chữ <em>&ldquo;Mở ChatGPT hoặc Gemini&rdquo;</em> (hoặc các phần đề án), tức là tài khoản của bạn <strong>đã được kết nối thành công!</strong>
                         </p>
                       </div>
@@ -425,17 +425,17 @@ export default function ConnectExtensionPage() {
                   </div>
 
                   {/* Amber Notice Card */}
-                  <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
-                    <div className="flex items-start gap-2.5 text-amber-300">
+                  <div className="rounded-2xl border border-amber-300 bg-[var(--mid-bg)] p-4 space-y-3">
+                    <div className="flex items-start gap-2.5 text-[var(--mid)]">
                       <Compass size={18} className="shrink-0 mt-0.5" />
                       <div className="space-y-1.5 text-xs">
-                        <p className="font-semibold text-amber-200">
+                        <p className="font-bold text-[var(--ink)]">
                           Chưa tự động gửi được tới Extension
                         </p>
-                        <p className="text-slate-300 leading-relaxed">
+                        <p className="text-[var(--ink-2)] leading-relaxed">
                           {errorNotice || "Trình duyệt chưa phát hiện thấy Extension đang hoạt động trên máy bạn."}
                         </p>
-                        <p className="text-[11px] text-amber-300/90 leading-relaxed bg-black/20 p-2.5 rounded-lg border border-amber-500/20">
+                        <p className="text-[11px] text-[var(--mid)] leading-relaxed bg-amber-100/70 p-2.5 rounded-lg border border-amber-300">
                           💡 <strong>Mẹo:</strong> Hiện tượng này xảy ra khi bạn mở trang web trước rồi mới bật tiện ích bên phải sau. Nếu tiện ích bên phải đã mở rồi, bạn chỉ cần bấm nút màu xanh <strong>&ldquo;Tiện ích bên phải đã mở rồi ➔ Xác nhận&rdquo;</strong> ở trên để tiếp tục!
                         </p>
                       </div>

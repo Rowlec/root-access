@@ -60,7 +60,7 @@ export function SiteHeader({ locale }: SiteHeaderProps) {
   }, []);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/60 bg-background/45 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--bg)]/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/app" className="flex shrink-0 items-center gap-2.5">
           <div className="relative flex size-7 items-center justify-center rounded bg-[#1C1A17] text-white font-serif font-bold text-base shadow-sm">

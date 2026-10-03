@@ -51,18 +51,18 @@ export default async function PricingPage() {
               <span className="text-3xl font-black text-foreground">19.000đ</span>
               <span className="text-xs text-muted-foreground ml-2">/ 20 lượt chấm</span>
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs text-[var(--ink-2)] leading-relaxed">
               Phù hợp cho 1 nhóm hoàn thiện trọn vẹn 1 checkpoint proposal.
             </p>
-            <ul className="space-y-2.5 text-xs text-slate-300 pt-2">
+            <ul className="space-y-2.5 text-xs text-[var(--ink-2)] pt-2">
               <li className="flex items-center gap-2">
-                <CheckCircle2 size={15} className="text-emerald-400" /> 20 lượt chấm theo rubric EXE
+                <CheckCircle2 size={15} className="text-[var(--ok)]" /> 20 lượt chấm theo rubric EXE
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 size={15} className="text-emerald-400" /> Chèn prompt & prompt sửa miễn phí
+                <CheckCircle2 size={15} className="text-[var(--ok)]" /> Chèn prompt & prompt sửa miễn phí
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 size={15} className="text-emerald-400" /> Kiểm tra số liệu bịa & câu hỏi hội đồng
+                <CheckCircle2 size={15} className="text-[var(--ok)]" /> Kiểm tra số liệu bịa & câu hỏi hội đồng
               </li>
             </ul>
           </div>
@@ -96,24 +96,24 @@ export default async function PricingPage() {
               <span className="inline-block rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
                 Gói Pro (Khuyên dùng)
               </span>
-              <span className="text-xs font-semibold text-emerald-400">Tiết kiệm 25%</span>
+              <span className="text-xs font-semibold text-emerald-800 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">Tiết kiệm 25%</span>
             </div>
             <div>
               <span className="text-3xl font-black text-foreground">39.000đ</span>
               <span className="text-xs text-muted-foreground ml-2">/ 80 lượt chấm</span>
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs text-[var(--ink-2)] leading-relaxed">
               Đủ cho cả nhóm sửa và chấm lại xuyên suốt toàn bộ học kỳ đến ngày báo cáo cuối kỳ.
             </p>
-            <ul className="space-y-2.5 text-xs text-slate-300 pt-2">
+            <ul className="space-y-2.5 text-xs text-[var(--ink-2)] pt-2">
               <li className="flex items-center gap-2">
-                <CheckCircle2 size={15} className="text-emerald-400" /> 80 lượt chấm theo rubric EXE
+                <CheckCircle2 size={15} className="text-[var(--ok)]" /> 80 lượt chấm theo rubric EXE
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 size={15} className="text-emerald-400" /> Không giới hạn lượt chèn prompt
+                <CheckCircle2 size={15} className="text-[var(--ok)]" /> Không giới hạn lượt chèn prompt
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 size={15} className="text-emerald-400" /> Hỗ trợ sửa không giới hạn
+                <CheckCircle2 size={15} className="text-[var(--ok)]" /> Hỗ trợ sửa không giới hạn
               </li>
             </ul>
           </div>
@@ -123,7 +123,7 @@ export default async function PricingPage() {
               isLoggedIn ? (
                 <PurchaseCreditsButton
                   packageId="pro"
-                  label="Nạp 80 Credit qua PayOS (Tự động)"
+                  label="Nạp 80 Credit qua PayOS"
                   className="h-11 w-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md shadow-primary/25"
                 />
               ) : (
@@ -193,9 +193,9 @@ export default async function PricingPage() {
         </div>
 
         {!isLoggedIn && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200 text-center">
+          <div className="rounded-xl border border-amber-300 bg-[var(--mid-bg)] p-3 text-xs text-[var(--mid)] text-center font-medium">
             Bạn chưa đăng nhập. Vui lòng{" "}
-            <Link href="/sign-in?next=/pricing" className="underline font-bold text-white">
+            <Link href="/sign-in?next=/pricing" className="underline font-bold text-[var(--ink)]">
               Đăng nhập trước
             </Link>{" "}
             để mã chuyển khoản gắn đúng vào tài khoản của bạn.

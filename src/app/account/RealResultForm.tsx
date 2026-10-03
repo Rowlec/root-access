@@ -74,13 +74,13 @@ export function RealResultForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pt-2">
       {success && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2">
+        <div className="rounded-xl border border-emerald-300 bg-[var(--ok-bg)]/80 p-3 text-xs text-[var(--ok)] font-medium flex items-center gap-2">
           <Check size={16} /> Đã lưu kết quả checkpoint thật thành công! Cảm ơn bạn đã đóng góp.
         </div>
       )}
 
       {errorMsg && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-300">
+        <div className="rounded-xl border border-red-300 bg-[var(--bad-bg)]/80 p-3 text-xs text-[var(--bad)] font-medium">
           {errorMsg}
         </div>
       )}

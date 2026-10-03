@@ -43,37 +43,37 @@ export default function PrivacyPage() {
                 <th className="p-4 w-1/2">Extension TUYỆT ĐỐI KHÔNG ĐỌC</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/60 text-slate-300">
+            <tbody className="divide-y divide-border/60 text-[var(--ink-2)]">
               <tr>
                 <td className="p-4 align-top space-y-2">
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+                    <CheckCircle2 size={16} className="text-[var(--ok)] shrink-0 mt-0.5" />
                     <span>
                       <strong>Nội dung câu trả lời AI cuối cùng trên trang:</strong> Chỉ đọc khi người dùng chủ động bấm nút <em>&ldquo;Chấm câu trả lời này&rdquo;</em> trên Side Panel.
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <CheckCircle2 size={16} className="text-emerald-400 shrink-0 mt-0.5" />
+                    <CheckCircle2 size={16} className="text-[var(--ok)] shrink-0 mt-0.5" />
                     <span>
                       <strong>Trạng thái giao diện trang AI:</strong> Kiểm tra sự hiện diện của ô nhập prompt và nút Stop (để nhận biết AI có đang stream chữ hay không).
                     </span>
                   </div>
                 </td>
-                <td className="p-4 align-top space-y-2 bg-red-500/5">
+                <td className="p-4 align-top space-y-2 bg-[var(--bad-bg)]/40">
                   <div className="flex items-start gap-2">
-                    <XCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+                    <XCircle size={16} className="text-[var(--bad)] shrink-0 mt-0.5" />
                     <span>
                       <strong>Lịch sử chat & các cuộc trò chuyện khác:</strong> Không bao giờ đọc danh sách trò chuyện ở thanh điều hướng, các tin nhắn cũ hay tên tài khoản của bạn.
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <XCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+                    <XCircle size={16} className="text-[var(--bad)] shrink-0 mt-0.5" />
                     <span>
-                      <strong>Bất kỳ trang web nào khác:</strong> Extension chỉ hoạt động trên <code>chatgpt.com</code> và <code>gemini.google.com</code>. Không có quyền trên bất kỳ trang web nào khác.
+                      <strong>Bất kỳ trang web nào khác:</strong> Extension chỉ hoạt động trên <code className="px-1 py-0.5 rounded bg-white/80 border border-red-200 font-mono text-[11px]">chatgpt.com</code> và <code className="px-1 py-0.5 rounded bg-white/80 border border-red-200 font-mono text-[11px]">gemini.google.com</code>. Không có quyền trên bất kỳ trang web nào khác.
                     </span>
                   </div>
                   <div className="flex items-start gap-2">
-                    <XCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+                    <XCircle size={16} className="text-[var(--bad)] shrink-0 mt-0.5" />
                     <span>
                       <strong>Không tự động chạy ngầm:</strong> Không tự ý đọc văn bản khi người dùng chưa nhấn lệnh Chấm.
                     </span>
@@ -86,37 +86,37 @@ export default function PrivacyPage() {
       </div>
 
       {/* Data Protection Checklist (Mục 14.2) */}
-      <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-4">
+      <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-4 shadow-xs">
         <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-          <ShieldCheck size={20} className="text-emerald-400" />
+          <ShieldCheck size={20} className="text-[var(--ok)]" />
           2. Tiêu chuẩn bảo vệ dữ liệu & Bảo mật hệ thống
         </h2>
-        <ul className="space-y-3 text-xs text-muted-foreground leading-relaxed">
+        <ul className="space-y-3 text-xs text-[var(--ink-2)] leading-relaxed">
           <li className="flex items-start gap-2">
-            <span className="text-foreground font-bold">•</span>
+            <span className="text-[var(--ok)] font-bold">•</span>
             <span><strong>Bảo mật API Key:</strong> Mọi API Key mô hình trí tuệ nhân tạo (LLM) được lưu trữ độc quyền trên môi trường máy chủ bảo mật (Server-side environment). Không có bất kỳ API Key nào được đóng gói hay để lộ trong mã nguồn Extension.</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-foreground font-bold">•</span>
+            <span className="text-[var(--ok)] font-bold">•</span>
             <span><strong>Phân quyền Row-Level Security:</strong> Người dùng chỉ có quyền truy cập dữ liệu dự án và kết quả chấm của chính mình. Cơ chế phân quyền ngăn chặn hoàn toàn việc rò rỉ dữ liệu giữa các nhóm.</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-foreground font-bold">•</span>
+            <span className="text-[var(--ok)] font-bold">•</span>
             <span><strong>Quyền xóa dữ liệu của người dùng:</strong> Khi người dùng thực hiện xóa dự án, toàn bộ kết quả chấm (grades), prompt đã chèn (prompt_insertions) và các hành động sửa liên quan sẽ được tự động xóa hoàn toàn khỏi cơ sở dữ liệu.</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-foreground font-bold">•</span>
+            <span className="text-[var(--ok)] font-bold">•</span>
             <span><strong>Chống can thiệp Prompt Injection:</strong> Dữ liệu bài làm của sinh viên luôn được cô lập an toàn trong cấu trúc định danh trước khi gửi tới bộ chấm, ngăn chặn các rủi ro can thiệp mệnh lệnh hệ thống.</span>
           </li>
         </ul>
       </div>
 
       {/* Chrome Web Store Single Purpose Notice */}
-      <div className="rounded-3xl border border-border bg-card/60 p-6 sm:p-8 space-y-3">
+      <div className="rounded-3xl border border-border bg-card p-6 sm:p-8 space-y-3 shadow-xs">
         <h2 className="text-base font-bold text-foreground">
           3. Tuyên bố mục đích duy nhất (Single Purpose Declaration)
         </h2>
-        <p className="text-xs text-muted-foreground leading-relaxed">
+        <p className="text-xs text-[var(--ink-2)] leading-relaxed">
           RootAccess là tiện ích hỗ trợ sinh viên hoàn thiện Startup Proposal trong môn học Khởi nghiệp bằng cách chèn prompt chuẩn và đánh giá bài làm theo tiêu chí rubric chính thức. Tiện ích chỉ yêu cầu các quyền hạn tối thiểu cần thiết để phục vụ mục đích này (<code>sidePanel</code>, <code>storage</code>, và quyền truy cập <code>chatgpt.com</code>, <code>gemini.google.com</code>).
         </p>
       </div>
