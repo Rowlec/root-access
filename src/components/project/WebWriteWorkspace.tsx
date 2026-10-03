@@ -67,6 +67,10 @@ interface WebWriteWorkspaceProps {
     order: number;
     status?: string;
   }>;
+  initialIntakeQuestions?: IntakeQuestion[];
+  initialIntakeAnswers?: Record<string, any>;
+  initialSavedText?: string;
+  initialGradeResult?: any;
 }
 
 export function WebWriteWorkspace({
@@ -77,13 +81,19 @@ export function WebWriteWorkspace({
   niche,
   packId,
   sections,
+  initialIntakeQuestions = [],
+  initialIntakeAnswers = {},
+  initialSavedText = "",
+  initialGradeResult = null,
 }: WebWriteWorkspaceProps) {
   const currentSection = sections.find((s) => s.id === sectionId) || sections[0];
 
   // Intake State
-  const [intakeQuestions, setIntakeQuestions] = useState<IntakeQuestion[]>([]);
-  const [intakeAnswers, setIntakeAnswers] = useState<Record<string, any>>({});
-  const [loadingIntake, setLoadingIntake] = useState(true);
+  const [intakeQuestions, setIntakeQuestions] = useState<IntakeQuestion[]>(initialIntakeQuestions);
+  const [intakeAnswers, setIntakeAnswers] = useState<Record<string, any>>(initialIntakeAnswers);
+  const [loadingIntake, setLoadingIntake] = useState(
+    !(initialIntakeQuestions && initialIntakeQuestions.length > 0)
+  );
 
   // Prompt State
   const [generatedPrompt, setGeneratedPrompt] = useState("");
@@ -92,9 +102,9 @@ export function WebWriteWorkspace({
   const [promptCopied, setPromptCopied] = useState(false);
 
   // Answer & Grade State
-  const [answerText, setAnswerText] = useState("");
+  const [answerText, setAnswerText] = useState(initialSavedText);
   const [isGrading, setIsGrading] = useState(false);
-  const [gradeResult, setGradeResult] = useState<GradeResponse | null>(null);
+  const [gradeResult, setGradeResult] = useState<GradeResponse | null>(initialGradeResult);
   const [gradeError, setGradeError] = useState<string | null>(null);
 
   // Saving State
@@ -107,33 +117,50 @@ export function WebWriteWorkspace({
 
   // Load section intake questions and saved answers
   useEffect(() => {
+    // If SSR already supplied intake questions, initialize them and bypass client fetch waterfall
+    if (initialIntakeQuestions && initialIntakeQuestions.length > 0) {
+      setIntakeQuestions(initialIntakeQuestions);
+      setIntakeAnswers(initialIntakeAnswers || {});
+      if (initialSavedText !== undefined && initialSavedText !== "") {
+        setAnswerText(initialSavedText);
+      }
+      if (initialGradeResult) {
+        setGradeResult(initialGradeResult);
+      }
+      setLoadingIntake(false);
+      return;
+    }
+
     let isMounted = true;
     async function loadData() {
       try {
         setLoadingIntake(true);
-        // 1. Fetch pack content for intake questions
-        const packRes = await fetch(`/api/packs/${packId}`);
-        if (packRes.ok) {
-          const packData = await packRes.json();
+        // Parallel requests instead of sequential waterfall
+        const [packRes, intakeRes, overviewRes] = await Promise.allSettled([
+          fetch(`/api/packs/${packId}`),
+          fetch(`/api/projects/${projectId}/sections/${sectionId}/intake`),
+          fetch(`/api/projects/${projectId}/overview`),
+        ]);
+
+        if (!isMounted) return;
+
+        if (packRes.status === "fulfilled" && packRes.value.ok) {
+          const packData = await packRes.value.json();
           const sec = packData.sections?.find((s: any) => s.id === sectionId);
           if (sec?.intake && isMounted) {
             setIntakeQuestions(sec.intake);
           }
         }
 
-        // 2. Fetch already answered intake from section_intakes
-        const intakeRes = await fetch(`/api/projects/${projectId}/sections/${sectionId}/intake`);
-        if (intakeRes.ok) {
-          const resJson = await intakeRes.json();
+        if (intakeRes.status === "fulfilled" && intakeRes.value.ok) {
+          const resJson = await intakeRes.value.json();
           if (resJson.answers && isMounted) {
             setIntakeAnswers(resJson.answers);
           }
         }
 
-        // 3. Fetch saved section if any
-        const overviewRes = await fetch(`/api/projects/${projectId}/overview`);
-        if (overviewRes.ok) {
-          const overview = await overviewRes.json();
+        if (overviewRes.status === "fulfilled" && overviewRes.value.ok) {
+          const overview = await overviewRes.value.json();
           const secOverview = overview.sections?.find((s: any) => s.id === sectionId);
           if (secOverview?.saved_text && isMounted) {
             setAnswerText(secOverview.saved_text);
@@ -152,7 +179,7 @@ export function WebWriteWorkspace({
     return () => {
       isMounted = false;
     };
-  }, [projectId, sectionId, packId]);
+  }, [projectId, sectionId, packId, initialIntakeQuestions, initialIntakeAnswers, initialSavedText, initialGradeResult]);
 
   // Handle answering an intake question
   const handleAnswerChange = async (qId: string, value: any) => {
