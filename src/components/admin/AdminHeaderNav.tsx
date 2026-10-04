@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Activity,
   ArrowLeft,
+  BookOpen,
   Boxes,
   Compass,
   FolderKanban,
@@ -19,6 +20,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/admin", label: "Tổng quan", icon: LayoutDashboard },
   { href: "/admin/users", label: "Người dùng & Admin", icon: Users },
+  { href: "/admin/examples", label: "Kho bài mẫu", icon: BookOpen },
   { href: "/admin/packages", label: "Gói credits", icon: Boxes },
   { href: "/admin/orders", label: "Đơn hàng & Nạp tiền", icon: ReceiptText },
   { href: "/admin/projects", label: "Dự án sinh viên", icon: FolderKanban },

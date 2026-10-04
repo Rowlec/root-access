@@ -43,12 +43,32 @@ export const WarningItemSchema = z.object({
 });
 export type WarningItem = z.infer<typeof WarningItemSchema>;
 
+export const CriterionGapSchema = z.object({
+  missing: z.string(),
+  quote: z.string().default(""),
+  fix_kind: z.enum(["auto", "needs_input", "self"]).default("auto"),
+  input_question: z.string().optional(),
+  example_id: z.string().optional(),
+  example: z
+    .object({
+      excerpt: z.string(),
+      why_good: z.string(),
+    })
+    .optional(),
+});
+export type CriterionGap = z.infer<typeof CriterionGapSchema>;
+
 export const GradedCriterionSchema = z.object({
   id: z.string(),
+  key: z.string().optional(),
   name: z.string(),
   level: CriterionLevelEnum,
   reason: z.string(),
   evidence_quote: z.string(),
+  status: z.enum(["below", "met"]).default("below").optional(),
+  priority: z.number().default(1).optional(),
+  gap: CriterionGapSchema.optional(),
+  keep_quote: z.string().optional(),
 });
 export type GradedCriterion = z.infer<typeof GradedCriterionSchema>;
 
@@ -59,7 +79,7 @@ export const CompareWithParentSchema = z.object({
 });
 export type CompareWithParent = z.infer<typeof CompareWithParentSchema>;
 
-// Schema matching Appendix B (GradeResult)
+// Schema matching Appendix B & Mentor Spec (GradeResult)
 export const GradeResultSchema = z.object({
   grade_id: z.string(),
   status: z.enum(["ok", "rejected"]),
@@ -68,7 +88,13 @@ export const GradeResultSchema = z.object({
     .nullable(),
   section_id: z.string(),
   off_topic: z.boolean(),
+  target_level: z.enum(["pass", "good", "excellent"]).default("good").optional(),
+  met_count: z.number().default(0).optional(),
+  total: z.number().default(0).optional(),
   criteria: z.array(GradedCriterionSchema),
+  gaps: z.array(GradedCriterionSchema).default([]).optional(),
+  keep: z.array(GradedCriterionSchema).default([]).optional(),
+  invented_numbers: z.array(z.string()).default([]).optional(),
   warnings: z.array(WarningItemSchema),
   fix_actions: z.array(FixActionSchema),
   likely_questions: z.array(z.string()),
@@ -86,6 +112,10 @@ export const LlmGradeOutputSchema = z.object({
       evidence_quote: z.string().default(""),
       reason: z.string(),
       level: CriterionLevelEnum,
+      missing: z.string().optional(),
+      fix_kind: z.enum(["auto", "needs_input", "self"]).default("auto").optional(),
+      input_question: z.string().optional(),
+      keep_quote: z.string().optional(),
     }),
   ),
   fix_actions: z

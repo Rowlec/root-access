@@ -10,6 +10,7 @@ import {
   authUser,
   creditLedger,
   creditTransactions,
+  examples,
   orders,
   packs,
   profiles,
@@ -590,4 +591,50 @@ export async function updateSelectorConfigAction(formData: FormData) {
     targetType: "site_selectors",
   });
   revalidatePath("/admin");
+}
+
+export async function createExampleAction(formData: FormData) {
+  const admin = await requireAdmin();
+  const db = getDb();
+
+  const course = String(formData.get("course") || "EXE101").trim();
+  const checkpoint = String(formData.get("checkpoint") || "Checkpoint 2").trim();
+  const sectionKey = String(formData.get("section_key") || "problem").trim();
+  const criterionKey = String(formData.get("criterion_key") || "").trim();
+  const level = String(formData.get("level") || "TOT").trim();
+  const reportedScore = String(formData.get("reported_score") || "9.5").trim();
+  const excerpt = String(formData.get("excerpt") || "").trim();
+  const whyGood = String(formData.get("why_good") || "").trim();
+  const sourceType = String(formData.get("source_type") || "senior").trim();
+
+  if (!criterionKey || !excerpt || !whyGood) {
+    throw new Error("Vui lòng điền đầy đủ tiêu chí, đoạn trích và lý do đạt Tốt.");
+  }
+
+  await db.insert(examples).values({
+    course,
+    checkpoint,
+    sectionKey,
+    criterionKey,
+    level,
+    reportedScore,
+    excerpt,
+    whyGood,
+    sourceType,
+    consent: true,
+    anonymized: true,
+    createdBy: admin.id,
+  });
+
+  revalidatePath("/admin/examples");
+}
+
+export async function deleteExampleAction(formData: FormData) {
+  await requireAdmin();
+  const db = getDb();
+  const id = String(formData.get("id") || "").trim();
+  if (id) {
+    await db.delete(examples).where(eq(examples.id, id));
+    revalidatePath("/admin/examples");
+  }
 }

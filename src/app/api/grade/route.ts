@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     const insertionId = body.insertion_id ?? body.insertionId ?? null;
     const parentGradeId = body.parent_grade_id ?? body.parentGradeId ?? null;
     const site = body.site ?? "chatgpt";
+    const targetLevel = body.target_level ?? body.targetLevel;
 
     if (!projectId || !sectionId || typeof outputText !== "string") {
       return jsonResponse(
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
       insertionId,
       parentGradeId,
       site,
+      targetLevel,
     });
 
     if (!engineResponse.success) {

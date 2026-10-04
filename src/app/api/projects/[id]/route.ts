@@ -112,6 +112,9 @@ export async function PATCH(
     if (body.pack_id !== undefined || body.packId !== undefined) {
       updates.packId = body.pack_id ?? body.packId;
     }
+    if (body.target_level !== undefined || body.targetLevel !== undefined) {
+      updates.targetLevel = body.target_level ?? body.targetLevel;
+    }
 
     const [updated] = await db
       .update(projects)

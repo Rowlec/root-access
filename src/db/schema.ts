@@ -152,6 +152,7 @@ export const projects = pgTable(
     teamStrengths: jsonb("team_strengths").$type<string[]>().default([]).notNull(),
     constraints: jsonb("constraints").$type<string[]>().default([]).notNull(),
     createdVia: text("created_via").default("studio").notNull(),
+    targetLevel: text("target_level").$type<"pass" | "good" | "excellent">(),
     // Backward compatibility fields
     title: text("title").default("").notNull(),
     startupIdea: text("startup_idea").default("").notNull(),
@@ -637,3 +638,31 @@ export const fullChecks = pgTable(
     index("full_checks_project_id_idx").on(table.projectId),
   ],
 );
+
+export const examples = pgTable(
+  "examples",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    course: text("course").notNull(), // 'EXE101'
+    checkpoint: text("checkpoint").notNull(), // 'Checkpoint 2'
+    sectionKey: text("section_key").notNull(), // 'problem', 'customer', 'solution', 'revenue'
+    criterionKey: text("criterion_key").notNull(), // 'specificity', 'urgency', etc.
+    level: text("level").default("TOT").notNull(), // 'TOT' | 'DAT'
+    reportedScore: text("reported_score"), // '9.5', '10'
+    excerpt: text("excerpt").notNull(), // Short 1-3 sentences from high scoring proposal
+    whyGood: text("why_good").notNull(), // Formula/explanation e.g. "1 nhóm · 1 nơi · 1 hành vi đếm được"
+    sourceType: text("source_type").default("senior").notNull(), // 'senior' | 'public' | 'lecturer'
+    consent: boolean("consent").default(true).notNull(),
+    anonymized: boolean("anonymized").default(true).notNull(),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("examples_course_idx").on(table.course),
+    index("examples_checkpoint_idx").on(table.checkpoint),
+    index("examples_section_key_idx").on(table.sectionKey),
+    index("examples_criterion_key_idx").on(table.criterionKey),
+    index("examples_level_idx").on(table.level),
+  ],
+);
+

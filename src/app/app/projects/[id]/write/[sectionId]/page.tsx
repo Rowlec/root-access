@@ -93,6 +93,7 @@ export default async function WriteSectionPage({
         initialIntakeAnswers={intakeRow?.answers || {}}
         initialSavedText={savedSectionRow?.savedText || ""}
         initialGradeResult={latestGradeRow?.result || null}
+        initialTargetLevel={project.targetLevel || null}
       />
     </main>
   );

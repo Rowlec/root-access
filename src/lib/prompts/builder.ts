@@ -145,46 +145,88 @@ export function buildInitialPrompt(
 export function buildFixPrompt(params: {
   sectionTitle: string;
   criterionName: string;
+  targetLevel?: "pass" | "good" | "excellent";
+  rubricRequirement?: string;
   totDescription?: string;
-  currentReason: string;
+  currentReason?: string;
+  missing?: string;
   evidenceQuote?: string;
+  exampleFormula?: string;
   userInputText?: string | null;
+  keptQuotes?: string[];
   actionType?: string;
   niche?: string;
 }): string {
   const {
     sectionTitle,
     criterionName,
+    targetLevel = "good",
+    rubricRequirement,
+    totDescription,
     currentReason,
+    missing,
     evidenceQuote,
+    exampleFormula,
     userInputText,
+    keptQuotes = [],
     actionType,
     niche,
   } = params;
 
+  const targetLabelMap: Record<string, string> = {
+    pass: "Qua môn (Đạt tiêu chí cơ bản)",
+    good: "Khá (Khoảng 7–8 điểm)",
+    excellent: "Xuất sắc (Khoảng 9–10 điểm)",
+  };
+
   const lines: string[] = [];
-  lines.push(`Sửa lại phần "${sectionTitle}" cho tiêu chí "${criterionName}".`);
+  lines.push(`Hãy sửa lại nội dung phần "${sectionTitle}" cho tiêu chí "${criterionName}" theo đúng các yêu cầu sau:`);
 
+  // (1) Câu yếu, trích nguyên văn
   if (evidenceQuote && evidenceQuote.trim()) {
-    lines.push(`Câu có vấn đề: "${evidenceQuote.trim()}".`);
+    lines.push(`1. CÂU CẦN SỬA (trích nguyên văn từ bài làm):\n"${evidenceQuote.trim()}"`);
+  } else {
+    lines.push(`1. VẤN ĐỀ CẦN SỬA:\n${missing || currentReason || "Nội dung hiện tại chưa đáp ứng đủ tiêu chí."}`);
   }
-  lines.push(`Lý do: ${currentReason.trim()}`);
 
+  // (2) Yêu cầu của rubric cho mức mục tiêu
+  const requirement = rubricRequirement || totDescription || currentReason;
+  if (requirement && requirement.trim()) {
+    lines.push(`2. YÊU CẦU THEO RUBRIC [Mục tiêu: ${targetLabelMap[targetLevel] || targetLevel}]:\n${requirement.trim()}`);
+  }
+
+  // (3) Cách viết lấy từ bài mẫu (công thức hành văn, không chép chữ)
+  if (exampleFormula && exampleFormula.trim()) {
+    lines.push(`3. CÁCH VIẾT THAM KHẢO (áp dụng công thức hành văn, không sao chép nguyên văn):\n${exampleFormula.trim()}`);
+  }
+
+  // (4) Dữ liệu sinh viên vừa nhập (nếu có)
   if (userInputText && userInputText.trim()) {
-    lines.push(`Dữ liệu bổ sung từ nhóm: ${userInputText.trim()}`);
+    lines.push(`4. DỮ LIỆU BỔ SUNG TỪ NGƯỜI DÙNG:\n${userInputText.trim()}`);
   }
 
-  if (actionType === "MARK_ASSUMPTIONS") {
-    lines.push(`Đánh dấu [GIẢ ĐỊNH] cho mọi nhận định chưa kiểm chứng và thay số liệu thiếu nguồn bằng [CẦN DỮ LIỆU: ...].`);
-  } else if (actionType === "FOCUS_REWRITE" && niche) {
-    lines.push(`Viết lại chỉ tập trung cho ngách "${niche}", không lan man sang đối tượng khác.`);
-  } else if (actionType === "NEED_DATA") {
-    lines.push(`Chèn chính xác dữ liệu nhóm vừa cung cấp vào đúng ngữ cảnh.`);
+  // Action type specific notes
+  if (actionType === "FOCUS_REWRITE" && niche) {
+    lines.push(`LƯU Ý ĐẶC BIỆT: Viết lại chỉ tập trung cho đúng ngách "${niche}", không lan man sang đối tượng khác.`);
   }
 
-  lines.push(`Trả lại toàn bộ phần ${sectionTitle} sau khi sửa, giữ nguyên các ý khác.`);
+  // (5) Khóa phần tốt: Chỉ sửa câu trên, giữ nguyên toàn bộ các câu khác
+  const rules: string[] = [
+    "CHỈ SỬA CÂU TRÊN. GIỮ NGUYÊN TOÀN BỘ CÁC CÂU KHÁC TRONG ĐOẠN VĂN.",
+  ];
 
-  return lines.join("\n");
+  if (keptQuotes && keptQuotes.length > 0) {
+    rules.push("Các câu sau đây đã đạt yêu cầu, TUYỆT ĐỐI KHÔNG ĐƯỢC THAY ĐỔI:\n" + keptQuotes.map((q) => `  - "${q}"`).join("\n"));
+  }
+
+  // (6) Anti-hallucination
+  rules.push("Nếu thiếu dữ liệu thực tế, hãy ghi [CẦN DỮ LIỆU: cần thu thập gì], tuyệt đối KHÔNG ĐƯỢC TỰ BỊA ĐẶT CON SỐ HAY TỈ LỆ.");
+
+  lines.push(`5. NGUYÊN TẮC BẮT BUỘC:\n` + rules.map((r, i) => `${i + 1}) ${r}`).join("\n"));
+
+  lines.push(`Trả lại đoạn văn hoàn chỉnh sau khi sửa.`);
+
+  return lines.join("\n\n");
 }
 
 export interface ValidationIssue {
