@@ -257,7 +257,9 @@ export function ProjectHubView({ initialData }: { initialData: HubData }) {
     }
   };
 
-  const nextSection = data.sections.find((s) => s.id === data.next_section_id) || data.sections[0];
+  const nextSection =
+    data.sections?.find((s) => s.id === data.next_section_id) ||
+    data.sections?.[0] || { id: "problem", title: "Vấn đề" };
 
   return (
     <div className="space-y-8">
