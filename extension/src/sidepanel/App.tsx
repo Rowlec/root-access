@@ -12,6 +12,7 @@ import { GradeResultScreen } from "./screens/GradeResultScreen";
 import { LoginScreen } from "./screens/LoginScreen";
 import { OutOfCreditsScreen } from "./screens/OutOfCreditsScreen";
 import { ProjectSetupScreen } from "./screens/ProjectSetupScreen";
+import { ProjectSelectModal } from "./screens/ProjectSelectModal";
 import { SectionDetailScreen } from "./screens/SectionDetailScreen";
 import { SectionListScreen, SectionStatus } from "./screens/SectionListScreen";
 
@@ -40,6 +41,26 @@ export function App() {
   const [currentGradeResult, setCurrentGradeResult] = useState<GradeResult | null>(null);
   const [selectedFixAction, setSelectedFixAction] = useState<FixAction | null>(null);
   const [sectionStatuses, setSectionStatuses] = useState<Record<string, SectionStatus>>({});
+  const [isProjectSelectOpen, setIsProjectSelectOpen] = useState(false);
+
+  const handleOpenProjectSelect = async () => {
+    setIsProjectSelectOpen(true);
+    try {
+      const freshProjects = await api.getProjects();
+      setProjects(freshProjects);
+    } catch (err) {
+      console.warn("Failed to refresh projects:", err);
+    }
+  };
+
+  const handleSelectProject = (proj: Project) => {
+    setActiveProject(proj);
+    if (proj.packId && packs.length > 0) {
+      const matchedPack = packs.find((p) => p.id === proj.packId);
+      if (matchedPack) setCurrentPack(matchedPack);
+    }
+    setIsProjectSelectOpen(false);
+  };
 
   // 1. Check active tab (ChatGPT or Gemini)
   useEffect(() => {
@@ -199,15 +220,34 @@ export function App() {
       currentPack?.sections?.find((s) => sectionStatuses[s.id] !== "DAT") ||
       currentPack?.sections?.[0];
     return (
-      <UnsupportedSiteNotice
-        userEmail={sessionUser?.email}
-        credits={sessionUser?.credits}
-        projectName={activeProject?.name}
-        packName={
-          currentPack ? `${currentPack.course} – ${currentPack.checkpoint}` : null
-        }
-        nextSectionTitle={nextSec?.title}
-      />
+      <>
+        <UnsupportedSiteNotice
+          userEmail={sessionUser?.email}
+          credits={sessionUser?.credits}
+          projectName={activeProject?.name}
+          packName={
+            currentPack ? `${currentPack.course} – ${currentPack.checkpoint}` : null
+          }
+          nextSectionTitle={nextSec?.title}
+          onChangeProject={handleOpenProjectSelect}
+        />
+        {isProjectSelectOpen && (
+          <ProjectSelectModal
+            projects={projects}
+            activeProjectId={activeProject?.id}
+            onSelectProject={handleSelectProject}
+            onNewProject={() => {
+              setIsProjectSelectOpen(false);
+              setScreen("PROJECT_SETUP");
+            }}
+            onRefresh={async () => {
+              const freshProjects = await api.getProjects();
+              setProjects(freshProjects);
+            }}
+            onClose={() => setIsProjectSelectOpen(false)}
+          />
+        )}
+      </>
     );
   }
 
@@ -280,20 +320,35 @@ export function App() {
   // S3: Section List (Default view for logged in user with active project)
   if (activeProject && currentPack) {
     return (
-      <SectionListScreen
-        project={activeProject}
-        pack={currentPack}
-        sectionStatuses={sectionStatuses}
-        onSelectSection={(sec) => {
-          setActiveSection(sec);
-          setScreen("SECTION_DETAIL");
-        }}
-        onChangeProject={() => {
-          const nextIndex = (projects.indexOf(activeProject) + 1) % projects.length;
-          setActiveProject(projects[nextIndex]);
-        }}
-        onNewProject={() => setScreen("PROJECT_SETUP")}
-      />
+      <>
+        <SectionListScreen
+          project={activeProject}
+          pack={currentPack}
+          sectionStatuses={sectionStatuses}
+          onSelectSection={(sec) => {
+            setActiveSection(sec);
+            setScreen("SECTION_DETAIL");
+          }}
+          onChangeProject={handleOpenProjectSelect}
+          onNewProject={() => setScreen("PROJECT_SETUP")}
+        />
+        {isProjectSelectOpen && (
+          <ProjectSelectModal
+            projects={projects}
+            activeProjectId={activeProject?.id}
+            onSelectProject={handleSelectProject}
+            onNewProject={() => {
+              setIsProjectSelectOpen(false);
+              setScreen("PROJECT_SETUP");
+            }}
+            onRefresh={async () => {
+              const freshProjects = await api.getProjects();
+              setProjects(freshProjects);
+            }}
+            onClose={() => setIsProjectSelectOpen(false)}
+          />
+        )}
+      </>
     );
   }
 

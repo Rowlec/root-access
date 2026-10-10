@@ -83,12 +83,14 @@ export function UnsupportedSiteNotice({
   projectName,
   packName,
   nextSectionTitle,
+  onChangeProject,
 }: {
   userEmail?: string | null;
   credits?: number | null;
   projectName?: string | null;
   packName?: string | null;
   nextSectionTitle?: string | null;
+  onChangeProject?: () => void;
 }) {
   const openUrl = (url: string) => {
     if (chrome?.tabs?.create) {
@@ -121,9 +123,20 @@ export function UnsupportedSiteNotice({
       {/* Project Status Info (Spec B12: Hiện tiến độ + Phần tiếp theo) */}
       {projectName && (
         <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4 space-y-2.5 text-xs text-left shadow-sm">
-          <span className="text-[2xs] font-bold uppercase tracking-wider text-[var(--muted)]">
-            Dự án hiện tại
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-[2xs] font-bold uppercase tracking-wider text-[var(--muted)]">
+              Dự án hiện tại
+            </span>
+            {onChangeProject && (
+              <button
+                type="button"
+                onClick={onChangeProject}
+                className="text-[11px] font-semibold text-[var(--accent)] hover:underline"
+              >
+                Đổi dự án
+              </button>
+            )}
+          </div>
           <h4 className="font-serif font-bold text-sm text-[var(--ink)] truncate">
             {projectName}
           </h4>

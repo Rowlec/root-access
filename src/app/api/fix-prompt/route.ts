@@ -128,6 +128,7 @@ export async function POST(request: Request) {
       totDescription: criterionDef.levels.TOT,
       currentReason: gradedCriterion?.reason ?? fixAction?.explanation ?? "Chưa đạt yêu cầu tối đa của tiêu chí.",
       missing: gradedCriterion?.gap?.missing,
+      whyImportant: gradedCriterion?.why_important || gradedCriterion?.gap?.why_important,
       evidenceQuote: gradedCriterion?.gap?.quote || gradedCriterion?.evidence_quote,
       exampleFormula,
       userInputText,

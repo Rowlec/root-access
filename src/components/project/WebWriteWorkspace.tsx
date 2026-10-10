@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  Award,
   Check,
   CheckCircle2,
   ChevronDown,
@@ -15,6 +16,7 @@ import {
   Copy,
   ExternalLink,
   HelpCircle,
+  History,
   Info,
   Loader2,
   Lock,
@@ -46,9 +48,13 @@ interface CriterionResult {
   priority?: number;
   reason: string;
   evidence_quote: string;
+  why_important?: string;
+  guiding_questions?: string[];
   gap?: {
     missing: string;
     quote: string;
+    why_important?: string;
+    guiding_questions?: string[];
     fix_kind: "auto" | "needs_input" | "self";
     input_question?: string;
     example_id?: string;
@@ -79,8 +85,26 @@ interface GradeResponse {
     type: string;
     label: string;
     explanation: string;
+    why_important?: string;
+    guiding_questions?: string[];
   }>;
   likely_questions?: string[];
+  compare_with_parent?: {
+    delta?: number;
+    improved: string[];
+    worse: string[];
+    same: string[];
+    details?: Array<{
+      criterion_id: string;
+      criterion_name?: string;
+      previous_level?: string;
+      current_level: string;
+      status: "improved" | "worse" | "same";
+      reason: string;
+      diff_snippet?: string;
+    }>;
+    summary_reason?: string;
+  } | null;
   credits_left?: number;
   summary?: string;
   overall_status?: "passed" | "needs_work";
@@ -176,9 +200,42 @@ export function WebWriteWorkspace({
     copied: boolean;
   } | null>(null);
 
+  // In-Card Answers for Guided Fix ("Tạo prompt từ câu trả lời của tôi")
+  const [inCardAnswers, setInCardAnswers] = useState<Record<string, string>>({});
+  const [submittingGapPromptId, setSubmittingGapPromptId] = useState<string | null>(null);
+
+  // Onboarding Modal State
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState(0);
+
+  // Contextual Help (?) State for Step 1 & Step 2
+  const [showStepHelp, setShowStepHelp] = useState<1 | 2 | null>(null);
+
+  // Lecturer Feedback State
+  const [showLecturerBox, setShowLecturerBox] = useState(false);
+  const [lecturerFeedbackText, setLecturerFeedbackText] = useState("");
+  const [lecturerActualScore, setLecturerActualScore] = useState("");
+  const [isAnalyzingFeedback, setIsAnalyzingFeedback] = useState(false);
+  const [feedbackAnalysis, setFeedbackAnalysis] = useState<any>(null);
+
+  // Full-check Cross-Section Proposal Review State
+  const [showFullCheckModal, setShowFullCheckModal] = useState(false);
+  const [isRunningFullCheck, setIsRunningFullCheck] = useState(false);
+  const [fullCheckResult, setFullCheckResult] = useState<any>(null);
+
   // Saving State
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Check if first time user to trigger onboarding
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const seen = localStorage.getItem("ra_guided_onboarding_seen");
+      if (!seen) {
+        setShowOnboarding(true);
+      }
+    }
+  }, []);
 
   // Load section intake questions and saved answers
   useEffect(() => {
@@ -307,7 +364,7 @@ export function WebWriteWorkspace({
     }
   };
 
-  // Grade current draft
+  // Grade current draft (Supports Regrade with parent comparison)
   const handleGrade = async () => {
     if (!answerText.trim()) return;
     setIsGrading(true);
@@ -321,6 +378,7 @@ export function WebWriteWorkspace({
           section_id: sectionId,
           output_text: answerText.trim(),
           target_level: targetLevel,
+          parent_grade_id: gradeResult?.grade_id,
         }),
       });
       const data = await res.json();
@@ -352,6 +410,8 @@ export function WebWriteWorkspace({
           savedText: answerText.trim(),
           gradeId: gradeResult?.grade_id,
           status,
+          lecturerFeedback: lecturerFeedbackText.trim() || undefined,
+          actualScore: lecturerActualScore.trim() || undefined,
         }),
       });
       if (res.ok) {
@@ -365,9 +425,17 @@ export function WebWriteWorkspace({
     }
   };
 
-  // 1. "Sửa cho tôi": direct 1-click fix prompt
-  const handleFixForMe = async (criterionId: string, criterionName: string) => {
+  // "Tạo prompt từ câu trả lời của tôi" (Thay cho "sửa một cú bấm")
+  const handleGeneratePromptFromAnswer = async (
+    criterionId: string,
+    criterionName: string,
+    customAnswer?: string
+  ) => {
     if (!gradeResult?.grade_id) return;
+    const answerToUse = (customAnswer ?? inCardAnswers[criterionId] ?? "").trim();
+    if (!answerToUse) return;
+
+    setSubmittingGapPromptId(criterionId);
     try {
       const res = await fetch("/api/fix-prompt", {
         method: "POST",
@@ -375,6 +443,7 @@ export function WebWriteWorkspace({
         body: JSON.stringify({
           grade_id: gradeResult.grade_id,
           criterion_key: criterionId,
+          user_answer: answerToUse,
         }),
       });
       if (res.ok) {
@@ -389,12 +458,16 @@ export function WebWriteWorkspace({
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setSubmittingGapPromptId(null);
     }
   };
 
-  // 2. "Trả lời 1 câu rồi sửa": open dialog with specific question
+  // Open dialog with specific question
   const handleOpenQuestionModal = (gap: CriterionResult) => {
     const question =
+      gap.guiding_questions?.[0] ||
+      gap.gap?.guiding_questions?.[0] ||
       gap.gap?.input_question ||
       `Bạn có số liệu hoặc câu chuyện thực tế nào từ khảo sát/phỏng vấn để bổ sung cho tiêu chí "${gap.name || gap.id}" không?`;
 
@@ -403,7 +476,7 @@ export function WebWriteWorkspace({
       criterionId: gap.id,
       criterionName: gap.name || gap.id,
       question,
-      userAnswer: "",
+      userAnswer: inCardAnswers[gap.id] || "",
       submitting: false,
     });
   };
@@ -415,6 +488,9 @@ export function WebWriteWorkspace({
     const answer = isMissingData
       ? "[CẦN DỮ LIỆU]"
       : questionModalState.userAnswer.trim() || "[CẦN DỮ LIỆU]";
+
+    // Update in-card answer cache
+    setInCardAnswers((prev) => ({ ...prev, [questionModalState.criterionId]: answer }));
 
     try {
       const res = await fetch("/api/fix-prompt", {
@@ -441,6 +517,52 @@ export function WebWriteWorkspace({
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  // Analyze lecturer feedback with rubric mapping
+  const handleAnalyzeLecturerFeedback = async () => {
+    if (!lecturerFeedbackText.trim()) return;
+    setIsAnalyzingFeedback(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/sections/${sectionId}/lecturer-feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          feedback: lecturerFeedbackText.trim(),
+          score: lecturerActualScore.trim(),
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFeedbackAnalysis(data.analysis);
+      }
+    } catch (err) {
+      console.error("Failed to analyze lecturer feedback", err);
+    } finally {
+      setIsAnalyzingFeedback(false);
+    }
+  };
+
+  // Run full cross-section proposal check
+  const handleRunFullCheck = async () => {
+    setIsRunningFullCheck(true);
+    setShowFullCheckModal(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/full-check`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setFullCheckResult(data.result);
+      } else {
+        alert(data.error || "Cần lưu ít nhất 2 phần để kiểm tra chéo toàn bộ proposal.");
+      }
+    } catch (err) {
+      console.error("Full check failed", err);
+    } finally {
+      setIsRunningFullCheck(false);
     }
   };
 
@@ -642,12 +764,35 @@ export function WebWriteWorkspace({
 
       {/* Navigation Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--line-2)] pb-4">
-        <Link
-          href={`/app/projects/${projectId}`}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
-        >
-          <ArrowLeft className="size-3.5" /> Về sổ dự án ({projectName})
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/app/projects/${projectId}`}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+          >
+            <ArrowLeft className="size-3.5" /> Về sổ dự án ({projectName})
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOnboardingStep(0);
+              setShowOnboarding(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--surface-2)] text-[11px] text-[var(--ink)] font-semibold hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors shadow-2xs"
+          >
+            <HelpCircle className="size-3.5 text-blue-500" />
+            <span>Hướng dẫn quy trình</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleRunFullCheck}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/40 text-[11px] text-amber-800 dark:text-amber-200 font-semibold hover:opacity-90 transition-opacity shadow-2xs"
+          >
+            <Sparkles className="size-3.5 text-amber-500" />
+            <span>Kiểm tra chéo toàn bài</span>
+          </button>
+        </div>
 
         {/* Section Tabs */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
@@ -669,14 +814,24 @@ export function WebWriteWorkspace({
 
       {/* Main Workspace Grid */}
       <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
-        {/* Left Column: Intake & Prompt Builder */}
+        {/* Left Column: Intake & Prompt Builder & Lecturer Feedback */}
         <div className="space-y-6">
           <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="text-[2xs] font-bold uppercase tracking-wider text-[var(--accent)]">
-                  Bước 1 · Hỏi nhanh 2–4 câu
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[2xs] font-bold uppercase tracking-wider text-[var(--accent)]">
+                    Bước 1 · Hỏi nhanh 2–4 câu
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowStepHelp(showStepHelp === 1 ? null : 1)}
+                    className="text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+                    title="Giải thích bước này"
+                  >
+                    <HelpCircle className="size-3.5" />
+                  </button>
+                </div>
                 <h2 className="text-lg font-serif font-bold text-[var(--ink)] mt-0.5">
                   Lấy dữ liệu thực tế cho phần {currentSection.title}
                 </h2>
@@ -685,6 +840,21 @@ export function WebWriteWorkspace({
                 </p>
               </div>
             </div>
+
+            {showStepHelp === 1 && (
+              <div className="rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/40 p-3.5 text-xs text-blue-900 dark:text-blue-200 space-y-1.5 animate-in fade-in duration-150">
+                <p className="font-bold flex items-center gap-1.5">
+                  <Info className="size-3.5 text-blue-600" />
+                  Mục đích của Bước 1:
+                </p>
+                <p className="text-[11px] leading-relaxed">
+                  Thu thập các dữ kiện thực tế của nhóm bạn để chuẩn bị prompt chuẩn. Prompt này sẽ yêu cầu ChatGPT bám sát ngách của bạn và <strong>không tự bịa số liệu</strong>.
+                </p>
+                <p className="text-[11px] leading-relaxed font-semibold text-blue-800 dark:text-blue-300">
+                  ➔ Bước tiếp theo: Bấm "Tạo prompt chuẩn", sao chép prompt sang ChatGPT để nhận câu trả lời bản nháp đầu tiên.
+                </p>
+              </div>
+            )}
 
             {loadingIntake ? (
               <div className="py-8 text-center text-xs text-[var(--muted)] flex items-center justify-center gap-2">
@@ -802,6 +972,111 @@ export function WebWriteWorkspace({
               </div>
             )}
           </section>
+
+          {/* Lecturer / Mentor Feedback Section */}
+          <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Award className="size-4 text-purple-600" />
+                <h3 className="font-serif font-bold text-sm text-[var(--ink)]">
+                  Nhận xét từ Giảng viên / Mentor
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLecturerBox(!showLecturerBox)}
+                className="text-xs text-[var(--accent)] font-semibold hover:underline"
+              >
+                {showLecturerBox ? "Thu gọn" : "Mở ô dán"}
+              </button>
+            </div>
+
+            {showLecturerBox && (
+              <div className="space-y-3 pt-2 border-t border-[var(--line-2)] animate-in fade-in duration-150">
+                <p className="text-xs text-[var(--muted)] leading-relaxed">
+                  Dán nhận xét thực tế của thầy/cô sau buổi review. Tool sẽ phân tích tiêu chí rubric liên quan và đưa ra câu hỏi gợi mở để bạn sửa.
+                </p>
+                <textarea
+                  rows={3}
+                  value={lecturerFeedbackText}
+                  onChange={(e) => setLecturerFeedbackText(e.target.value)}
+                  placeholder="Ví dụ: 'Thầy thấy phần khách hàng mục tiêu còn chung chung quá, chưa có số liệu khảo sát chứng minh nỗi đau...'"
+                  className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-3 text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] leading-relaxed"
+                />
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="text"
+                    value={lecturerActualScore}
+                    onChange={(e) => setLecturerActualScore(e.target.value)}
+                    placeholder="Điểm thật GV chấm (nếu có, vd: 7.5)"
+                    className="w-48 rounded-lg border border-[var(--line)] bg-[var(--surface-2)] px-3 py-1.5 text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--accent)]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAnalyzeLecturerFeedback}
+                    disabled={isAnalyzingFeedback || !lecturerFeedbackText.trim()}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors shadow-xs"
+                  >
+                    {isAnalyzingFeedback ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="size-3.5" />
+                    )}
+                    Phân tích & Hướng dẫn sửa
+                  </button>
+                </div>
+
+                {feedbackAnalysis && (
+                  <div className="rounded-xl border border-purple-200 bg-purple-50/70 dark:bg-purple-950/30 p-4 space-y-3 text-xs text-purple-950 dark:text-purple-100">
+                    <div className="font-bold flex items-center gap-2 flex-wrap">
+                      <span>Tiêu chí liên quan:</span>
+                      <span className="px-2 py-0.5 rounded bg-purple-200 dark:bg-purple-900 text-purple-800 dark:text-purple-200 font-bold">
+                        {feedbackAnalysis.criterion_name}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-bold block uppercase text-[10px] text-purple-800 dark:text-purple-300">
+                        Vì sao GV trừ điểm:
+                      </span>
+                      <p className="leading-relaxed">{feedbackAnalysis.why_important}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="font-bold block uppercase text-[10px] text-purple-800 dark:text-purple-300">
+                        Câu hỏi gợi mở để sửa theo ý GV:
+                      </span>
+                      {feedbackAnalysis.guiding_questions?.map((q: string, i: number) => (
+                        <p key={i} className="font-medium">
+                          • {q}
+                        </p>
+                      ))}
+                    </div>
+                    <div className="pt-2 border-t border-purple-200/60 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const q =
+                            feedbackAnalysis.guiding_questions?.[0] ||
+                            "Bạn muốn bổ sung dữ liệu gì để trả lời nhận xét của giảng viên?";
+                          setQuestionModalState({
+                            open: true,
+                            criterionId: feedbackAnalysis.criterion_key,
+                            criterionName: `Theo nhận xét GV: ${feedbackAnalysis.criterion_name}`,
+                            question: q,
+                            userAnswer: inCardAnswers[feedbackAnalysis.criterion_key] || "",
+                            submitting: false,
+                          });
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-purple-700 text-white font-bold text-xs hover:bg-purple-800 shadow-xs"
+                      >
+                        <Wand2 className="size-3" />
+                        Trả lời & Tạo prompt sửa theo GV
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
         </div>
 
         {/* Right Column: Paste & Goal-Oriented Grading */}
@@ -810,9 +1085,19 @@ export function WebWriteWorkspace({
             {/* Step 2 Header & Target Level Bar */}
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <span className="text-[2xs] font-bold uppercase tracking-wider text-[var(--accent)]">
-                  Bước 2 · Dán & Chấm theo mục tiêu
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[2xs] font-bold uppercase tracking-wider text-[var(--accent)]">
+                    Bước 2 · Dán & Chấm theo mục tiêu
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowStepHelp(showStepHelp === 2 ? null : 2)}
+                    className="text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+                    title="Giải thích bước này"
+                  >
+                    <HelpCircle className="size-3.5" />
+                  </button>
+                </div>
                 <h2 className="text-lg font-serif font-bold text-[var(--ink)] mt-0.5">
                   Đạt đúng điểm bạn muốn
                 </h2>
@@ -838,6 +1123,35 @@ export function WebWriteWorkspace({
               </div>
             </div>
 
+            {/* Contextual Help for Step 2 */}
+            {showStepHelp === 2 && (
+              <div className="rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/40 p-3.5 text-xs text-blue-900 dark:text-blue-200 space-y-1.5 animate-in fade-in duration-150">
+                <p className="font-bold flex items-center gap-1.5">
+                  <Info className="size-3.5 text-blue-600" />
+                  Mục đích của Bước 2:
+                </p>
+                <p className="text-[11px] leading-relaxed">
+                  Đối chiếu câu trả lời với rubric chính thức theo mức điểm bạn đã chọn. Tool <strong>không sửa thay</strong> mà chỉ ra chính xác chỗ nào cần sửa, thiếu gì, vì sao quan trọng và đưa câu hỏi gợi mở để bạn tự sửa.
+                </p>
+                <p className="text-[11px] leading-relaxed font-semibold text-blue-800 dark:text-blue-300">
+                  ➔ Sau khi sửa: Bấm "Chấm theo mục tiêu này" lần nữa để xem bảng <em>"Bạn đã sửa gì"</em> và giải thích vì sao điểm đổi.
+                </p>
+              </div>
+            )}
+
+            {/* Visual Copy Guidance */}
+            <div className="flex items-center justify-between gap-3 text-xs text-[var(--muted)] bg-[var(--surface-2)] p-3 rounded-xl border border-[var(--line-2)]">
+              <div className="flex items-center gap-2">
+                <Copy className="size-4 text-[var(--accent)] shrink-0" />
+                <span>
+                  <strong>Chỉ dẫn:</strong> Sau khi ChatGPT sinh câu trả lời ở tab bên cạnh, hãy sao chép văn bản và dán vào ô bên dưới.
+                </span>
+              </div>
+              <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 whitespace-nowrap">
+                Tip: Extension tự nhận diện
+              </span>
+            </div>
+
             {/* Editor or Visual Review */}
             {answerViewMode === "preview" && gradeResult ? (
               renderVisualAnswer()
@@ -861,6 +1175,16 @@ export function WebWriteWorkspace({
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Empty State when no draft pasted yet */}
+            {!answerText.trim() && !gradeResult && (
+              <div className="rounded-xl border border-dashed border-[var(--line)] p-6 text-center space-y-2 bg-[var(--surface-2)]/50">
+                <p className="text-xs font-semibold text-[var(--ink)]">Chưa có bài để chấm</p>
+                <p className="text-[11px] text-[var(--muted)] max-w-sm mx-auto leading-relaxed">
+                  Hãy hoàn thành Bước 1 ở bên trái, sao chép prompt sang ChatGPT, sau đó dán nội dung câu trả lời nhận được vào ô trên và bấm "Chấm theo mục tiêu này".
+                </p>
               </div>
             )}
 
@@ -916,6 +1240,77 @@ export function WebWriteWorkspace({
             {/* Results Presentation (Chỉ sửa chỗ thiếu, giữ nguyên chỗ tốt) */}
             {gradeResult && (
               <div className="space-y-5 pt-4 border-t border-[var(--line-2)]">
+                {/* "Bạn đã sửa gì" sau mỗi lần chấm lại (compare_with_parent) */}
+                {gradeResult.compare_with_parent && (
+                  <div className="rounded-2xl border border-blue-300/80 bg-blue-50/50 dark:bg-blue-950/20 p-4 sm:p-5 space-y-3.5 shadow-xs">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <History className="size-4 text-blue-600" />
+                        <h4 className="font-bold text-xs text-blue-950 dark:text-blue-100">
+                          Bạn đã sửa gì sau khi chấm lại
+                        </h4>
+                      </div>
+                      {(() => {
+                        const delta =
+                          gradeResult.compare_with_parent.delta ??
+                          (gradeResult.compare_with_parent.improved.length -
+                            gradeResult.compare_with_parent.worse.length);
+                        return (
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                            {delta > 0
+                              ? `+${delta} tiêu chí đạt`
+                              : delta === 0
+                              ? "Điểm chưa đổi"
+                              : `${delta} tiêu chí`}
+                          </span>
+                        );
+                      })()}
+                    </div>
+
+                    {gradeResult.compare_with_parent.summary_reason && (
+                      <div className="rounded-xl bg-blue-100/60 dark:bg-blue-900/30 p-3 text-xs text-blue-950 dark:text-blue-200 leading-relaxed font-medium">
+                        {gradeResult.compare_with_parent.summary_reason}
+                      </div>
+                    )}
+
+                    {gradeResult.compare_with_parent.details &&
+                      gradeResult.compare_with_parent.details.length > 0 && (
+                        <div className="space-y-2 pt-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 dark:text-blue-300 block">
+                            Chi tiết thay đổi theo từng tiêu chí:
+                          </span>
+                          <div className="space-y-2">
+                            {gradeResult.compare_with_parent.details.map((d, dIdx) => (
+                              <div
+                                key={dIdx}
+                                className="flex items-start gap-2.5 text-xs bg-white/80 dark:bg-neutral-900/80 p-3 rounded-xl border border-blue-200/60 dark:border-blue-900/40"
+                              >
+                                <span
+                                  className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                    d.status === "improved"
+                                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                      : d.status === "worse"
+                                      ? "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300"
+                                      : "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+                                  }`}
+                                >
+                                  {d.previous_level || "Chưa đạt"} → {d.current_level}
+                                </span>
+                                <div className="space-y-0.5 min-w-0 flex-1">
+                                  <p className="font-bold text-[var(--ink)] text-[11px]">
+                                    {d.criterion_name || d.criterion_id}
+                                  </p>
+                                  <p className="text-[11px] text-[var(--muted)] leading-relaxed">
+                                    {d.reason}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                  </div>
+                )}
                 {/* Progress bar to target */}
                 <div className="rounded-xl border border-[var(--line-2)] bg-[var(--surface-2)] p-4 space-y-2">
                   <div className="flex items-center justify-between text-xs">
@@ -978,6 +1373,20 @@ export function WebWriteWorkspace({
                     <div className="space-y-4">
                       {gapsList.map((gap, gIdx) => {
                         const isSelfFixOpen = openSelfFixId === gap.id;
+                        const guidingQuestions: string[] =
+                          gap.guiding_questions && gap.guiding_questions.length > 0
+                            ? gap.guiding_questions
+                            : gap.gap?.guiding_questions && gap.gap.guiding_questions.length > 0
+                            ? gap.gap.guiding_questions
+                            : [
+                                gap.gap?.input_question ||
+                                  `Nhóm đã khảo sát bao nhiêu người hoặc có dữ liệu thực tế nào chứng minh tiêu chí "${gap.name || gap.id}" không?`,
+                              ];
+
+                        const whyImportantText =
+                          gap.why_important ||
+                          gap.gap?.why_important ||
+                          "Hội đồng và giảng viên sẽ trừ điểm ở phần này nếu thấy bài viết thiếu số liệu chứng minh thực tế hoặc chỉ nói chung chung.";
 
                         return (
                           <div
@@ -1000,24 +1409,40 @@ export function WebWriteWorkspace({
                               </span>
                             </div>
 
-                            {/* Thiếu gì */}
+                            {/* 1. Chỗ nào: Weak Quote */}
+                            {(gap.gap?.quote || gap.evidence_quote) && (
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 block">
+                                  1. Chỗ nào (Đoạn cần sửa):
+                                </span>
+                                <blockquote className="rounded-xl border border-amber-300 bg-amber-100/60 dark:bg-amber-900/40 p-2.5 text-xs text-amber-950 dark:text-amber-100 font-mono italic leading-relaxed">
+                                  "{gap.gap?.quote || gap.evidence_quote}"
+                                </blockquote>
+                              </div>
+                            )}
+
+                            {/* 2. Thiếu gì: Missing criteria */}
                             <div className="text-xs text-[var(--ink)] space-y-1">
-                              <span className="font-bold text-[11px] uppercase tracking-wider text-[var(--muted)] block">
-                                Thiếu gì:
+                              <span className="font-bold text-[10px] uppercase tracking-wider text-[var(--muted)] block">
+                                2. Thiếu gì (Theo rubric):
                               </span>
                               <p className="leading-relaxed font-medium">
                                 {gap.gap?.missing || gap.reason}
                               </p>
                             </div>
 
-                            {/* Weak Quote from draft */}
-                            {(gap.gap?.quote || gap.evidence_quote) && (
-                              <blockquote className="rounded-xl border border-amber-300/60 bg-amber-100/50 dark:bg-amber-900/30 p-2.5 text-xs text-[var(--ink)] font-mono italic">
-                                "{gap.gap?.quote || gap.evidence_quote}"
-                              </blockquote>
-                            )}
+                            {/* 3. Vì sao quan trọng: Why important */}
+                            <div className="rounded-xl border border-red-200/80 bg-red-50/70 dark:bg-red-950/30 p-3 text-xs space-y-1">
+                              <span className="font-bold text-[10px] uppercase tracking-wider text-red-800 dark:text-red-300 flex items-center gap-1.5">
+                                <AlertTriangle className="size-3 text-red-600" />
+                                3. Vì sao quan trọng (Giảng viên sẽ trừ điểm ở đâu):
+                              </span>
+                              <p className="text-[11px] text-red-900 dark:text-red-200 leading-relaxed font-medium">
+                                {whyImportantText}
+                              </p>
+                            </div>
 
-                            {/* High-Scoring Example Box */}
+                            {/* High-Scoring Example Box if available */}
                             {gap.gap?.example && (
                               <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3.5 space-y-1.5 text-xs">
                                 <div className="flex items-center gap-1.5 font-bold text-emerald-700 dark:text-emerald-400 text-[11px] uppercase">
@@ -1034,60 +1459,112 @@ export function WebWriteWorkspace({
                               </div>
                             )}
 
-                            {/* 3 Fix Action Buttons */}
-                            <div className="pt-2 border-t border-amber-200/80 dark:border-amber-900/40 flex flex-wrap items-center gap-2 justify-end">
-                              {/* Action 1: Sửa cho tôi */}
-                              <button
-                                type="button"
-                                onClick={() => handleFixForMe(gap.id, gap.name || gap.id)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[var(--accent)] text-white text-xs font-semibold hover:opacity-90 transition-opacity shadow-sm"
-                              >
-                                <Wand2 className="size-3" />
-                                Sửa cho tôi
-                              </button>
+                            {/* 4. Câu hỏi gợi mở & Trả lời để tạo prompt */}
+                            <div className="rounded-xl border border-amber-300 bg-[var(--surface)] p-3.5 space-y-2.5">
+                              <div className="space-y-1">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                                  <MessageSquare className="size-3 text-amber-600" />
+                                  4. Câu hỏi gợi mở (Để nhóm tự trả lời):
+                                </span>
+                                {guidingQuestions.map((q, qIdx) => (
+                                  <p
+                                    key={qIdx}
+                                    className="text-xs text-[var(--ink)] font-semibold leading-relaxed"
+                                  >
+                                    • {q}
+                                  </p>
+                                ))}
+                              </div>
 
-                              {/* Action 2: Trả lời 1 câu rồi sửa */}
-                              <button
-                                type="button"
-                                onClick={() => handleOpenQuestionModal(gap)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] text-xs font-semibold hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors shadow-sm"
-                              >
-                                <MessageSquare className="size-3 text-amber-500" />
-                                Trả lời 1 câu rồi sửa
-                              </button>
+                              <div>
+                                <textarea
+                                  rows={2}
+                                  value={inCardAnswers[gap.id] || ""}
+                                  onChange={(e) =>
+                                    setInCardAnswers((prev) => ({
+                                      ...prev,
+                                      [gap.id]: e.target.value,
+                                    }))
+                                  }
+                                  placeholder="Điền dữ liệu thật của nhóm bạn vào đây (vd: đã phỏng vấn 12 người, 8 người kêu giá quá 50k không mua...)"
+                                  className="w-full rounded-lg border border-[var(--line)] bg-[var(--surface-2)] p-2.5 text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] leading-relaxed"
+                                />
+                              </div>
 
-                              {/* Action 3: Tự sửa */}
-                              <button
-                                type="button"
-                                onClick={() => setOpenSelfFixId(isSelfFixOpen ? null : gap.id)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-dashed border-[var(--line)] text-xs text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
-                              >
-                                Tự sửa {isSelfFixOpen ? <ChevronUp className="size-3" /> : <ChevronDown className="size-3" />}
-                              </button>
+                              <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setInCardAnswers((prev) => ({
+                                      ...prev,
+                                      [gap.id]: "[CẦN DỮ LIỆU]",
+                                    }));
+                                  }}
+                                  className="text-[11px] text-[var(--muted)] hover:text-amber-600 font-medium underline"
+                                >
+                                  Chưa có số liệu (Ghi [CẦN DỮ LIỆU])
+                                </button>
+
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setOpenSelfFixId(isSelfFixOpen ? null : gap.id)
+                                    }
+                                    className="text-[11px] text-[var(--muted)] hover:text-[var(--ink)] font-semibold px-2 py-1 rounded"
+                                  >
+                                    Tự sửa {isSelfFixOpen ? "▲" : "▼"}
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleGeneratePromptFromAnswer(gap.id, gap.name || gap.id)
+                                    }
+                                    disabled={
+                                      submittingGapPromptId === gap.id ||
+                                      !(inCardAnswers[gap.id] || "").trim()
+                                    }
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--accent)] text-white text-xs font-bold hover:opacity-90 disabled:opacity-40 transition-opacity shadow-xs"
+                                    title={
+                                      !(inCardAnswers[gap.id] || "").trim()
+                                        ? "Chỉ bật khi sinh viên đã điền câu trả lời gợi mở (Không làm thay)"
+                                        : "Tạo prompt chuẩn mang dữ liệu thật của bạn sang ChatGPT"
+                                    }
+                                  >
+                                    {submittingGapPromptId === gap.id ? (
+                                      <Loader2 className="size-3 animate-spin" />
+                                    ) : (
+                                      <Wand2 className="size-3" />
+                                    )}
+                                    Tạo prompt từ câu trả lời của tôi
+                                  </button>
+                                </div>
+                              </div>
                             </div>
 
                             {/* Self-fix checklist expansion */}
                             {isSelfFixOpen && (
-                              <div className="rounded-xl border border-[var(--line-2)] bg-[var(--surface)] p-3 text-xs space-y-2 animate-in fade-in duration-150">
+                              <div className="rounded-xl border border-[var(--line-2)] bg-[var(--surface-2)] p-3 text-xs space-y-2 animate-in fade-in duration-150">
                                 <span className="font-bold text-[11px] text-[var(--muted)] uppercase block">
-                                  Checklist cần có trong đoạn văn:
+                                  Checklist tự sửa (không dùng ChatGPT):
                                 </span>
                                 <ul className="space-y-1.5 text-[var(--ink)] text-[11px]">
                                   <li className="flex items-center gap-2">
                                     <Check className="size-3.5 text-emerald-500" />
-                                    <span>Đúng 1 nhóm khách hàng cụ thể (không gộp đối tượng).</span>
+                                    <span>Bổ sung số liệu hoặc câu chuyện thật của nhóm vào đoạn gạch chân vàng.</span>
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <Check className="size-3.5 text-emerald-500" />
-                                    <span>Có địa điểm / ngữ cảnh sinh sống rõ ràng.</span>
+                                    <span>Giải quyết đúng lý do bị trừ điểm ở mục 3 (Vì sao quan trọng).</span>
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <Check className="size-3.5 text-emerald-500" />
-                                    <span>Hành vi quan sát được hoặc đếm được tần suất.</span>
+                                    <span>Giữ nguyên các câu ở mục "Giữ nguyên" (đã khóa bên dưới).</span>
                                   </li>
                                   <li className="flex items-center gap-2">
                                     <Check className="size-3.5 text-emerald-500" />
-                                    <span>Dẫn số liệu khảo sát thực tế (nếu chưa có thì ghi [CẦN DỮ LIỆU]).</span>
+                                    <span>Sau khi sửa xong trong ô văn bản, bấm "Chấm theo mục tiêu này" lại để xem điểm tăng.</span>
                                   </li>
                                 </ul>
                               </div>
@@ -1282,6 +1759,280 @@ export function WebWriteWorkspace({
               >
                 <ExternalLink className="size-3.5" />
                 Mở ChatGPT & Dán
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Onboarding Modal (3-4 màn giới thiệu quy trình mới, có thể bỏ qua) */}
+      {showOnboarding && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-lg rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
+                Hướng dẫn quy trình mới · Bước {onboardingStep + 1}/4
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem("ra_guided_onboarding_seen", "true");
+                  setShowOnboarding(false);
+                }}
+                className="text-xs text-[var(--muted)] hover:text-[var(--ink)] font-semibold"
+              >
+                Bỏ qua
+              </button>
+            </div>
+
+            {/* Step content */}
+            {onboardingStep === 0 && (
+              <div className="space-y-3">
+                <div className="size-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center font-bold text-lg">
+                  1
+                </div>
+                <h3 className="text-base font-serif font-bold text-[var(--ink)]">
+                  Chọn mức điểm bạn muốn đạt
+                </h3>
+                <p className="text-xs text-[var(--muted)] leading-relaxed">
+                  Bạn có thể chọn <strong>Qua môn</strong>, <strong>Khá (7–8)</strong>, hoặc <strong>Xuất sắc (9–10)</strong>. RootAccess chỉ chỉ ra đúng những chỗ cần sửa để đạt mức điểm bạn chọn, không làm ngợp bạn với hàng tá góp ý thừa.
+                </p>
+              </div>
+            )}
+
+            {onboardingStep === 1 && (
+              <div className="space-y-3">
+                <div className="size-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center font-bold text-lg">
+                  2
+                </div>
+                <h3 className="text-base font-serif font-bold text-[var(--ink)]">
+                  Thu thập dữ liệu thật · Chống AI bịa số
+                </h3>
+                <p className="text-xs text-[var(--muted)] leading-relaxed">
+                  Ở Bước 1, bạn trả lời nhanh 2–4 câu hỏi về dự án. Prompt sẽ dùng chính thông tin thật này để gửi ChatGPT, khóa chặt ngách của nhóm bạn và ngăn ChatGPT tự bịa số liệu ảo.
+                </p>
+              </div>
+            )}
+
+            {onboardingStep === 2 && (
+              <div className="space-y-3">
+                <div className="size-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center font-bold text-lg">
+                  3
+                </div>
+                <h3 className="text-base font-serif font-bold text-[var(--ink)]">
+                  Chấm theo rubric · Sửa có hướng dẫn
+                </h3>
+                <p className="text-xs text-[var(--muted)] leading-relaxed">
+                  Dán câu trả lời từ ChatGPT vào Bước 2. Tool sẽ chỉ ra: <strong>Chỗ nào yếu</strong> (gạch chân vàng), <strong>Thiếu gì</strong> theo rubric, <strong>Vì sao quan trọng</strong> (thầy cô trừ điểm ở đâu), và <strong>Câu hỏi gợi mở</strong> để bạn tự suy nghĩ.
+                </p>
+              </div>
+            )}
+
+            {onboardingStep === 3 && (
+              <div className="space-y-3">
+                <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold text-lg">
+                  4
+                </div>
+                <h3 className="text-base font-serif font-bold text-[var(--ink)]">
+                  Tự sửa & Xem "Bạn đã sửa gì"
+                </h3>
+                <p className="text-xs text-[var(--muted)] leading-relaxed">
+                  Tool <strong>không sửa thay</strong> mà chỉ tạo prompt khi bạn đã điền câu trả lời gợi mở. Sau mỗi lần chấm lại, bạn sẽ thấy rõ bản so sánh: <em>bạn đã sửa gì và vì sao điểm thay đổi</em>.
+                </p>
+              </div>
+            )}
+
+            {/* Stepper dots & buttons */}
+            <div className="pt-3 border-t border-[var(--line-2)] flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                {[0, 1, 2, 3].map((step) => (
+                  <div
+                    key={step}
+                    className={`size-2 rounded-full transition-all ${
+                      step === onboardingStep ? "w-6 bg-[var(--accent)]" : "bg-[var(--line)]"
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {onboardingStep > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingStep((s) => s - 1)}
+                    className="px-3 py-1.5 rounded-lg border border-[var(--line)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--sunken)]"
+                  >
+                    Quay lại
+                  </button>
+                )}
+
+                {onboardingStep < 3 ? (
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingStep((s) => s + 1)}
+                    className="px-4 py-1.5 rounded-lg bg-[var(--ink)] text-white text-xs font-bold hover:bg-black"
+                  >
+                    Tiếp tục
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.setItem("ra_guided_onboarding_seen", "true");
+                      setShowOnboarding(false);
+                    }}
+                    className="px-4 py-1.5 rounded-lg bg-[var(--accent)] text-white text-xs font-bold hover:opacity-90 shadow-xs"
+                  >
+                    Bắt đầu ngay
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Cross-Check Proposal Modal */}
+      {showFullCheckModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-2xl max-h-[85vh] flex flex-col rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between gap-3 border-b border-[var(--line-2)] pb-3">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600">
+                  Kiểm tra chéo toàn bộ Proposal · 4 phần
+                </span>
+                <h3 className="text-base font-serif font-bold text-[var(--ink)] mt-0.5">
+                  Phát hiện mâu thuẫn giữa các phần
+                </h3>
+                <p className="text-xs text-[var(--muted)] mt-0.5">
+                  Chỉ ra các mâu thuẫn (nhóm khách hàng, số liệu khảo sát, giá), trích dẫn cả hai phía để nhóm tự quyết định, không sửa thay.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowFullCheckModal(false)}
+                className="text-[var(--muted)] hover:text-[var(--ink)] p-1 rounded-lg"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+              {isRunningFullCheck ? (
+                <div className="py-12 text-center text-xs text-[var(--muted)] flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="size-6 animate-spin text-[var(--accent)]" />
+                  <p className="font-semibold text-[var(--ink)]">
+                    Đang đối chiếu chéo nội dung giữa các phần đã lưu...
+                  </p>
+                  <p className="text-[11px] text-[var(--muted)]">
+                    Kiểm tra sự đồng nhất về đối tượng khách hàng, số liệu phỏng vấn và mô hình giá.
+                  </p>
+                </div>
+              ) : fullCheckResult ? (
+                <div className="space-y-4">
+                  {/* Conflicting issues */}
+                  <div className="space-y-3">
+                    <h4 className="text-xs font-bold uppercase text-[var(--ink)] flex items-center gap-2">
+                      <AlertTriangle className="size-4 text-amber-500" />
+                      Các điểm mâu thuẫn phát hiện ({fullCheckResult.issues?.length || 0})
+                    </h4>
+
+                    {(!fullCheckResult.issues || fullCheckResult.issues.length === 0) && (
+                      <div className="rounded-xl border border-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/20 p-4 text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
+                        <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                        <span>Tuyệt vời! Không phát hiện mâu thuẫn lớn giữa các phần đã lưu.</span>
+                      </div>
+                    )}
+
+                    {fullCheckResult.issues?.map((issue: any, iIdx: number) => (
+                      <div
+                        key={iIdx}
+                        className="rounded-xl border border-amber-300/80 bg-amber-50/40 dark:bg-amber-950/20 p-4 space-y-2.5 text-xs"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-[var(--ink)] text-xs">
+                            {iIdx + 1}. {issue.title || "Mâu thuẫn dữ liệu"}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
+                              issue.severity === "high"
+                                ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
+                                : "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300"
+                            }`}
+                          >
+                            Mức độ {issue.severity || "vừa"}
+                          </span>
+                        </div>
+
+                        <p className="text-[var(--ink)] leading-relaxed font-medium">
+                          {issue.description}
+                        </p>
+
+                        {(issue.quote_a || issue.quote_b) && (
+                          <div className="grid sm:grid-cols-2 gap-2 pt-1">
+                            {issue.quote_a && (
+                              <div className="rounded-lg bg-white/70 dark:bg-neutral-900/70 p-2 border border-[var(--line-2)] space-y-1">
+                                <span className="text-[10px] font-bold text-[var(--muted)] uppercase">
+                                  Trích dẫn phía 1:
+                                </span>
+                                <p className="font-mono text-[11px] text-[var(--ink)] italic">
+                                  "{issue.quote_a}"
+                                </p>
+                              </div>
+                            )}
+                            {issue.quote_b && (
+                              <div className="rounded-lg bg-white/70 dark:bg-neutral-900/70 p-2 border border-[var(--line-2)] space-y-1">
+                                <span className="text-[10px] font-bold text-[var(--muted)] uppercase">
+                                  Trích dẫn phía 2:
+                                </span>
+                                <p className="font-mono text-[11px] text-[var(--ink)] italic">
+                                  "{issue.quote_b}"
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {issue.suggested_fix && (
+                          <div className="rounded-lg bg-amber-100/50 dark:bg-amber-900/30 p-2.5 text-[11px] text-amber-950 dark:text-amber-200">
+                            <strong>Câu hỏi cho nhóm: </strong>
+                            {issue.suggested_fix}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Council Questions */}
+                  {fullCheckResult.council_questions &&
+                    fullCheckResult.council_questions.length > 0 && (
+                      <div className="space-y-2 pt-2 border-t border-[var(--line-2)]">
+                        <h4 className="text-xs font-bold uppercase text-[var(--ink)] flex items-center gap-2">
+                          <MessageSquare className="size-4 text-blue-500" />
+                          Câu hỏi phản biện dự kiến từ Hội đồng (OC1)
+                        </h4>
+                        <div className="space-y-1.5">
+                          {fullCheckResult.council_questions.map((cq: string, cqIdx: number) => (
+                            <div
+                              key={cqIdx}
+                              className="rounded-lg bg-[var(--surface-2)] p-2.5 text-xs text-[var(--ink)] font-medium"
+                            >
+                              • {cq}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="pt-3 border-t border-[var(--line-2)] flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowFullCheckModal(false)}
+                className="px-4 py-2 rounded-xl bg-[var(--ink)] text-white text-xs font-bold hover:bg-black"
+              >
+                Đã hiểu & Đóng
               </button>
             </div>
           </div>

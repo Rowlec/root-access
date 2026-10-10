@@ -533,6 +533,8 @@ export const projectSections = pgTable(
     savedText: text("saved_text"),
     savedGradeId: uuid("saved_grade_id"),
     chatUrl: text("chat_url"),
+    lecturerFeedback: text("lecturer_feedback"),
+    actualScore: text("actual_score"),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [

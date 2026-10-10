@@ -21,6 +21,8 @@ export async function POST(
     const savedGradeId = body.saved_grade_id ?? body.savedGradeId ?? null;
     const chatUrl = body.chat_url ?? body.chatUrl ?? null;
     const status = body.status ?? "passed"; // 'todo' | 'drafting' | 'passed'
+    const lecturerFeedback = body.lecturer_feedback ?? body.lecturerFeedback ?? null;
+    const actualScore = body.actual_score ?? body.actualScore ?? null;
 
     if (!savedText) {
       return jsonResponse(
@@ -46,6 +48,8 @@ export async function POST(
           savedText,
           savedGradeId: savedGradeId || existing.savedGradeId,
           chatUrl: chatUrl || existing.chatUrl,
+          lecturerFeedback: lecturerFeedback || existing.lecturerFeedback,
+          actualScore: actualScore || existing.actualScore,
           updatedAt: new Date(),
         })
         .where(and(eq(projectSections.projectId, projectId), eq(projectSections.sectionId, sectionId)))
@@ -60,6 +64,8 @@ export async function POST(
           savedText,
           savedGradeId,
           chatUrl,
+          lecturerFeedback,
+          actualScore,
         })
         .returning();
     }

@@ -171,4 +171,15 @@ export const api = {
   async getProjectOverview(projectId: string): Promise<any> {
     return request(`/api/projects/${projectId}/overview`);
   },
+
+  async analyzeLecturerFeedback(
+    projectId: string,
+    sectionId: string,
+    data: { feedback: string; score?: string },
+  ): Promise<any> {
+    return request(`/api/projects/${projectId}/sections/${sectionId}/lecturer-feedback`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
 };

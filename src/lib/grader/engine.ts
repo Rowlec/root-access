@@ -111,7 +111,9 @@ CÁCH CHẤM & ĐỊNH HƯỚNG GÓP Ý:
 5. Số liệu không có trong "Dữ liệu thật nhóm đã cung cấp" và không có nguồn: coi là chưa được chứng minh, không dùng làm căn cứ để cho mức TOT.
 6. HƯỚNG SỬA CỤ THỂ CHO TỪNG TIÊU CHÍ:
    - Nếu tiêu chí chưa đạt mục tiêu (ví dụ mục tiêu 'excellent' mà mới đạt DAT hoặc CHUA_DAT; hoặc mục tiêu 'good' mà tiêu chí cốt lõi mới đạt DAT; hoặc tiêu chí bị CHUA_DAT):
-     + "missing": một câu cụ thể nói rõ bài làm đang thiếu gì, kèm trích câu yếu (ví dụ: "Ngách bị gộp với 'người đi làm'. Cần đúng 1 nhóm, 1 nơi, 1 hành vi.").
+     + "missing": một câu cụ thể nói rõ bài làm đang thiếu gì, kèm trích câu yếu (ví dụ: "Phần Problem chưa có số liệu chứng minh vấn đề có thật.").
+     + "why_important": 1 câu nói rõ giảng viên hoặc hội đồng sẽ trừ điểm ở đâu nếu để nguyên như vậy (ví dụ: "Giảng viên sẽ trừ điểm ở tiêu chí Bằng chứng vì chưa chứng minh được vấn đề có thật trên thực tế.").
+     + "guiding_questions": 1–2 câu hỏi gợi mở để sinh viên tự trả lời dữ liệu thật của nhóm (ví dụ: ["Nhóm đã hỏi bao nhiêu người?", "Họ nói gì về khó khăn lớn nhất?"]).
      + "fix_kind":
        * "auto": nếu vấn đề về cách diễn đạt, hành văn, hoặc ngách quá rộng có thể sửa bằng prompt chèn ChatGPT.
        * "needs_input": nếu thiếu số liệu khảo sát thực tế, số lượng phỏng vấn, bằng chứng thực tế mà sinh viên phải trả lời (KHÔNG BAO GIỜ ĐỂ AI BỊA SỐ).
@@ -136,6 +138,11 @@ SCHEMA JSON MONG ĐỢI:
       "reason": "Giải thích 1–2 câu, nói như người thật",
       "level": "CHUA_DAT" | "DAT" | "TOT",
       "missing": "Điểm còn thiếu cụ thể nếu tiêu chí chưa đạt mục tiêu",
+      "why_important": "Giảng viên sẽ trừ điểm ở đâu nếu để vậy",
+      "guiding_questions": [
+        "Câu hỏi gợi mở 1 để sinh viên tự trả lời...",
+        "Câu hỏi gợi mở 2..."
+      ],
       "fix_kind": "auto" | "needs_input" | "self",
       "input_question": "Câu hỏi ngắn gọn nếu fix_kind là needs_input",
       "keep_quote": "Câu làm tốt trích nguyên văn từ bài làm nếu tiêu chí đã đạt"
@@ -210,8 +217,10 @@ async function callGeminiGrader(
 }
 
 function computeParentComparison(
-  newCriteria: Array<{ id: string; level: "CHUA_DAT" | "DAT" | "TOT" }>,
-  oldCriteria: Array<{ id: string; level: string }> | undefined,
+  newCriteria: Array<{ id: string; name?: string; level: "CHUA_DAT" | "DAT" | "TOT"; reason?: string }>,
+  oldCriteria: Array<{ id: string; name?: string; level: string; reason?: string }> | undefined,
+  oldText?: string,
+  newText?: string,
 ): CompareWithParent | null {
   if (!oldCriteria || oldCriteria.length === 0) return null;
 
@@ -221,28 +230,87 @@ function computeParentComparison(
     TOT: 3,
   };
 
-  const oldMap = new Map(oldCriteria.map((c) => [c.id, scoreMap[c.level] ?? 1]));
+  const levelLabelMap: Record<string, string> = {
+    CHUA_DAT: "Chưa đạt",
+    DAT: "Đạt",
+    TOT: "Tốt",
+  };
+
+  const oldMap = new Map(oldCriteria.map((c) => [c.id, c]));
 
   const improved: string[] = [];
   const worse: string[] = [];
   const same: string[] = [];
+  const details: NonNullable<CompareWithParent["details"]> = [];
 
   for (const c of newCriteria) {
     const newScore = scoreMap[c.level] ?? 1;
-    const oldScore = oldMap.get(c.id);
+    const oldCrit = oldMap.get(c.id);
+    const oldLevel = oldCrit?.level || "CHUA_DAT";
+    const oldScore = scoreMap[oldLevel] ?? 1;
+    const critName = c.name || c.id;
+    const prevLabel = levelLabelMap[oldLevel] || oldLevel;
+    const currLabel = levelLabelMap[c.level] || c.level;
 
-    if (oldScore === undefined) {
+    if (!oldCrit) {
       same.push(c.id);
+      details.push({
+        criterion_id: c.id,
+        criterion_name: critName,
+        previous_level: oldLevel,
+        current_level: c.level,
+        status: "same",
+        reason: `Tiêu chí "${critName}": Mức hiện tại là ${currLabel}.`,
+      });
     } else if (newScore > oldScore) {
       improved.push(c.id);
+      details.push({
+        criterion_id: c.id,
+        criterion_name: critName,
+        previous_level: oldLevel,
+        current_level: c.level,
+        status: "improved",
+        reason: `Tiêu chí "${critName}": ${prevLabel} → ${currLabel}, vì đã bổ sung bằng chứng và bám sát rubric hơn.`,
+      });
     } else if (newScore < oldScore) {
       worse.push(c.id);
+      details.push({
+        criterion_id: c.id,
+        criterion_name: critName,
+        previous_level: oldLevel,
+        current_level: c.level,
+        status: "worse",
+        reason: `Tiêu chí "${critName}": ${prevLabel} → ${currLabel}, do đoạn mới viết lược bỏ một số chi tiết cụ thể từ bản trước.`,
+      });
     } else {
       same.push(c.id);
+      let sameReason = `Tiêu chí "${critName}": Duy trì mức ${currLabel}.`;
+      if (c.level === "CHUA_DAT") {
+        sameReason = `Tiêu chí "${critName}": Giữ nguyên mức Chưa đạt. Lý do: Sửa đúng chỗ nhưng chưa đủ dẫn chứng thực tế hoặc sửa chưa trúng điểm cốt lõi của rubric.`;
+      }
+      details.push({
+        criterion_id: c.id,
+        criterion_name: critName,
+        previous_level: oldLevel,
+        current_level: c.level,
+        status: "same",
+        reason: sameReason,
+      });
     }
   }
 
-  return { improved, worse, same };
+  let summary_reason = "Kết quả đã được cập nhật so với lần chấm trước.";
+  if (improved.length > 0 && worse.length === 0) {
+    summary_reason = `Bạn đã nâng cấp thành công ${improved.length} tiêu chí! Bài viết đã tiến bộ rõ rệt và bám sát yêu cầu chấm điểm.`;
+  } else if (improved.length > 0 && worse.length > 0) {
+    summary_reason = `Có ${improved.length} tiêu chí tiến bộ, nhưng ${worse.length} tiêu chí bị giảm mức do câu chữ mới làm mất thông tin trước đó.`;
+  } else if (worse.length > 0) {
+    summary_reason = `Điểm chưa tăng và có ${worse.length} tiêu chí bị giảm mức. Hãy kiểm tra lại các câu tốt đã bị xóa hoặc sửa nhầm chỗ.`;
+  } else {
+    summary_reason = `Điểm số giữ nguyên. Bạn có thể đã sửa đúng chỗ nhưng chưa đủ số liệu/dẫn chứng, hoặc đã sửa sai chỗ so với điểm yếu rubric chỉ ra.`;
+  }
+
+  return { improved, worse, same, details, summary_reason };
 }
 
 export async function runGradingEngine(
@@ -458,11 +526,18 @@ export async function runGradingEngine(
 
     const matchedEx = sectionExamples.find((ex) => ex.criterionKey === c.id);
 
+    const whyImportant = c.why_important || (def?.description ? `Giảng viên sẽ đánh giá thấp phần này nếu không đáp ứng mục tiêu của tiêu chí "${def.name}".` : "Giảng viên có thể trừ điểm nếu thiếu số liệu hoặc dẫn chứng xác thực.");
+    const guidingQuestions = (c.guiding_questions && c.guiding_questions.length > 0)
+      ? c.guiding_questions
+      : (c.input_question ? [c.input_question] : [`Nhóm đã thu thập thông tin hoặc phỏng vấn thực tế nào liên quan đến tiêu chí "${def?.name || c.id}"?`]);
+
     const gap = status === "below" ? {
       missing: c.missing || (level === "CHUA_DAT" ? `Chưa đạt: ${c.reason}` : `Cần nâng lên mức Tốt: ${c.reason}`),
       quote: c.evidence_quote || "",
+      why_important: whyImportant,
+      guiding_questions: guidingQuestions,
       fix_kind: (c.fix_kind || (c.reason.toLowerCase().includes("số liệu") || c.reason.toLowerCase().includes("khảo sát") ? "needs_input" : "auto")) as "auto" | "needs_input" | "self",
-      input_question: c.input_question,
+      input_question: c.input_question || guidingQuestions[0],
       example_id: matchedEx?.id,
       example: matchedEx ? {
         excerpt: matchedEx.excerpt,
@@ -480,6 +555,8 @@ export async function runGradingEngine(
       status,
       reason: c.reason,
       evidence_quote: c.evidence_quote || "",
+      why_important: whyImportant,
+      guiding_questions: guidingQuestions,
       gap,
       keep_quote,
     };
@@ -522,7 +599,15 @@ export async function runGradingEngine(
       }
       return true;
     })
-    .slice(0, 3);
+    .slice(0, 3)
+    .map((fa) => {
+      const relatedCriterion = postProcessedCriteria.find((c) => c.id === fa.criterion_id);
+      return {
+        ...fa,
+        why_important: relatedCriterion?.why_important,
+        guiding_questions: relatedCriterion?.guiding_questions,
+      };
+    });
 
   // 7. Check parent grade comparison
   let compareWithParent: CompareWithParent | null = null;
@@ -538,6 +623,8 @@ export async function runGradingEngine(
       compareWithParent = computeParentComparison(
         postProcessedCriteria,
         parentResult.criteria,
+        parentGrade.outputText,
+        processedOutputText,
       );
     }
   }

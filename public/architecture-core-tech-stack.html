@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RootAccess - Core Tech Stack Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+      min-height: 100vh;
+    }
+
+    .toolbar {
+      width: 100%;
+      max-width: 1200px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 12px 20px;
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+      border: 1px solid #e2e8f0;
+    }
+
+    .toolbar h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .toolbar .btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .toolbar .btn:hover {
+      background: #1d4ed8;
+    }
+
+    /* Presentation Canvas (16:9 optimized for slides) */
+    .canvas-container {
+      width: 1200px;
+      min-height: 720px;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+      border: 1px solid #e2e8f0;
+      padding: 40px 50px 35px 50px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Header Title */
+    .slide-header {
+      text-align: center;
+      margin-bottom: 25px;
+      position: relative;
+    }
+
+    .slide-header h2 {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #0f172a;
+    }
+
+    .slide-header p {
+      font-size: 13px;
+      color: #64748b;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    .project-badge {
+      position: absolute;
+      right: 0;
+      top: 0;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      background: #eff6ff;
+      color: #2563eb;
+      border-radius: 20px;
+      border: 1px solid #bfdbfe;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Main 3 Columns */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 210px 1fr 240px;
+      gap: 30px;
+      align-items: center;
+      position: relative;
+    }
+
+    .column-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #1e293b;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    /* COLUMN 1: CLIENTS */
+    .clients-col {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .client-card {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      position: relative;
+    }
+
+    .client-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .client-info h4 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .client-info p {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+      line-height: 1.3;
+    }
+
+    .client-connector {
+      position: absolute;
+      right: -25px;
+      top: 50%;
+      width: 25px;
+      height: 2px;
+      background: #94a3b8;
+    }
+
+    .client-connector::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: -3px;
+      width: 0;
+      height: 0;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      border-left: 6px solid #94a3b8;
+    }
+
+    /* COLUMN 2: APPS */
+    .apps-box {
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 18px;
+      padding: 22px 24px;
+      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.04);
+      display: grid;
+      grid-template-columns: 1fr 185px;
+      gap: 20px;
+      position: relative;
+    }
+
+    .apps-main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .gateway-banner {
+      background: #f8fafc;
+      border: 1.5px dashed #94a3b8;
+      border-radius: 12px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .gateway-logo {
+      width: 32px;
+      height: 32px;
+      background: #000;
+      color: white;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .gateway-info h5 {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .gateway-info p {
+      font-size: 10.5px;
+      color: #64748b;
+    }
+
+    .services-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #475569;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .services-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .service-item {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .service-item h6 {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #1e293b;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .service-item p {
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 3px;
+      line-height: 1.35;
+    }
+
+    .infra-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #e2e8f0;
+    }
+
+    .infra-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #e0f2fe;
+      color: #0369a1;
+      border: 1px solid #bae6fd;
+    }
+
+    /* Tech Specs Side Column */
+    .tech-specs-col {
+      border-left: 1px solid #e2e8f0;
+      padding-left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .spec-block {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .spec-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #64748b;
+    }
+
+    .spec-value {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tag-pill {
+      font-size: 9.5px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Apps to Data Connector */
+    .apps-to-data-line {
+      position: absolute;
+      right: -30px;
+      top: 50%;
+      width: 30px;
+      height: 2px;
+      background: #94a3b8;
+    }
+
+    .apps-to-data-line::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: -3px;
+      width: 0;
+      height: 0;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+      border-left: 6px solid #94a3b8;
+    }
+
+    /* COLUMN 3: DATA (Cylinder Style) */
+    .cylinder-container {
+      background: #ffffff;
+      border: 2px solid #64748b;
+      border-radius: 40px / 20px;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.06);
+      position: relative;
+    }
+
+    .cylinder-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 26px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      border: 2px solid #64748b;
+      border-bottom: 2px solid #64748b;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.04);
+    }
+
+    .data-section-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #334155;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .data-card {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .data-card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .data-icon {
+      font-size: 18px;
+    }
+
+    .data-card-header h5 {
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .data-card p {
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.35;
+    }
+
+    /* 3RD PARTY APPS SECTION (Bottom Row) */
+    .third-party-row {
+      margin-top: 25px;
+      padding-top: 18px;
+      border-top: 1.5px dashed #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .third-party-label {
+      font-size: 14px;
+      font-weight: 800;
+      color: #1e293b;
+      white-space: nowrap;
+      min-width: 140px;
+    }
+
+    .third-party-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .service-badge {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 7px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+    }
+
+    .badge-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .badge-text h6 {
+      font-size: 11px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .badge-text span {
+      font-size: 9.5px;
+      color: #64748b;
+      display: block;
+    }
+
+    /* Print optimization */
+    @media print {
+      body {
+        background: transparent;
+        padding: 0;
+      }
+      .toolbar {
+        display: none;
+      }
+      .canvas-container {
+        box-shadow: none;
+        border: none;
+        width: 100%;
+        padding: 20px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top action bar -->
+  <div class="toolbar">
+    <div>
+      <h1>RootAccess · Sơ đồ Core Tech Stack (Theo chuẩn Slide Mentor Thanhntl2)</h1>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn" onclick="window.print()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2m-12 0v4h12v-4m-12 0h12"></path></svg>
+        In / Xuất PDF Slide
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Canvas for Slides -->
+  <div class="canvas-container" id="capture-area">
+    
+    <!-- Slide Header -->
+    <div class="slide-header">
+      <span class="project-badge">EXE201 · FA26</span>
+      <h2>Core tech stack</h2>
+      <p>Kiến trúc hệ thống toàn diện cho Nền tảng Chấm & Bổ trợ Startup Proposal RootAccess</p>
+    </div>
+
+    <!-- Main 3 Columns: Clients | Apps | Data -->
+    <div class="main-grid">
+
+      <!-- 1. CLIENTS -->
+      <div class="clients-col">
+        <div class="column-title">Clients</div>
+
+        <!-- Client 1: Chrome Extension Sidepanel -->
+        <div class="client-card">
+          <div class="client-icon-wrap" style="background: #e0f2fe; color: #0284c7;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="4"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+          </div>
+          <div class="client-info">
+            <h4>Chrome Extension</h4>
+            <p>Sidepanel Manifest V3<br><span class="tag-pill">React · Vite · TypeScript</span></p>
+          </div>
+          <div class="client-connector"></div>
+        </div>
+
+        <!-- Client 2: Web Workspace Client -->
+        <div class="client-card">
+          <div class="client-icon-wrap" style="background: #fdf2f8; color: #db2777;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          </div>
+          <div class="client-info">
+            <h4>Web Application</h4>
+            <p>Responsive Workspace<br><span class="tag-pill">Next.js 16 · React 19</span></p>
+          </div>
+          <div class="client-connector"></div>
+        </div>
+
+        <!-- Client 3: Target Platforms (ChatGPT / Gemini Web) -->
+        <div class="client-card">
+          <div class="client-icon-wrap" style="background: #f0fdf4; color: #16a34a;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          </div>
+          <div class="client-info">
+            <h4>AI Host Injected</h4>
+            <p>ChatGPT & Gemini DOM<br><span class="tag-pill">Content Script · Gạch chân</span></p>
+          </div>
+          <div class="client-connector"></div>
+        </div>
+      </div>
+
+      <!-- 2. APPS (Backend & Engines) -->
+      <div>
+        <div class="column-title">Apps</div>
+        <div class="apps-box">
+          
+          <!-- Left: Services & Engines -->
+          <div class="apps-main-content">
+            
+            <!-- API Gateway -->
+            <div class="gateway-banner">
+              <div class="gateway-logo">▲</div>
+              <div class="gateway-info">
+                <h5>API Gateway & Route Handlers</h5>
+                <p>Next.js App Router API (/api/*) · Edge Middleware · CORS</p>
+              </div>
+            </div>
+
+            <!-- Microservices / Core Engines -->
+            <div>
+              <div class="services-title">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"></rect><rect x="2" y="14" width="20" height="8" rx="2"></rect></svg>
+                Core Engines & Services
+              </div>
+              <div class="services-grid">
+                
+                <div class="service-item">
+                  <h6>🎯 Grader Engine</h6>
+                  <p>Chấm theo mục tiêu (Qua/Khá/Xuất sắc), lọc gap/keep, bắt số liệu bịa</p>
+                </div>
+
+                <div class="service-item">
+                  <h6>✍️ Fix Prompt Engine</h6>
+                  <p>Tạo prompt sửa 6 bước, khóa câu tốt, chống AI tự tạo số</p>
+                </div>
+
+                <div class="service-item">
+                  <h6>💳 Wallet & Credits</h6>
+                  <p>Trừ credit nguyên tử (atomic), sổ cái ledger, webhook PayOS</p>
+                </div>
+
+                <div class="service-item">
+                  <h6>💡 Idea Studio</h6>
+                  <p>Làm rõ ngách (Niche), phát hiện giả định, chuẩn hóa đề tài</p>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Deployment / Infra -->
+            <div class="infra-footer">
+              <span class="infra-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+                Vercel Serverless Functions
+              </span>
+              <span class="infra-badge" style="background: #fdf4ff; color: #a21caf; border-color: #f0abfc;">
+                🛡️ Better-Auth Security
+              </span>
+            </div>
+
+          </div>
+
+          <!-- Right: Tech Specifications Sidebar -->
+          <div class="tech-specs-col">
+            <div class="spec-block">
+              <span class="spec-label">Language</span>
+              <span class="spec-value">
+                <span style="color: #3178c6; font-size: 14px;">📘</span> TypeScript 5
+              </span>
+            </div>
+
+            <div class="spec-block">
+              <span class="spec-label">Framework</span>
+              <span class="spec-value">Next.js 16 (Turbo)</span>
+            </div>
+
+            <div class="spec-block">
+              <span class="spec-label">Infra as Code</span>
+              <span class="spec-value">Drizzle Schema</span>
+            </div>
+
+            <div class="spec-block">
+              <span class="spec-label">Validation</span>
+              <span class="spec-value">
+                <span class="tag-pill">Zod v3</span> JSON Schema
+              </span>
+            </div>
+
+            <div class="spec-block">
+              <span class="spec-label">API Style</span>
+              <span class="spec-value">RESTful JSON API</span>
+            </div>
+
+            <div class="spec-block">
+              <span class="spec-label">AI Model</span>
+              <span class="spec-value" style="color: #0284c7;">Gemini 2.5 Flash</span>
+            </div>
+          </div>
+
+          <!-- Connector to Data -->
+          <div class="apps-to-data-line"></div>
+        </div>
+      </div>
+
+      <!-- 3. DATA (Database Cylinder) -->
+      <div>
+        <div class="column-title">Data</div>
+        <div class="cylinder-container">
+          
+          <div style="height: 12px;"></div> <!-- Spacing below cylinder top lid -->
+
+          <!-- Relational Database -->
+          <div>
+            <div class="data-section-title">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              Relational DB
+            </div>
+            <div class="data-card">
+              <div class="data-card-header">
+                <span class="data-icon" style="color: #336791;">🐘</span>
+                <div>
+                  <h5>Neon PostgreSQL</h5>
+                  <span class="tag-pill">Drizzle ORM</span>
+                </div>
+              </div>
+              <p>Schema: projects, grades, examples (18 bài mẫu 9–10đ), wallets, ledger</p>
+            </div>
+          </div>
+
+          <!-- Caching Layer -->
+          <div>
+            <div class="data-section-title">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              Caching Layer
+            </div>
+            <div class="data-card">
+              <div class="data-card-header">
+                <span class="data-icon" style="color: #dc2626;">⚡</span>
+                <div>
+                  <h5>Edge & Local Cache</h5>
+                  <span class="tag-pill">Next Cache + Storage</span>
+                </div>
+              </div>
+              <p>Cache selector DOM, pack rubric CP2, token session user</p>
+            </div>
+          </div>
+
+          <!-- Audit & Events Ledger -->
+          <div>
+            <div class="data-section-title">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              Audit & Media
+            </div>
+            <div class="data-card">
+              <div class="data-card-header">
+                <span class="data-icon" style="color: #eab308;">📁</span>
+                <div>
+                  <h5>Events & Artifacts</h5>
+                  <span class="tag-pill">JSONB Ledger</span>
+                </div>
+              </div>
+              <p>Lưu lịch sử chấm, prompt insertions, tokens thật & demo logs</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 4. 3RD PARTY APPS (Bottom Row) -->
+    <div class="third-party-row">
+      <div class="third-party-label">3rd Party Apps</div>
+      <div class="third-party-cards">
+        
+        <!-- PayOS -->
+        <div class="service-badge">
+          <div class="badge-icon" style="background: #0284c7; color: white;">💳</div>
+          <div class="badge-text">
+            <h6>PayOS</h6>
+            <span>Cổng VietQR tự động</span>
+          </div>
+        </div>
+
+        <!-- Google Gemini AI -->
+        <div class="service-badge">
+          <div class="badge-icon" style="background: #ea580c; color: white;">✨</div>
+          <div class="badge-text">
+            <h6>Google Gemini API</h6>
+            <span>LLM chấm & so sánh mốc</span>
+          </div>
+        </div>
+
+        <!-- OpenAI ChatGPT Host -->
+        <div class="service-badge">
+          <div class="badge-icon" style="background: #10a37f; color: white;">💬</div>
+          <div class="badge-text">
+            <h6>ChatGPT / Gemini Web</h6>
+            <span>Môi trường viết của SV</span>
+          </div>
+        </div>
+
+        <!-- Google OAuth -->
+        <div class="service-badge">
+          <div class="badge-icon" style="background: #dc2626; color: white;">🔑</div>
+          <div class="badge-text">
+            <h6>Google OAuth</h6>
+            <span>Xác thực FPT mail</span>
+          </div>
+        </div>
+
+        <!-- Chrome Web Store -->
+        <div class="service-badge">
+          <div class="badge-icon" style="background: #4f46e5; color: white;">🌐</div>
+          <div class="badge-text">
+            <h6>Chrome Web Store</h6>
+            <span>Phân phối Extension V3</span>
+          </div>
+        </div>
+
+        <!-- Vercel Analytics -->
+        <div class="service-badge">
+          <div class="badge-icon" style="background: #0f172a; color: white;">📊</div>
+          <div class="badge-text">
+            <h6>Vercel Analytics</h6>
+            <span>Giám sát tốc độ & lỗi</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

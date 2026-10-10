@@ -1,0 +1,261 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 740" width="1200" height="740" style="background:#ffffff; font-family:'Plus Jakarta Sans', -apple-system, sans-serif;">
+  <defs>
+    <!-- Drop shadow -->
+    <filter id="cardShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#0f172a" flood-opacity="0.05" />
+    </filter>
+    <filter id="boxShadow" x="-10%" y="-10%" width="125%" height="125%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.08" />
+    </filter>
+    <!-- Arrow marker -->
+    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
+    </marker>
+  </defs>
+
+  <!-- BACKGROUND RECT -->
+  <rect x="0" y="0" width="1200" height="740" fill="#ffffff" rx="20" />
+
+  <!-- HEADER -->
+  <text x="600" y="52" text-anchor="middle" font-size="30" font-weight="800" fill="#0f172a">Core tech stack</text>
+  <text x="600" y="76" text-anchor="middle" font-size="13" font-weight="500" fill="#64748b">Kiến trúc kỹ thuật nền tảng RootAccess · EXE201 FA26</text>
+  <rect x="1060" y="32" width="95" height="26" rx="13" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="1107" y="49" text-anchor="middle" font-size="11" font-weight="700" fill="#2563eb">EXE201 · FA26</text>
+
+  <!-- SECTION 1: CLIENTS (X: 45, Y: 110, W: 215) -->
+  <text x="152" y="125" text-anchor="middle" font-size="16" font-weight="800" fill="#1e293b">Clients</text>
+
+  <!-- Client 1: Chrome Extension -->
+  <g transform="translate(45, 145)" filter="url(#cardShadow)">
+    <rect width="215" height="90" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" />
+    <rect x="12" y="16" width="44" height="44" rx="10" fill="#e0f2fe" />
+    <path d="M 24 38 L 44 38 M 34 26 L 34 50" stroke="#0284c7" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="68" y="35" font-size="13" font-weight="700" fill="#0f172a">Chrome Extension</text>
+    <text x="68" y="52" font-size="11" font-weight="500" fill="#64748b">Sidepanel Manifest V3</text>
+    <rect x="68" y="60" width="112" height="18" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="124" y="73" text-anchor="middle" font-size="9.5" font-weight="600" fill="#334155" font-family="'JetBrains Mono', monospace">React 19 · Vite</text>
+  </g>
+  <!-- Connector 1 -->
+  <line x1="260" y1="190" x2="310" y2="280" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)" />
+
+  <!-- Client 2: Web Application -->
+  <g transform="translate(45, 260)" filter="url(#cardShadow)">
+    <rect width="215" height="90" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" />
+    <rect x="12" y="16" width="44" height="44" rx="10" fill="#fdf2f8" />
+    <rect x="22" y="28" width="24" height="18" rx="3" fill="none" stroke="#db2777" stroke-width="2" />
+    <line x1="28" y1="48" x2="40" y2="48" stroke="#db2777" stroke-width="2" />
+    <text x="68" y="35" font-size="13" font-weight="700" fill="#0f172a">Web Application</text>
+    <text x="68" y="52" font-size="11" font-weight="500" fill="#64748b">Workspace &amp; Studio</text>
+    <rect x="68" y="60" width="125" height="18" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="130" y="73" text-anchor="middle" font-size="9.5" font-weight="600" fill="#334155" font-family="'JetBrains Mono', monospace">Next.js 16 · Tailwind</text>
+  </g>
+  <!-- Connector 2 -->
+  <line x1="260" y1="305" x2="310" y2="305" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)" />
+
+  <!-- Client 3: Injected Host (ChatGPT / Gemini) -->
+  <g transform="translate(45, 375)" filter="url(#cardShadow)">
+    <rect width="215" height="90" rx="14" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5" />
+    <rect x="12" y="16" width="44" height="44" rx="10" fill="#f0fdf4" />
+    <circle cx="34" cy="38" r="10" fill="none" stroke="#16a34a" stroke-width="2" />
+    <path d="M 30 38 L 33 41 L 39 34" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round"/>
+    <text x="68" y="35" font-size="13" font-weight="700" fill="#0f172a">AI Host Injected</text>
+    <text x="68" y="52" font-size="11" font-weight="500" fill="#64748b">ChatGPT / Gemini DOM</text>
+    <rect x="68" y="60" width="134" height="18" rx="4" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="135" y="73" text-anchor="middle" font-size="9.5" font-weight="600" fill="#334155" font-family="'JetBrains Mono', monospace">Content Script (Highlighter)</text>
+  </g>
+  <!-- Connector 3 -->
+  <line x1="260" y1="420" x2="310" y2="330" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)" />
+
+
+  <!-- SECTION 2: APPS (X: 320, Y: 110, W: 540) -->
+  <text x="590" y="125" text-anchor="middle" font-size="16" font-weight="800" fill="#1e293b">Apps</text>
+
+  <!-- Big Apps Container Box -->
+  <g transform="translate(320, 140)" filter="url(#boxShadow)">
+    <rect width="550" height="340" rx="18" fill="#ffffff" stroke="#cbd5e1" stroke-width="2" />
+
+    <!-- Sub-container: API Gateway Banner -->
+    <rect x="20" y="20" width="320" height="52" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <rect x="32" y="31" width="30" height="30" rx="6" fill="#0f172a" />
+    <text x="47" y="51" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">▲</text>
+    <text x="72" y="42" font-size="12" font-weight="700" fill="#0f172a">API Gateway &amp; Route Handlers</text>
+    <text x="72" y="58" font-size="10.5" font-weight="500" fill="#64748b">Next.js App Router (/api/*) · Edge Middleware</text>
+
+    <!-- Services Header -->
+    <text x="22" y="98" font-size="11" font-weight="800" fill="#475569" letter-spacing="0.5">CORE ENGINES &amp; SERVICES</text>
+
+    <!-- 4 Microservices / Engines Cards -->
+    <!-- Service 1: Grader Engine -->
+    <rect x="20" y="108" width="155" height="74" rx="10" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="32" y="128" font-size="11.5" font-weight="700" fill="#1e293b">🎯 Grader Engine</text>
+    <text x="32" y="145" font-size="9.5" font-weight="500" fill="#64748b">Chấm theo mục tiêu</text>
+    <text x="32" y="159" font-size="9.5" font-weight="500" fill="#64748b">(Pass/Good/Excel), lọc gap</text>
+    <text x="32" y="173" font-size="9" font-weight="600" fill="#0284c7">Mốc anchor bài mẫu 9–10</text>
+
+    <!-- Service 2: Fix Prompt Engine -->
+    <rect x="185" y="108" width="155" height="74" rx="10" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="197" y="128" font-size="11.5" font-weight="700" fill="#1e293b">✍️ Fix Prompt Engine</text>
+    <text x="197" y="145" font-size="9.5" font-weight="500" fill="#64748b">Prompt sửa 6 bước</text>
+    <text x="197" y="159" font-size="9.5" font-weight="500" fill="#64748b">Khóa các câu đạt chuẩn</text>
+    <text x="197" y="173" font-size="9" font-weight="600" fill="#ea580c">Chống AI bịa số liệu</text>
+
+    <!-- Service 3: Wallet & Credits -->
+    <rect x="20" y="190" width="155" height="74" rx="10" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="32" y="210" font-size="11.5" font-weight="700" fill="#1e293b">💳 Wallet &amp; Ledger</text>
+    <text x="32" y="227" font-size="9.5" font-weight="500" fill="#64748b">Trừ credit nguyên tử</text>
+    <text x="32" y="241" font-size="9.5" font-weight="500" fill="#64748b">Webhook PayOS QR</text>
+    <text x="32" y="255" font-size="9" font-weight="600" fill="#16a34a">Bảo toàn giao dịch (ACID)</text>
+
+    <!-- Service 4: Idea Studio -->
+    <rect x="185" y="190" width="155" height="74" rx="10" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1"/>
+    <text x="197" y="210" font-size="11.5" font-weight="700" fill="#1e293b">💡 Idea Studio</text>
+    <text x="197" y="227" font-size="9.5" font-weight="500" fill="#64748b">Làm rõ ngách (Niche)</text>
+    <text x="197" y="241" font-size="9.5" font-weight="500" fill="#64748b">Bắt lỗi gộp đối tượng</text>
+    <text x="197" y="255" font-size="9" font-weight="600" fill="#9333ea">Hỏi nhanh 2-4 câu</text>
+
+    <!-- Bottom Badges in Apps -->
+    <line x1="20" y1="280" x2="340" y2="280" stroke="#e2e8f0" stroke-width="1" />
+    <rect x="20" y="292" width="155" height="26" rx="6" fill="#e0f2fe" stroke="#bae6fd" stroke-width="1"/>
+    <text x="97" y="309" text-anchor="middle" font-size="10.5" font-weight="600" fill="#0369a1">☁️ Vercel Serverless Edge</text>
+
+    <rect x="185" y="292" width="155" height="26" rx="6" fill="#fdf4ff" stroke="#f0abfc" stroke-width="1"/>
+    <text x="262" y="309" text-anchor="middle" font-size="10.5" font-weight="600" fill="#a21caf">🛡️ Better-Auth Security</text>
+
+    <!-- Vertical Divider for Tech Specs Column -->
+    <line x1="360" y1="20" x2="360" y2="320" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- Right Sidebar: Tech Specs -->
+    <text x="380" y="38" font-size="10" font-weight="800" fill="#64748b" letter-spacing="0.5">LANGUAGE</text>
+    <text x="380" y="56" font-size="12" font-weight="700" fill="#0f172a">📘 TypeScript 5 / Node 24</text>
+
+    <text x="380" y="88" font-size="10" font-weight="800" fill="#64748b" letter-spacing="0.5">FRAMEWORK</text>
+    <text x="380" y="106" font-size="12" font-weight="700" fill="#0f172a">Next.js 16 (Turbopack)</text>
+
+    <text x="380" y="138" font-size="10" font-weight="800" fill="#64748b" letter-spacing="0.5">INFRA AS CODE</text>
+    <text x="380" y="156" font-size="12" font-weight="700" fill="#0f172a">Drizzle Schema ORM</text>
+
+    <text x="380" y="188" font-size="10" font-weight="800" fill="#64748b" letter-spacing="0.5">API &amp; VALIDATION</text>
+    <text x="380" y="206" font-size="12" font-weight="700" fill="#0f172a">REST API · Zod v3</text>
+
+    <text x="380" y="238" font-size="10" font-weight="800" fill="#64748b" letter-spacing="0.5">AI ENGINE</text>
+    <text x="380" y="256" font-size="12" font-weight="700" fill="#0284c7">Gemini 2.5 Flash</text>
+
+    <text x="380" y="288" font-size="10" font-weight="800" fill="#64748b" letter-spacing="0.5">DEPLOYMENT</text>
+    <text x="380" y="306" font-size="12" font-weight="700" fill="#0f172a">Vercel Global Edge</text>
+  </g>
+
+  <!-- Apps to Data Connector -->
+  <line x1="870" y1="310" x2="925" y2="310" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)" />
+
+
+  <!-- SECTION 3: DATA (CYLINDER) (X: 935, Y: 110, W: 220) -->
+  <text x="1045" y="125" text-anchor="middle" font-size="16" font-weight="800" fill="#1e293b">Data</text>
+
+  <!-- Big Database Cylinder -->
+  <g transform="translate(935, 140)" filter="url(#boxShadow)">
+    <!-- Cylinder Body -->
+    <path d="M 0 25 C 0 8, 220 8, 220 25 L 220 320 C 220 335, 0 335, 0 320 Z" fill="#ffffff" stroke="#64748b" stroke-width="2"/>
+    <!-- Cylinder Top Lid -->
+    <ellipse cx="110" cy="22" rx="110" ry="20" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+
+    <!-- Content 1: Relational Database (Metadata) -->
+    <text x="20" y="65" font-size="10" font-weight="800" fill="#475569" letter-spacing="0.5">RELATIONAL DATABASE</text>
+    <g transform="translate(15, 74)">
+      <rect width="190" height="74" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" />
+      <text x="12" y="24" font-size="16">🐘</text>
+      <text x="36" y="22" font-size="12" font-weight="700" fill="#0f172a">Neon PostgreSQL</text>
+      <text x="36" y="38" font-size="9.5" font-weight="500" fill="#64748b">Serverless PostgreSQL 16</text>
+      <text x="12" y="55" font-size="9" font-weight="600" fill="#2563eb">Drizzle ORM Type-Safe</text>
+      <text x="12" y="68" font-size="8.5" font-weight="500" fill="#64748b">projects, grades, wallets</text>
+    </g>
+
+    <!-- Content 2: High-Scoring Examples Library -->
+    <text x="20" y="165" font-size="10" font-weight="800" fill="#475569" letter-spacing="0.5">EXAMPLES LIBRARY (DATA)</text>
+    <g transform="translate(15, 174)">
+      <rect width="190" height="64" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" />
+      <text x="12" y="24" font-size="16">🌟</text>
+      <text x="36" y="22" font-size="12" font-weight="700" fill="#0f172a">18+ Bài mẫu điểm cao</text>
+      <text x="36" y="38" font-size="9.5" font-weight="500" fill="#64748b">Bảng examples (Điểm 9.5-10)</text>
+      <text x="12" y="55" font-size="8.5" font-weight="600" fill="#059669">Mốc neo rubric &amp; "Vì sao tốt"</text>
+    </g>
+
+    <!-- Content 3: Caching & Ledger -->
+    <text x="20" y="255" font-size="10" font-weight="800" fill="#475569" letter-spacing="0.5">CACHING &amp; AUDIT</text>
+    <g transform="translate(15, 264)">
+      <rect width="190" height="52" rx="10" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" />
+      <text x="12" y="22" font-size="15">⚡</text>
+      <text x="34" y="20" font-size="11.5" font-weight="700" fill="#0f172a">Edge Cache &amp; Storage</text>
+      <text x="12" y="36" font-size="9" font-weight="500" fill="#64748b">Cache selectors, token session</text>
+      <text x="12" y="47" font-size="8.5" font-weight="500" fill="#64748b">Credit Ledger &amp; Event Logs</text>
+    </g>
+  </g>
+
+
+  <!-- SECTION 4: 3RD PARTY APPS (BOTTOM ROW) -->
+  <line x1="45" y1="520" x2="1155" y2="520" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="45" y="552" font-size="15" font-weight="800" fill="#1e293b">3rd Party Apps</text>
+
+  <!-- Badges Row -->
+  <g transform="translate(180, 532)">
+    
+    <!-- PayOS -->
+    <g transform="translate(0, 0)" filter="url(#cardShadow)">
+      <rect width="150" height="50" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect x="8" y="10" width="30" height="30" rx="6" fill="#0284c7" />
+      <text x="23" y="30" text-anchor="middle" font-size="14">💳</text>
+      <text x="46" y="25" font-size="11.5" font-weight="700" fill="#0f172a">PayOS</text>
+      <text x="46" y="39" font-size="9.5" font-weight="500" fill="#64748b">Cổng VietQR 24/7</text>
+    </g>
+
+    <!-- Google Gemini -->
+    <g transform="translate(160, 0)" filter="url(#cardShadow)">
+      <rect width="165" height="50" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect x="8" y="10" width="30" height="30" rx="6" fill="#ea580c" />
+      <text x="23" y="30" text-anchor="middle" font-size="14">✨</text>
+      <text x="46" y="25" font-size="11.5" font-weight="700" fill="#0f172a">Google Gemini</text>
+      <text x="46" y="39" font-size="9.5" font-weight="500" fill="#64748b">Gemini 2.5 Flash LLM</text>
+    </g>
+
+    <!-- ChatGPT Web -->
+    <g transform="translate(335, 0)" filter="url(#cardShadow)">
+      <rect width="160" height="50" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect x="8" y="10" width="30" height="30" rx="6" fill="#10a37f" />
+      <text x="23" y="30" text-anchor="middle" font-size="14">💬</text>
+      <text x="46" y="25" font-size="11.5" font-weight="700" fill="#0f172a">ChatGPT Web</text>
+      <text x="46" y="39" font-size="9.5" font-weight="500" fill="#64748b">Nền tảng viết của SV</text>
+    </g>
+
+    <!-- Google OAuth -->
+    <g transform="translate(505, 0)" filter="url(#cardShadow)">
+      <rect width="150" height="50" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect x="8" y="10" width="30" height="30" rx="6" fill="#dc2626" />
+      <text x="23" y="30" text-anchor="middle" font-size="14">🔑</text>
+      <text x="46" y="25" font-size="11.5" font-weight="700" fill="#0f172a">Google Auth</text>
+      <text x="46" y="39" font-size="9.5" font-weight="500" fill="#64748b">SSO Email FPTU</text>
+    </g>
+
+    <!-- Chrome Web Store -->
+    <g transform="translate(665, 0)" filter="url(#cardShadow)">
+      <rect width="160" height="50" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect x="8" y="10" width="30" height="30" rx="6" fill="#4f46e5" />
+      <text x="23" y="30" text-anchor="middle" font-size="14">🌐</text>
+      <text x="46" y="25" font-size="11.5" font-weight="700" fill="#0f172a">Chrome Store</text>
+      <text x="46" y="39" font-size="9.5" font-weight="500" fill="#64748b">Phân phối Extension</text>
+    </g>
+
+    <!-- Vercel Analytics -->
+    <g transform="translate(835, 0)" filter="url(#cardShadow)">
+      <rect width="140" height="50" rx="10" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+      <rect x="8" y="10" width="30" height="30" rx="6" fill="#0f172a" />
+      <text x="23" y="30" text-anchor="middle" font-size="14">📊</text>
+      <text x="46" y="25" font-size="11.5" font-weight="700" fill="#0f172a">Vercel Vitals</text>
+      <text x="46" y="39" font-size="9.5" font-weight="500" fill="#64748b">APM &amp; Audit Logs</text>
+    </g>
+
+  </g>
+
+  <!-- FOOTER NOTE -->
+  <text x="600" y="625" text-anchor="middle" font-size="11" font-weight="500" fill="#94a3b8">
+    Mô hình chuẩn hóa theo tài liệu hướng dẫn của Mentor Thầy Nguyễn Trần Lê Thanh (Thanhntl2) · Slide 3.1 Architecture
+  </text>
+</svg>

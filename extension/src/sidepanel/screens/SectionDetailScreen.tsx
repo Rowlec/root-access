@@ -303,6 +303,12 @@ export function SectionDetailScreen({
         </p>
       </div>
 
+      {/* Guide notice (Không cần copy tay) */}
+      <div className="flex items-center justify-between text-[11px] text-[var(--muted)] bg-[var(--surface-2)] px-3 py-2 rounded-xl border border-[var(--line-2)]">
+        <span>💡 Nhập thông tin thật → Chèn prompt → Bấm Chấm</span>
+        <span className="text-emerald-600 font-bold">Tự đọc câu trả lời</span>
+      </div>
+
       {/* Step 1: Hỏi nhanh 2-4 câu (Spec Mục 4) */}
       {intakeQuestions.length > 0 && !isProjectIncomplete && (
         <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5 space-y-3">

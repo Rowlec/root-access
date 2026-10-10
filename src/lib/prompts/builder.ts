@@ -150,6 +150,7 @@ export function buildFixPrompt(params: {
   totDescription?: string;
   currentReason?: string;
   missing?: string;
+  whyImportant?: string;
   evidenceQuote?: string;
   exampleFormula?: string;
   userInputText?: string | null;
@@ -165,6 +166,7 @@ export function buildFixPrompt(params: {
     totDescription,
     currentReason,
     missing,
+    whyImportant,
     evidenceQuote,
     exampleFormula,
     userInputText,
@@ -180,29 +182,31 @@ export function buildFixPrompt(params: {
   };
 
   const lines: string[] = [];
-  lines.push(`Hãy sửa lại nội dung phần "${sectionTitle}" cho tiêu chí "${criterionName}" theo đúng các yêu cầu sau:`);
+  lines.push(`Hãy sửa lại nội dung phần "${sectionTitle}" cho tiêu chí "${criterionName}" dựa trên câu trả lời thực tế của nhóm theo đúng các yêu cầu sau:`);
 
   // (1) Câu yếu, trích nguyên văn
   if (evidenceQuote && evidenceQuote.trim()) {
-    lines.push(`1. CÂU CẦN SỬA (trích nguyên văn từ bài làm):\n"${evidenceQuote.trim()}"`);
+    lines.push(`1. ĐOẠN VĂN CẦN SỬA (trích nguyên văn từ bài làm):\n"${evidenceQuote.trim()}"`);
   } else {
     lines.push(`1. VẤN ĐỀ CẦN SỬA:\n${missing || currentReason || "Nội dung hiện tại chưa đáp ứng đủ tiêu chí."}`);
   }
 
-  // (2) Yêu cầu của rubric cho mức mục tiêu
-  const requirement = rubricRequirement || totDescription || currentReason;
-  if (requirement && requirement.trim()) {
-    lines.push(`2. YÊU CẦU THEO RUBRIC [Mục tiêu: ${targetLabelMap[targetLevel] || targetLevel}]:\n${requirement.trim()}`);
-  }
+  // (2) Điểm còn thiếu & Vì sao quan trọng
+  const whyImportantText = whyImportant?.trim() || "";
+  lines.push(
+    `2. YÊU CẦU THEO RUBRIC [Mục tiêu: ${targetLabelMap[targetLevel] || targetLevel}]:\n- Điểm còn thiếu: ${missing || currentReason || "Chưa hoàn thiện tiêu chuẩn rubric."}${
+      whyImportantText ? `\n- Vì sao quan trọng: ${whyImportantText}` : ""
+    }${rubricRequirement ? `\n- Tiêu chuẩn cần đạt: ${rubricRequirement.trim()}` : ""}`,
+  );
 
   // (3) Cách viết lấy từ bài mẫu (công thức hành văn, không chép chữ)
   if (exampleFormula && exampleFormula.trim()) {
     lines.push(`3. CÁCH VIẾT THAM KHẢO (áp dụng công thức hành văn, không sao chép nguyên văn):\n${exampleFormula.trim()}`);
   }
 
-  // (4) Dữ liệu sinh viên vừa nhập (nếu có)
+  // (4) Dữ liệu sinh viên vừa nhập từ câu trả lời gợi mở
   if (userInputText && userInputText.trim()) {
-    lines.push(`4. DỮ LIỆU BỔ SUNG TỪ NGƯỜI DÙNG:\n${userInputText.trim()}`);
+    lines.push(`4. THÔNG TIN THẬT DO NHÓM CUNG CẤP (Câu trả lời của sinh viên):\n${userInputText.trim()}`);
   }
 
   // Action type specific notes
@@ -210,17 +214,17 @@ export function buildFixPrompt(params: {
     lines.push(`LƯU Ý ĐẶC BIỆT: Viết lại chỉ tập trung cho đúng ngách "${niche}", không lan man sang đối tượng khác.`);
   }
 
-  // (5) Khóa phần tốt: Chỉ sửa câu trên, giữ nguyên toàn bộ các câu khác
+  // (5) Khóa phần tốt & Nguyên tắc chống bịa số
   const rules: string[] = [
-    "CHỈ SỬA CÂU TRÊN. GIỮ NGUYÊN TOÀN BỘ CÁC CÂU KHÁC TRONG ĐOẠN VĂN.",
+    "DÙNG ĐÚNG THÔNG TIN THẬT SINH VIÊN ĐÃ ĐIỀN Ở MỤC 4. TUYỆT ĐỐI KHÔNG BỊA ĐẶT THÊM SỐ LIỆU HAY BẰNG CHỨNG GIẢ TẠO.",
+    "CHỈ SỬA CÂU CẦN SỬA Ở MỤC 1. GIỮ NGUYÊN TOÀN BỘ CÁC CÂU KHÁC TRONG ĐOẠN VĂN.",
   ];
 
   if (keptQuotes && keptQuotes.length > 0) {
     rules.push("Các câu sau đây đã đạt yêu cầu, TUYỆT ĐỐI KHÔNG ĐƯỢC THAY ĐỔI:\n" + keptQuotes.map((q) => `  - "${q}"`).join("\n"));
   }
 
-  // (6) Anti-hallucination
-  rules.push("Nếu thiếu dữ liệu thực tế, hãy ghi [CẦN DỮ LIỆU: cần thu thập gì], tuyệt đối KHÔNG ĐƯỢC TỰ BỊA ĐẶT CON SỐ HAY TỈ LỆ.");
+  rules.push("Nếu thiếu thông tin, hãy ghi [CẦN DỮ LIỆU: cần thu thập gì], không tự ý suy đoán số liệu cho sinh viên.");
 
   lines.push(`5. NGUYÊN TẮC BẮT BUỘC:\n` + rules.map((r, i) => `${i + 1}) ${r}`).join("\n"));
 

@@ -48,6 +48,8 @@ export const CriterionGapSchema = z.object({
   quote: z.string().default(""),
   fix_kind: z.enum(["auto", "needs_input", "self"]).default("auto"),
   input_question: z.string().optional(),
+  why_important: z.string().optional(),
+  guiding_questions: z.array(z.string()).default([]).optional(),
   example_id: z.string().optional(),
   example: z
     .object({
@@ -67,15 +69,31 @@ export const GradedCriterionSchema = z.object({
   evidence_quote: z.string(),
   status: z.enum(["below", "met"]).default("below").optional(),
   priority: z.number().default(1).optional(),
+  why_important: z.string().optional(),
+  guiding_questions: z.array(z.string()).default([]).optional(),
   gap: CriterionGapSchema.optional(),
   keep_quote: z.string().optional(),
 });
 export type GradedCriterion = z.infer<typeof GradedCriterionSchema>;
 
+export const CompareDetailSchema = z.object({
+  criterion_id: z.string(),
+  criterion_name: z.string().optional(),
+  previous_level: z.string().optional(),
+  current_level: z.string(),
+  status: z.enum(["improved", "worse", "same"]),
+  reason: z.string(),
+  diff_snippet: z.string().optional(),
+});
+export type CompareDetail = z.infer<typeof CompareDetailSchema>;
+
 export const CompareWithParentSchema = z.object({
+  delta: z.number().default(0).optional(),
   improved: z.array(z.string()),
   worse: z.array(z.string()),
   same: z.array(z.string()),
+  details: z.array(CompareDetailSchema).default([]).optional(),
+  summary_reason: z.string().optional(),
 });
 export type CompareWithParent = z.infer<typeof CompareWithParentSchema>;
 
@@ -113,6 +131,8 @@ export const LlmGradeOutputSchema = z.object({
       reason: z.string(),
       level: CriterionLevelEnum,
       missing: z.string().optional(),
+      why_important: z.string().optional(),
+      guiding_questions: z.array(z.string()).default([]).optional(),
       fix_kind: z.enum(["auto", "needs_input", "self"]).default("auto").optional(),
       input_question: z.string().optional(),
       keep_quote: z.string().optional(),

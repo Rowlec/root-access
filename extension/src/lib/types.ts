@@ -82,6 +82,9 @@ export interface GradedCriterion {
   level: "CHUA_DAT" | "DAT" | "TOT";
   reason: string;
   evidence_quote: string;
+  why_important?: string;
+  guiding_questions?: string[];
+  missing?: string;
 }
 
 export interface WarningItem {
@@ -102,13 +105,28 @@ export interface FixAction {
   type: "NEED_DATA" | "TASK" | "MARK_ASSUMPTIONS" | "FOCUS_REWRITE";
   label: string;
   explanation: string;
+  why_important?: string;
+  guiding_questions?: string[];
   inputs?: FixActionInput[];
 }
 
+export interface CompareDetail {
+  criterion_id: string;
+  criterion_name?: string;
+  previous_level?: string;
+  current_level: string;
+  status: "improved" | "worse" | "same";
+  reason: string;
+  diff_snippet?: string;
+}
+
 export interface CompareWithParent {
+  delta?: number;
   improved: string[];
   worse: string[];
   same: string[];
+  details?: CompareDetail[];
+  summary_reason?: string;
 }
 
 export interface GradeResult {

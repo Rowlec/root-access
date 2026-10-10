@@ -2,13 +2,18 @@ import React, { useEffect, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
+  Award,
   Check,
   CheckCircle2,
   ChevronRight,
   ExternalLink,
+  HelpCircle,
+  History,
   Loader2,
+  MessageSquare,
   RotateCcw,
   Save,
+  Sparkles,
 } from "lucide-react";
 import { api } from "../../lib/api";
 import { readLastAnswerFromTab } from "../../lib/messages";
@@ -45,6 +50,25 @@ export function GradeResultScreen({
   const [regrading, setRegrading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showLecturerBox, setShowLecturerBox] = useState(false);
+  const [lecturerFeedbackText, setLecturerFeedbackText] = useState("");
+  const [analyzingFeedback, setAnalyzingFeedback] = useState(false);
+  const [feedbackAnalysis, setFeedbackAnalysis] = useState<any>(null);
+
+  const handleAnalyzeFeedback = async () => {
+    if (!lecturerFeedbackText.trim()) return;
+    setAnalyzingFeedback(true);
+    try {
+      const res = await api.analyzeLecturerFeedback(project.id, section.id, {
+        feedback: lecturerFeedbackText.trim(),
+      });
+      setFeedbackAnalysis(res.analysis);
+    } catch (err: any) {
+      console.warn("Feedback analyze failed", err);
+    } finally {
+      setAnalyzingFeedback(false);
+    }
+  };
 
   // Trigger in-page quote highlights on mount (Spec 5.1)
   useEffect(() => {
@@ -148,6 +172,34 @@ export function GradeResultScreen({
         </span>
       </div>
 
+      {/* Auto-read Notice */}
+      <div className="flex items-center justify-between text-[11px] text-[var(--muted)] bg-[var(--surface-2)] px-3 py-2 rounded-xl border border-[var(--line-2)]">
+        <span>💡 Tự đọc câu trả lời AI trên ChatGPT (không cần copy)</span>
+        <span className="text-emerald-600 font-bold">Tự động</span>
+      </div>
+
+      {/* Compare with parent (Bạn đã sửa gì) */}
+      {result.compare_with_parent && (
+        <div className="rounded-xl border border-blue-300 bg-blue-50/70 dark:bg-blue-950/30 p-3 space-y-1.5 text-xs text-blue-950 dark:text-blue-100">
+          <div className="flex items-center justify-between font-bold">
+            <span className="flex items-center gap-1.5">
+              <History size={14} className="text-blue-600" />
+              Bạn đã sửa gì sau khi chấm lại
+            </span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-200 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+              {(result.compare_with_parent.delta ?? 0) > 0
+                ? `+${result.compare_with_parent.delta} Đạt`
+                : "Điểm cập nhật"}
+            </span>
+          </div>
+          {result.compare_with_parent.summary_reason && (
+            <p className="text-[11px] leading-relaxed">
+              {result.compare_with_parent.summary_reason}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Summary Card */}
       <div
         className={`rounded-2xl border p-4 space-y-2 ${
@@ -178,6 +230,59 @@ export function GradeResultScreen({
             ? "Không còn tiêu chí nào Chưa đạt. Bạn có thể bấm 'Lưu bản đạt' bên dưới để lưu vào hồ sơ đề án."
             : "Một số câu cần sửa theo gợi ý dưới đây để bài viết khớp ngách và số liệu hơn."}
         </p>
+      </div>
+
+      {/* Lecturer Feedback Collapsible Box */}
+      <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3 space-y-2 text-xs">
+        <button
+          type="button"
+          onClick={() => setShowLecturerBox(!showLecturerBox)}
+          className="w-full flex items-center justify-between text-xs font-bold text-[var(--ink)]"
+        >
+          <span className="flex items-center gap-1.5 text-purple-600">
+            <Award size={14} />
+            Nhận xét từ Giảng viên / Mentor
+          </span>
+          <span className="text-[11px] text-[var(--accent)] font-semibold">
+            {showLecturerBox ? "Thu gọn" : "Mở ô dán"}
+          </span>
+        </button>
+
+        {showLecturerBox && (
+          <div className="space-y-2 pt-2 border-t border-[var(--line-2)] animate-in fade-in duration-150">
+            <textarea
+              rows={2}
+              value={lecturerFeedbackText}
+              onChange={(e) => setLecturerFeedbackText(e.target.value)}
+              placeholder="Dán nhận xét của GV/Mentor..."
+              className="w-full rounded-lg border border-[var(--line)] bg-[var(--surface-2)] p-2 text-xs text-[var(--ink)]"
+            />
+            <button
+              type="button"
+              onClick={handleAnalyzeFeedback}
+              disabled={analyzingFeedback || !lecturerFeedbackText.trim()}
+              className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-purple-600 text-white text-xs font-bold hover:bg-purple-700 disabled:opacity-50"
+            >
+              {analyzingFeedback ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Sparkles size={13} />
+              )}
+              Phân tích & Hướng dẫn sửa
+            </button>
+            {feedbackAnalysis && (
+              <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-[11px] text-purple-950 dark:text-purple-200 space-y-1 border border-purple-200">
+                <p className="font-bold">Tiêu chí: {feedbackAnalysis.criterion_name}</p>
+                <p>
+                  <strong>Lý do trừ điểm:</strong> {feedbackAnalysis.why_important}
+                </p>
+                <p>
+                  <strong>Gợi ý sửa:</strong> {feedbackAnalysis.guiding_questions?.[0]}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Action: Lưu bản đạt / Lưu bản này (Spec Mục 5 & 9.4) */}
