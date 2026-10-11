@@ -328,15 +328,26 @@ export function WebWriteWorkspace({
           projectId,
           sectionId,
           packId,
+          intake_answers: intakeAnswers,
         }),
       });
       if (res.ok) {
         const body = await res.json();
-        setGeneratedPrompt(body.prompt);
+        const text = body.prompt_text || body.prompt || "";
+        setGeneratedPrompt(text);
         setShowPromptPreview(true);
+        if (text) {
+          navigator.clipboard.writeText(text).catch(() => {});
+          setPromptCopied(true);
+          setTimeout(() => setPromptCopied(false), 3000);
+        }
+      } else {
+        const body = await res.json().catch(() => ({}));
+        alert(body.message || body.error || "Không thể tạo prompt. Vui lòng kiểm tra lại thông tin dự án.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      alert("Lỗi kết nối khi tạo prompt: " + (err.message || String(err)));
     } finally {
       setGeneratingPrompt(false);
     }
@@ -951,21 +962,46 @@ export function WebWriteWorkspace({
               )}
             </div>
 
-            {/* Prompt Preview */}
+            {/* Prompt Preview & Copy Banner */}
             {generatedPrompt && showPromptPreview && (
-              <div className="space-y-3 pt-3 border-t border-[var(--line-2)]">
+              <div className="space-y-3 pt-3 border-t border-[var(--line-2)] animate-in fade-in duration-200">
+                <div className="rounded-xl border border-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/40 p-3.5 space-y-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                      <CheckCircle2 className="size-4 text-emerald-600" />
+                      {promptCopied ? "Đã sao chép prompt vào bộ nhớ tạm!" : "Prompt chuẩn đã sẵn sàng!"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleCopyAndOpenChatGPT}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--ink)] text-white text-xs font-bold hover:bg-black transition-colors shadow-xs"
+                    >
+                      <ExternalLink className="size-3.5" />
+                      Mở ChatGPT & Dán
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-emerald-900/80 dark:text-emerald-200/80 leading-relaxed">
+                    👉 <strong>Bước tiếp theo:</strong> Gửi prompt này vào ChatGPT, copy câu trả lời của AI và dán vào ô bên phải <strong>(Bước 2 · Dán & Chấm theo mục tiêu)</strong> để đối chiếu rubric.
+                  </p>
+                </div>
+
                 <div className="flex items-center justify-between">
                   <span className="text-[2xs] font-bold text-[var(--muted)] uppercase">
-                    Nội dung prompt:
+                    Nội dung prompt chuẩn:
                   </span>
                   <button
-                    onClick={handleCopyAndOpenChatGPT}
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedPrompt);
+                      setPromptCopied(true);
+                      setTimeout(() => setPromptCopied(false), 2500);
+                    }}
                     className="inline-flex items-center gap-1 text-xs text-[var(--accent)] font-semibold hover:underline"
                   >
                     <Copy className="size-3" />
-                    {promptCopied ? "Đã chép!" : "Sao chép & Mở ChatGPT"}
+                    {promptCopied ? "Đã chép lại!" : "Sao chép prompt"}
                   </button>
                 </div>
+
                 <pre className="rounded-xl border border-[var(--line-2)] bg-[var(--surface-2)] p-4 text-xs font-mono text-[var(--ink)] leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto">
                   {generatedPrompt}
                 </pre>

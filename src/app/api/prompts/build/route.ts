@@ -106,6 +106,7 @@ export async function POST(request: Request) {
     return jsonResponse(
       {
         prompt_text: promptText,
+        prompt: promptText,
         insertion_id: insertion.id,
       },
       { status: 200 },
