@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Clock,
   Copy,
+  Download,
   Edit3,
   ExternalLink,
   Eye,
@@ -24,6 +25,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { buildProposalExport, createDocxBlob, createTextBlob } from "@/lib/proposal-export";
 
 interface CriterionOverview {
   id: string;
@@ -236,6 +238,76 @@ export function ProjectHubView({ initialData }: { initialData: HubData }) {
     } finally {
       setIsCheckingFull(false);
     }
+  };
+
+  const handleExportDocx = () => {
+    const sectionsToExport = (data.sections || [])
+      .filter((s) => s.saved_text && s.saved_text.trim())
+      .map((s) => ({
+        heading: s.title,
+        content: s.saved_text || "",
+      }));
+
+    const doc = buildProposalExport({
+      title: data.project.name || "Startup Proposal",
+      contextLines: [
+        `Môn học: ${data.pack.course} - ${data.pack.checkpoint.toUpperCase()}`,
+        `Ý tưởng: ${data.project.one_liner || ""}`,
+        `Ngách: ${data.project.niche || ""}`,
+      ],
+      sections:
+        sectionsToExport.length > 0
+          ? sectionsToExport
+          : [
+              {
+                heading: "Khách hàng mục tiêu & Vấn đề",
+                content: "Đề án khởi nghiệp đã hoàn thiện theo chuẩn Rubric của trường.",
+              },
+            ],
+    });
+
+    const blob = createDocxBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${data.project.name || "Startup_Proposal"}.docx`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportTxt = () => {
+    const sectionsToExport = (data.sections || [])
+      .filter((s) => s.saved_text && s.saved_text.trim())
+      .map((s) => ({
+        heading: s.title,
+        content: s.saved_text || "",
+      }));
+
+    const doc = buildProposalExport({
+      title: data.project.name || "Startup Proposal",
+      contextLines: [
+        `Môn học: ${data.pack.course} - ${data.pack.checkpoint.toUpperCase()}`,
+        `Ý tưởng: ${data.project.one_liner || ""}`,
+        `Ngách: ${data.project.niche || ""}`,
+      ],
+      sections:
+        sectionsToExport.length > 0
+          ? sectionsToExport
+          : [
+              {
+                heading: "Khách hàng mục tiêu & Vấn đề",
+                content: "Đề án khởi nghiệp đã hoàn thiện theo chuẩn Rubric của trường.",
+              },
+            ],
+    });
+
+    const blob = createTextBlob(doc);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${data.project.name || "Startup_Proposal"}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const handleBuyTeamPass = async (plan: "trial" | "full") => {
@@ -608,6 +680,39 @@ export function ProjectHubView({ initialData }: { initialData: HubData }) {
                 )}
               </div>
             )}
+          </div>
+
+          {/* 4. Xuất bản Startup Proposal (Final Step) */}
+          <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <Download className="size-5 text-[var(--accent)]" />
+                  <h3 className="font-serif font-bold text-base text-[var(--ink)]">
+                    Xuất bản Startup Proposal
+                  </h3>
+                </div>
+                <p className="text-xs text-[var(--muted)] leading-relaxed">
+                  Tải toàn bộ bài đề án hoàn chỉnh dưới dạng file Word (.DOCX) hoặc .TXT chuẩn form nộp bài.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={handleExportDocx}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-[var(--accent)] text-white text-xs font-semibold hover:opacity-90 shadow-sm transition-all"
+                >
+                  <Download className="size-3.5" />
+                  Tải file Word (.DOCX)
+                </button>
+                <button
+                  onClick={handleExportTxt}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg border border-[var(--line)] bg-[var(--surface)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--sunken)] transition-colors"
+                >
+                  Tải bản .TXT
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

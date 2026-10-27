@@ -5,6 +5,7 @@ import { getDb } from "@/db";
 import { grades, packs, projectSections, sectionIntakes } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { Pack } from "@/lib/packs-schema";
+import { buildInitialPrompt } from "@/lib/prompts/builder";
 
 export default async function WriteSectionPage({
   params,
@@ -74,6 +75,17 @@ export default async function WriteSectionPage({
     notFound();
   }
 
+  const initialPrompt = buildInitialPrompt(packContent, currentSection, {
+    name: project.name || project.title,
+    idea: project.oneLiner || project.idea || project.startupIdea || "",
+    one_liner: project.oneLiner || project.idea || project.startupIdea || "",
+    targetCustomer: project.niche || project.targetCustomer || "",
+    niche: project.niche || project.targetCustomer || "",
+    domain: project.domain || project.industry,
+    intake_answers: intakeRow?.answers || {},
+    availableData: project.availableData,
+  });
+
   return (
     <main className="mx-auto min-h-svh w-full max-w-6xl px-5 py-6 sm:px-8 lg:px-10 lg:py-10">
       <WebWriteWorkspace
@@ -94,6 +106,7 @@ export default async function WriteSectionPage({
         initialSavedText={savedSectionRow?.savedText || ""}
         initialGradeResult={latestGradeRow?.result || null}
         initialTargetLevel={project.targetLevel || null}
+        initialPrompt={initialPrompt}
       />
     </main>
   );

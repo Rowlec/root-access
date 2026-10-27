@@ -19,10 +19,8 @@ import { api } from "../../lib/api";
 import { readLastAnswerFromTab } from "../../lib/messages";
 import { track } from "../../lib/tracking";
 import { FixAction, GradeResult, Pack, Project, Section } from "../../lib/types";
-import { CouncilQuestions } from "../components/CouncilQuestions";
 import { CriterionRow } from "../components/CriterionRow";
 import { FixActionCard } from "../components/FixActionCard";
-import { WarningList } from "../components/WarningList";
 
 export function GradeResultScreen({
   result,
@@ -327,11 +325,6 @@ export function GradeResultScreen({
         </div>
       </div>
 
-      {/* Warnings */}
-      {result.warnings && result.warnings.length > 0 && (
-        <WarningList warnings={result.warnings} />
-      )}
-
       {/* Fix Actions */}
       {result.fix_actions && result.fix_actions.length > 0 && (
         <div className="space-y-2">
@@ -348,11 +341,6 @@ export function GradeResultScreen({
             ))}
           </div>
         </div>
-      )}
-
-      {/* Council Questions */}
-      {result.likely_questions && result.likely_questions.length > 0 && (
-        <CouncilQuestions questions={result.likely_questions} />
       )}
 
       {/* Regrade Button */}

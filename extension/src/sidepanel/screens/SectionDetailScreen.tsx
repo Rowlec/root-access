@@ -314,9 +314,9 @@ export function SectionDetailScreen({
         <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-3.5 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-[var(--accent)] flex items-center gap-1">
-              Hỏi nhanh: {intakeQuestions.length} câu
+              Thêm số liệu (Tùy chọn)
             </span>
-            <span className="text-[2xs] text-[var(--muted)]">Dữ liệu thật của nhóm</span>
+            <span className="text-[2xs] text-[var(--muted)]">Không bắt buộc</span>
           </div>
 
           <div className="space-y-3">

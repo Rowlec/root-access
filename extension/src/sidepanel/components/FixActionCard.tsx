@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowRight, Database, CheckSquare, ShieldAlert, Edit3, HelpCircle } from "lucide-react";
+import { ArrowRight, Database, CheckSquare, ShieldAlert, Edit3 } from "lucide-react";
 import { FixAction } from "../../lib/types";
 
 export function FixActionCard({
@@ -37,7 +37,7 @@ export function FixActionCard({
               {action.label}
             </p>
             <p className="text-[11px] leading-relaxed text-slate-300">
-              <span className="font-semibold text-slate-400">Thiếu gì: </span>
+              <span className="font-semibold text-slate-400">Gợi ý sửa thẳng: </span>
               {action.explanation}
             </p>
           </div>
@@ -48,18 +48,11 @@ export function FixActionCard({
         />
       </div>
 
-      {action.why_important && (
-        <p className="text-[10px] text-amber-300/80 bg-amber-500/10 rounded-lg p-2 border border-amber-500/20 leading-relaxed">
-          <span className="font-bold">⚠️ Vì sao quan trọng: </span>
-          {action.why_important}
-        </p>
-      )}
-
       <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[10px] text-blue-400 font-semibold">
-        <span className="flex items-center gap-1">
-          <HelpCircle size={11} /> Có câu hỏi gợi mở cho sinh viên
+        <span>Đề xuất khắc phục ngay</span>
+        <span className="group-hover:underline flex items-center gap-1 font-bold">
+          Tạo prompt sửa ➔
         </span>
-        <span className="group-hover:underline">Tự trả lời để sửa ➔</span>
       </div>
     </div>
   );

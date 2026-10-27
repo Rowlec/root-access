@@ -20,7 +20,7 @@ export interface ProjectPromptInput {
 
 export function formatAvailableData(data?: ProjectPromptInput["availableData"]): string {
   if (!data || Object.keys(data).length === 0) {
-    return "(Nhóm chưa có dữ liệu thực tế, cần đánh dấu [CẦN DỮ LIỆU] khi viết)";
+    return "(Nhóm chưa có dữ liệu thực tế, AI sẽ tự đề xuất số liệu mẫu phù hợp)";
   }
 
   const parts: string[] = [];
@@ -39,7 +39,7 @@ export function formatAvailableData(data?: ProjectPromptInput["availableData"]):
 
   return parts.length > 0
     ? parts.join("\n- ")
-    : "(Nhóm chưa có dữ liệu thực tế, cần đánh dấu [CẦN DỮ LIỆU] khi viết)";
+    : "(Nhóm chưa có dữ liệu thực tế, AI sẽ tự đề xuất số liệu mẫu phù hợp)";
 }
 
 export function buildInitialPrompt(
@@ -51,93 +51,100 @@ export function buildInitialPrompt(
   const oneLiner = (project.one_liner || project.idea || "").trim();
   const niche = (project.niche || project.targetCustomer || "").trim();
 
-  // Process intake questions into known / unknown blocks
+  // Process intake questions into known items
   const knownItems: string[] = [];
-  const unknownItems: string[] = [];
-
   const answers = project.intake_answers || {};
 
   if (section.intake && section.intake.length > 0) {
     for (const q of section.intake) {
       const val = answers[q.id];
-      const isUnknown =
-        val === undefined ||
-        val === null ||
-        val === "" ||
-        val === q.unknown_label ||
-        (Array.isArray(val) && val.length === 0);
+      const isKnown =
+        val !== undefined &&
+        val !== null &&
+        val !== "" &&
+        val !== q.unknown_label &&
+        (!Array.isArray(val) || val.length > 0);
 
-      if (isUnknown) {
-        unknownItems.push(`- ${q.prompt_label || q.question}`);
-      } else {
+      if (isKnown) {
         const displayVal = Array.isArray(val) ? val.join(", ") : String(val);
-        knownItems.push(`- ${q.prompt_label || q.question}: ${displayVal}`);
+        knownItems.push(`${q.prompt_label || q.question}: ${displayVal}`);
       }
     }
   } else if (project.availableData) {
     const data = project.availableData;
     if (data.surveyCount && Number(data.surveyCount) > 0) {
-      knownItems.push(`- Khảo sát: ${data.surveyCount} người tham gia`);
+      knownItems.push(`Khảo sát: ${data.surveyCount} người tham gia`);
     }
     if (data.interviewCount && Number(data.interviewCount) > 0) {
-      knownItems.push(`- Phỏng vấn sâu: ${data.interviewCount} người`);
+      knownItems.push(`Phỏng vấn sâu: ${data.interviewCount} người`);
     }
     if (data.keyFindings && String(data.keyFindings).trim()) {
-      knownItems.push(`- Kết quả chính: ${String(data.keyFindings).trim()}`);
+      knownItems.push(`Kết quả chính: ${String(data.keyFindings).trim()}`);
     }
     if (data.freeText && String(data.freeText).trim()) {
-      knownItems.push(`- Ghi chú: ${String(data.freeText).trim()}`);
+      knownItems.push(`Ghi chú: ${String(data.freeText).trim()}`);
     }
   }
 
   const parts: string[] = [];
 
   parts.push(
-    `Bạn là trợ lý giúp nhóm sinh viên viết phần "${section.title}" trong Startup Proposal môn ${pack.course} (${pack.checkpoint}).`,
+    `Bạn là chuyên gia cố vấn khởi nghiệp. Hãy viết hoàn chỉnh nội dung phần "${section.title}" cho đề án khởi nghiệp của nhóm sinh viên.`
   );
 
-  // <the_du_an>
-  const theDuAnLines: string[] = [];
-  theDuAnLines.push(`${name}: ${oneLiner}`);
+  // Project Information
+  const projectLines: string[] = [
+    `THÔNG TIN DỰ ÁN:`,
+    `- Tên dự án: ${name}`,
+  ];
+  if (oneLiner) {
+    projectLines.push(`- Ý tưởng cốt lõi: ${oneLiner}`);
+  }
   if (niche) {
-    theDuAnLines.push(`Ngách: ${niche}`);
+    projectLines.push(`- Khách hàng mục tiêu và ngách: ${niche}`);
+  }
+  if (project.domain) {
+    projectLines.push(`- Lĩnh vực: ${project.domain}`);
   }
   if (project.saved_summary && project.saved_summary.trim()) {
-    theDuAnLines.push(`Đã chốt ở các phần trước: ${project.saved_summary.trim()}`);
+    projectLines.push(`- Nội dung đã chốt ở phần trước: ${project.saved_summary.trim()}`);
   }
-  parts.push(`<the_du_an>\n${theDuAnLines.join("\n")}\n</the_du_an>`);
-
-  // <du_lieu_nhom>
   if (knownItems.length > 0) {
-    parts.push(`<du_lieu_nhom>\n${knownItems.join("\n")}\n</du_lieu_nhom>`);
+    projectLines.push(`- Dữ liệu thực tế nhóm đã có:`);
+    for (const item of knownItems) {
+      projectLines.push(`  + ${item}`);
+    }
   }
+  parts.push(projectLines.join("\n"));
 
-  // <chua_co_du_lieu>
-  if (unknownItems.length > 0) {
-    parts.push(`<chua_co_du_lieu>\n${unknownItems.join("\n")}\n</chua_co_du_lieu>`);
-  }
-
-  // Tiêu chí tốt
-  const criteriaText = section.criteria
-    .map((c) => `- ${c.name}: ${c.levels.TOT}`)
-    .join("\n");
-  parts.push(`Một phần "${section.title}" tốt cần:\n${criteriaText}`);
-
-  // Cách viết
-  const rules = [
-    `- Chỉ dùng số liệu và lời khách hàng có trong <du_lieu_nhom>, vì hội đồng sẽ hỏi nguồn.`,
-    `- Chỗ cần dữ liệu mà chưa có, ghi [CẦN DỮ LIỆU: cần thu thập gì].`,
-    `- Nhận định chưa kiểm chứng thì đánh dấu [GIẢ ĐỊNH].`,
-    `- Giữ đúng ngách ở trên, không mở rộng sang nhóm khách hàng khác.`,
+  // Rubric Criteria
+  const criteriaLines: string[] = [
+    `TIÊU CHUẨN CẦN ĐẠT ĐƯỢC CHO PHẦN "${section.title}":`,
   ];
-  if (unknownItems.length >= 2) {
-    rules.push(`- Nếu thiếu thông tin quan trọng, hãy hỏi tôi tối đa 2 câu trước khi viết.`);
-  }
-  parts.push(`Cách viết:\n${rules.join("\n")}`);
+  section.criteria.forEach((c, index) => {
+    criteriaLines.push(`${index + 1}. ${c.name}: ${c.levels.TOT}`);
+  });
+  parts.push(criteriaLines.join("\n"));
 
-  // Cấu trúc đầu ra
-  const headings = section.criteria.map((c) => `### ${c.name}`).join("\n");
-  parts.push(`Trình bày bằng tiếng Việt, mỗi tiêu chí là một tiêu đề nhỏ:\n${headings}`);
+  // Writing rules
+  const rulesLines: string[] = [
+    `YÊU CẦU KHI VIẾT:`,
+    `- Hãy viết và sinh ra kết quả hoàn chỉnh ngay lập tức trong câu trả lời đầu tiên, tuyệt đối không đặt câu hỏi lại người dùng.`,
+    `- Nếu nhóm chưa có đủ số liệu thực tế, hãy chủ động đưa ra các ví dụ, tình huống và số liệu mẫu hợp lý bám sát ngách khách hàng để bài viết thuyết phục nhất.`,
+    `- Không sử dụng các ký hiệu ghi chú như cần dữ liệu hay giả định. Viết như một bản đề án hoàn chỉnh, chuyên nghiệp.`,
+    `- Bám sát ngách khách hàng đã nêu, lập luận chặt chẽ và mạch lạc bằng tiếng Việt.`,
+  ];
+  parts.push(rulesLines.join("\n"));
+
+  // Output structure
+  const structureLines: string[] = [
+    `BỐ CỤC BÀI VIẾT:`,
+    `Trình bày rõ ràng theo từng phần sau:`,
+  ];
+  section.criteria.forEach((c, index) => {
+    structureLines.push(`${index + 1}. ${c.name}`);
+  });
+  parts.push(structureLines.join("\n"));
 
   return parts.join("\n\n");
 }
@@ -176,61 +183,56 @@ export function buildFixPrompt(params: {
   } = params;
 
   const targetLabelMap: Record<string, string> = {
-    pass: "Qua môn (Đạt tiêu chí cơ bản)",
-    good: "Khá (Khoảng 7–8 điểm)",
-    excellent: "Xuất sắc (Khoảng 9–10 điểm)",
+    pass: "Qua môn (Đạt tiêu chuẩn)",
+    good: "Khá (Khoảng 7-8 điểm)",
+    excellent: "Xuất sắc (Khoảng 9-10 điểm)",
   };
 
-  const lines: string[] = [];
-  lines.push(`Hãy sửa lại nội dung phần "${sectionTitle}" cho tiêu chí "${criterionName}" dựa trên câu trả lời thực tế của nhóm theo đúng các yêu cầu sau:`);
+  const sections: string[] = [];
 
-  // (1) Câu yếu, trích nguyên văn
-  if (evidenceQuote && evidenceQuote.trim()) {
-    lines.push(`1. ĐOẠN VĂN CẦN SỬA (trích nguyên văn từ bài làm):\n"${evidenceQuote.trim()}"`);
-  } else {
-    lines.push(`1. VẤN ĐỀ CẦN SỬA:\n${missing || currentReason || "Nội dung hiện tại chưa đáp ứng đủ tiêu chí."}`);
-  }
-
-  // (2) Điểm còn thiếu & Vì sao quan trọng
-  const whyImportantText = whyImportant?.trim() || "";
-  lines.push(
-    `2. YÊU CẦU THEO RUBRIC [Mục tiêu: ${targetLabelMap[targetLevel] || targetLevel}]:\n- Điểm còn thiếu: ${missing || currentReason || "Chưa hoàn thiện tiêu chuẩn rubric."}${
-      whyImportantText ? `\n- Vì sao quan trọng: ${whyImportantText}` : ""
-    }${rubricRequirement ? `\n- Tiêu chuẩn cần đạt: ${rubricRequirement.trim()}` : ""}`,
+  sections.push(
+    `Bạn là chuyên gia cố vấn khởi nghiệp. Hãy sửa lại và hoàn thiện nội dung cho phần "${sectionTitle}" thuộc tiêu chí "${criterionName}".`
   );
 
-  // (3) Cách viết lấy từ bài mẫu (công thức hành văn, không chép chữ)
+  const fixDetails: string[] = [
+    `CHI TIẾT CẦN KHẮC PHỤC:`,
+  ];
+  if (evidenceQuote && evidenceQuote.trim()) {
+    fixDetails.push(`- Đoạn văn đang cần sửa: "${evidenceQuote.trim()}"`);
+  }
+  fixDetails.push(`- Vấn đề cần khắc phục: ${missing || currentReason || "Nội dung hiện tại chưa đáp ứng đủ tiêu chí."}`);
+  if (whyImportant?.trim()) {
+    fixDetails.push(`- Lý do cần sửa: ${whyImportant.trim()}`);
+  }
+  fixDetails.push(`- Tiêu chuẩn mục tiêu (${targetLabelMap[targetLevel] || targetLevel}): ${rubricRequirement || totDescription || "Đạt chuẩn cao nhất"}`);
+  sections.push(fixDetails.join("\n"));
+
   if (exampleFormula && exampleFormula.trim()) {
-    lines.push(`3. CÁCH VIẾT THAM KHẢO (áp dụng công thức hành văn, không sao chép nguyên văn):\n${exampleFormula.trim()}`);
+    sections.push(`CÁCH VIẾT THAM KHẢO:\n${exampleFormula.trim()}`);
   }
 
-  // (4) Dữ liệu sinh viên vừa nhập từ câu trả lời gợi mở
   if (userInputText && userInputText.trim()) {
-    lines.push(`4. THÔNG TIN THẬT DO NHÓM CUNG CẤP (Câu trả lời của sinh viên):\n${userInputText.trim()}`);
+    sections.push(`THÔNG TIN BỔ SUNG CỦA NHÓM:\n${userInputText.trim()}`);
   }
 
-  // Action type specific notes
-  if (actionType === "FOCUS_REWRITE" && niche) {
-    lines.push(`LƯU Ý ĐẶC BIỆT: Viết lại chỉ tập trung cho đúng ngách "${niche}", không lan man sang đối tượng khác.`);
-  }
-
-  // (5) Khóa phần tốt & Nguyên tắc chống bịa số
   const rules: string[] = [
-    "DÙNG ĐÚNG THÔNG TIN THẬT SINH VIÊN ĐÃ ĐIỀN Ở MỤC 4. TUYỆT ĐỐI KHÔNG BỊA ĐẶT THÊM SỐ LIỆU HAY BẰNG CHỨNG GIẢ TẠO.",
-    "CHỈ SỬA CÂU CẦN SỬA Ở MỤC 1. GIỮ NGUYÊN TOÀN BỘ CÁC CÂU KHÁC TRONG ĐOẠN VĂN.",
+    `NGUYÊN TẮC VIẾT:`,
+    `- Hãy sinh ra đoạn văn hoàn chỉnh đã sửa ngay lập tức, không dừng lại hỏi người dùng.`,
+    `- Giữ đúng ngách khách hàng${niche ? ` ("${niche}")` : ""}, không lan man sang đối tượng khác.`,
+    `- Nếu thiếu số liệu khảo sát cụ thể, hãy tự bổ sung số liệu và dẫn chứng mẫu hợp lý, không dùng các ký hiệu ghi chú như cần dữ liệu hay giả định.`,
   ];
 
   if (keptQuotes && keptQuotes.length > 0) {
-    rules.push("Các câu sau đây đã đạt yêu cầu, TUYỆT ĐỐI KHÔNG ĐƯỢC THAY ĐỔI:\n" + keptQuotes.map((q) => `  - "${q}"`).join("\n"));
+    rules.push(`- Giữ nguyên các câu đã đạt sau đây trong bài viết:`);
+    for (const q of keptQuotes) {
+      rules.push(`  + "${q}"`);
+    }
   }
 
-  rules.push("Nếu thiếu thông tin, hãy ghi [CẦN DỮ LIỆU: cần thu thập gì], không tự ý suy đoán số liệu cho sinh viên.");
+  rules.push(`- Trình bày mạch lạc, tự nhiên bằng tiếng Việt và trả lại đoạn văn hoàn chỉnh sau khi sửa.`);
+  sections.push(rules.join("\n"));
 
-  lines.push(`5. NGUYÊN TẮC BẮT BUỘC:\n` + rules.map((r, i) => `${i + 1}) ${r}`).join("\n"));
-
-  lines.push(`Trả lại đoạn văn hoàn chỉnh sau khi sửa.`);
-
-  return lines.join("\n\n");
+  return sections.join("\n\n");
 }
 
 export interface ValidationIssue {
@@ -295,7 +297,7 @@ export function validateProjectProfile(input: {
       field: "availableData",
       severity: "warning",
       message:
-        "Chưa có dữ liệu thật, AI sẽ đánh dấu [CẦN DỮ LIỆU] ở các chỗ cần số liệu.",
+        "Chưa có dữ liệu thật, AI sẽ tự đề xuất số liệu và tình huống mẫu phù hợp.",
     });
   }
 

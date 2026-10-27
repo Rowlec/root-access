@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Check, HelpCircle, Loader2, Send, Sparkles, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Check, Copy, Loader2, Send, Sparkles } from "lucide-react";
 import { api } from "../../lib/api";
 import { insertPromptToTab } from "../../lib/messages";
 import { track } from "../../lib/tracking";
@@ -21,30 +21,14 @@ export function FixModal({
   const [userAnswer, setUserAnswer] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [insertSuccess, setInsertSuccess] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
 
   // Find related criterion for quote and detailed guidance
   const relatedCrit = gradeResult.criteria.find((c) => c.id === action.criterion_id);
-
-  // 1-2 guiding questions
-  const guidingQuestions =
-    (action.guiding_questions && action.guiding_questions.length > 0)
-      ? action.guiding_questions
-      : (relatedCrit?.guiding_questions && relatedCrit.guiding_questions.length > 0)
-      ? relatedCrit.guiding_questions
-      : [
-          `Nhóm đã phỏng vấn hoặc khảo sát bao nhiêu người về tiêu chí "${relatedCrit?.name || action.label}"? Họ trả lời ra sao?`,
-        ];
-
-  const whyImportant =
-    action.why_important ||
-    relatedCrit?.why_important ||
-    "Giảng viên và hội đồng bảo vệ sẽ trừ điểm ở tiêu chí này nếu bài viết thiếu dữ liệu thực tế kiểm chứng.";
-
   const weakQuote = relatedCrit?.evidence_quote?.trim() || "";
+  const directExplanation = action.explanation || relatedCrit?.reason || "Cần hoàn thiện tiêu chí theo đúng rubric.";
 
   const handleApplyFix = async () => {
-    if (!userAnswer.trim()) return;
-
     setSubmitting(true);
     try {
       track("fix_action_clicked", { type: action.type, criterion_id: action.criterion_id });
@@ -63,12 +47,14 @@ export function FixModal({
         track("prompt_inserted", { site: siteId, section_id: gradeResult.section_id, kind: "fix" });
         setTimeout(() => {
           onSuccess();
-        }, 1500);
+        }, 1200);
       } else {
         // Fallback: copy to clipboard
         await navigator.clipboard.writeText(res.prompt_text);
-        alert("Đã tự động sao chép prompt sửa vào clipboard! Vui lòng dán vào ô chat.");
-        onSuccess();
+        setCopiedPrompt(true);
+        setTimeout(() => {
+          onSuccess();
+        }, 1500);
       }
     } catch (err: any) {
       alert(err.message || "Tạo prompt sửa thất bại.");
@@ -77,7 +63,28 @@ export function FixModal({
     }
   };
 
-  const isAnswerValid = userAnswer.trim().length >= 5;
+  const handleCopyFixPrompt = async () => {
+    setSubmitting(true);
+    try {
+      const res = await api.fixPrompt({
+        grade_id: gradeResult.grade_id,
+        action_id: action.id,
+        user_input: {
+          answer: userAnswer.trim(),
+        },
+      });
+
+      await navigator.clipboard.writeText(res.prompt_text);
+      setCopiedPrompt(true);
+      setTimeout(() => {
+        onSuccess();
+      }, 1500);
+    } catch (err: any) {
+      alert(err.message || "Sao chép prompt thất bại.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex h-screen flex-col overflow-y-auto p-4 space-y-4 bg-[#090d16] text-slate-100">
@@ -89,19 +96,19 @@ export function FixModal({
         >
           <ArrowLeft size={16} /> Quay lại kết quả chấm
         </button>
-        <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-          Sửa có hướng dẫn
+        <span className="text-[11px] font-bold text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+          Gợi ý sửa thẳng
         </span>
       </div>
 
       {/* Title */}
       <div className="space-y-1">
         <h3 className="text-sm font-bold text-white flex items-center gap-2">
-          <Sparkles size={16} className="text-blue-400" />
+          <Sparkles size={16} className="text-blue-400 shrink-0" />
           {action.label}
         </h3>
         <p className="text-[11px] text-slate-400">
-          RootAccess hướng dẫn bạn tự trả lời để hiểu sâu bài đề án, không sửa thay.
+          Đề xuất khắc phục trực tiếp tiêu chí này vào bài làm.
         </p>
       </div>
 
@@ -109,86 +116,47 @@ export function FixModal({
       {weakQuote ? (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 space-y-1.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 block">
-            1. Chỗ nào đang yếu (Trích bài làm):
+            Đoạn văn cần sửa (trích bài làm):
           </span>
-          <p className="text-xs text-amber-100 font-mono italic underline decoration-amber-400/60 decoration-wavy">
+          <p className="text-xs text-amber-100 font-mono italic underline decoration-amber-400/60 decoration-wavy leading-relaxed">
             &ldquo;{weakQuote}&rdquo;
           </p>
         </div>
       ) : null}
 
-      {/* 2. Thiếu gì: Tiêu chí rubric */}
-      <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-          2. Thiếu gì (Theo Rubric):
+      {/* 2. Gợi ý sửa thẳng */}
+      <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3.5 space-y-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300 block">
+          Vấn đề & Đề xuất sửa thẳng:
         </span>
-        <p className="text-xs text-slate-200 font-medium leading-relaxed">
-          {action.explanation || relatedCrit?.reason}
+        <p className="text-xs text-blue-100 font-medium leading-relaxed">
+          {directExplanation}
         </p>
       </div>
 
-      {/* 3. Vì sao quan trọng: Rủi ro trừ điểm */}
-      <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 space-y-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1">
-          <AlertTriangle size={12} />
-          3. Vì sao quan trọng (Rủi ro bảo vệ):
-        </span>
-        <p className="text-xs text-rose-200 leading-relaxed">
-          {whyImportant}
-        </p>
-      </div>
-
-      {/* 4. Câu hỏi gợi mở & Ô trả lời của sinh viên */}
-      <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3.5 space-y-2.5">
-        <div className="flex items-start gap-1.5">
-          <HelpCircle size={15} className="text-blue-400 shrink-0 mt-0.5" />
-          <span className="text-xs font-bold text-blue-200">
-            4. Câu hỏi gợi mở (Sinh viên tự trả lời):
-          </span>
-        </div>
-
-        <ul className="text-xs text-blue-100/90 list-disc list-inside space-y-1 pl-1">
-          {guidingQuestions.map((q, idx) => (
-            <li key={idx} className="leading-relaxed">
-              <strong className="text-white">{q}</strong>
-            </li>
-          ))}
-        </ul>
-
-        <div className="pt-1 space-y-1">
-          <label className="block text-[11px] font-semibold text-slate-300">
-            Điền câu trả lời thực tế của nhóm:
+      {/* 3. Dữ liệu bổ sung (Tùy chọn) */}
+      <div className="rounded-xl border border-white/10 bg-white/5 p-3.5 space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-semibold text-slate-200">
+            Số liệu hoặc ghi chú của nhóm (Tùy chọn):
           </label>
-          <textarea
-            value={userAnswer}
-            onChange={(e) => setUserAnswer(e.target.value)}
-            placeholder="Nhập thông tin hoặc số liệu thực tế của nhóm (ví dụ: 'Nhóm đã phỏng vấn 15 bạn sinh viên, 11 bạn chia sẻ rằng mỗi tuần tốn ít nhất 4 giờ tự sơ chế đồ ăn...')"
-            rows={4}
-            className="w-full rounded-xl border border-white/10 bg-black/60 p-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none leading-relaxed"
-          />
+          <span className="text-[10px] text-slate-400">Không bắt buộc</span>
         </div>
-
-        {!isAnswerValid ? (
-          <p className="text-[11px] text-amber-300/90 flex items-center gap-1.5 pt-0.5">
-            <span>ℹ️ Hãy điền câu trả lời thật ở trên để bật nút tạo prompt sửa.</span>
-          </p>
-        ) : (
-          <p className="text-[11px] text-emerald-400 flex items-center gap-1.5 pt-0.5">
-            <span>✓ Đã có thông tin nhóm! Bạn có thể bấm tạo prompt sửa bên dưới.</span>
-          </p>
-        )}
+        <textarea
+          value={userAnswer}
+          onChange={(e) => setUserAnswer(e.target.value)}
+          placeholder="Nếu có số liệu khảo sát thật hoặc lưu ý riêng, bạn có thể điền vào đây (hoặc để trống để AI tự tối ưu)..."
+          rows={3}
+          className="w-full rounded-xl border border-white/10 bg-black/60 p-2.5 text-xs text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none leading-relaxed"
+        />
       </div>
 
-      {/* Button: Tạo prompt từ câu trả lời của tôi (Chỉ bật khi đã điền câu trả lời) */}
+      {/* Buttons */}
       <div className="mt-auto pt-3 border-t border-white/10 space-y-2">
         <button
           onClick={handleApplyFix}
-          disabled={submitting || !isAnswerValid}
-          className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-bold transition-all shadow-lg ${
-            isAnswerValid
-              ? "bg-blue-600 text-white shadow-blue-500/25 hover:bg-blue-500 cursor-pointer"
-              : "bg-white/10 text-slate-500 cursor-not-allowed border border-white/5"
-          }`}
+          disabled={submitting}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-xs font-bold text-white shadow-lg shadow-blue-500/25 hover:bg-blue-500 cursor-pointer disabled:opacity-50 transition-all"
         >
           {submitting ? (
             <>
@@ -203,13 +171,31 @@ export function FixModal({
           ) : (
             <>
               <Send size={15} />
-              Tạo prompt từ câu trả lời của tôi
+              Tạo & Chèn prompt sửa vào ChatGPT
             </>
           )}
         </button>
 
-        <p className="text-[10px] text-slate-400 text-center">
-          Prompt chỉ sử dụng dữ liệu bạn nhập ở trên và yêu cầu AI giữ nguyên các câu đã đạt.
+        <button
+          onClick={handleCopyFixPrompt}
+          disabled={submitting}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-white/10 cursor-pointer disabled:opacity-50 transition-all"
+        >
+          {copiedPrompt ? (
+            <>
+              <Check size={14} className="text-green-400" />
+              Đã sao chép prompt sửa!
+            </>
+          ) : (
+            <>
+              <Copy size={14} />
+              Sao chép prompt sửa
+            </>
+          )}
+        </button>
+
+        <p className="text-[10px] text-slate-400 text-center pt-1">
+          Prompt yêu cầu AI sửa trực tiếp đoạn văn trên và giữ nguyên toàn bộ các câu đã đạt.
         </p>
       </div>
     </div>

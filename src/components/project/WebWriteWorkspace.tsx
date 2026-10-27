@@ -128,6 +128,7 @@ interface WebWriteWorkspaceProps {
   initialSavedText?: string;
   initialGradeResult?: any;
   initialTargetLevel?: "pass" | "good" | "excellent" | null;
+  initialPrompt?: string;
 }
 
 export function WebWriteWorkspace({
@@ -143,6 +144,7 @@ export function WebWriteWorkspace({
   initialSavedText = "",
   initialGradeResult = null,
   initialTargetLevel = null,
+  initialPrompt = "",
 }: WebWriteWorkspaceProps) {
   const currentSection = sections.find((s) => s.id === sectionId) || sections[0];
 
@@ -160,10 +162,11 @@ export function WebWriteWorkspace({
   const [loadingIntake, setLoadingIntake] = useState(
     !(initialIntakeQuestions && initialIntakeQuestions.length > 0)
   );
+  const [showOptionalIntake, setShowOptionalIntake] = useState(false);
 
   // Prompt State
-  const [generatedPrompt, setGeneratedPrompt] = useState("");
-  const [showPromptPreview, setShowPromptPreview] = useState(false);
+  const [generatedPrompt, setGeneratedPrompt] = useState(initialPrompt || "");
+  const [showPromptPreview, setShowPromptPreview] = useState(true);
   const [generatingPrompt, setGeneratingPrompt] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
 
@@ -318,7 +321,7 @@ export function WebWriteWorkspace({
   };
 
   // Build Initial Prompt
-  const handleBuildPrompt = async () => {
+  const handleBuildPrompt = async (customAnswers?: Record<string, any>, autoCopy: boolean = true) => {
     setGeneratingPrompt(true);
     try {
       const res = await fetch("/api/prompts/build", {
@@ -328,7 +331,7 @@ export function WebWriteWorkspace({
           projectId,
           sectionId,
           packId,
-          intake_answers: intakeAnswers,
+          intake_answers: customAnswers || intakeAnswers,
         }),
       });
       if (res.ok) {
@@ -336,7 +339,7 @@ export function WebWriteWorkspace({
         const text = body.prompt_text || body.prompt || "";
         setGeneratedPrompt(text);
         setShowPromptPreview(true);
-        if (text) {
+        if (text && autoCopy) {
           navigator.clipboard.writeText(text).catch(() => {});
           setPromptCopied(true);
           setTimeout(() => setPromptCopied(false), 3000);
@@ -352,6 +355,13 @@ export function WebWriteWorkspace({
       setGeneratingPrompt(false);
     }
   };
+
+  // If prompt was not pre-populated, build it on mount
+  useEffect(() => {
+    if (!generatedPrompt) {
+      handleBuildPrompt(undefined, false);
+    }
+  }, [projectId, sectionId]);
 
   const handleCopyAndOpenChatGPT = () => {
     navigator.clipboard.writeText(generatedPrompt);
@@ -497,8 +507,8 @@ export function WebWriteWorkspace({
     setQuestionModalState((prev) => (prev ? { ...prev, submitting: true } : null));
 
     const answer = isMissingData
-      ? "[CẦN DỮ LIỆU]"
-      : questionModalState.userAnswer.trim() || "[CẦN DỮ LIỆU]";
+      ? ""
+      : questionModalState.userAnswer.trim();
 
     // Update in-card answer cache
     setInCardAnswers((prev) => ({ ...prev, [questionModalState.criterionId]: answer }));
@@ -825,14 +835,15 @@ export function WebWriteWorkspace({
 
       {/* Main Workspace Grid */}
       <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
-        {/* Left Column: Intake & Prompt Builder & Lecturer Feedback */}
+        {/* Left Column: Prompt Ready & Optional Intake & Lecturer Feedback */}
         <div className="space-y-6">
+          {/* Main Card: Ready-to-use Prompt */}
           <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="text-[2xs] font-bold uppercase tracking-wider text-[var(--accent)]">
-                    Bước 1 · Hỏi nhanh 2–4 câu
+                    Bước 1 · Sao chép Prompt cho AI
                   </span>
                   <button
                     type="button"
@@ -844,10 +855,10 @@ export function WebWriteWorkspace({
                   </button>
                 </div>
                 <h2 className="text-lg font-serif font-bold text-[var(--ink)] mt-0.5">
-                  Lấy dữ liệu thực tế cho phần {currentSection.title}
+                  Prompt viết hoàn chỉnh phần {currentSection.title}
                 </h2>
                 <p className="text-xs text-[var(--muted)] mt-1 leading-relaxed">
-                  Để prompt có dữ liệu thật của nhóm, chống AI tự bịa số liệu. Câu nào chưa làm có thể bấm "Chưa biết".
+                  Prompt đã được dựng sẵn bám sát ngách dự án và rubric. ChatGPT sẽ sinh ra bài viết đầy đủ ngay lập tức mà không hỏi lại.
                 </p>
               </div>
             </div>
@@ -856,158 +867,195 @@ export function WebWriteWorkspace({
               <div className="rounded-xl border border-blue-200 bg-blue-50/70 dark:bg-blue-950/40 p-3.5 text-xs text-blue-900 dark:text-blue-200 space-y-1.5 animate-in fade-in duration-150">
                 <p className="font-bold flex items-center gap-1.5">
                   <Info className="size-3.5 text-blue-600" />
-                  Mục đích của Bước 1:
+                  Hướng dẫn sử dụng:
                 </p>
                 <p className="text-[11px] leading-relaxed">
-                  Thu thập các dữ kiện thực tế của nhóm bạn để chuẩn bị prompt chuẩn. Prompt này sẽ yêu cầu ChatGPT bám sát ngách của bạn và <strong>không tự bịa số liệu</strong>.
+                  1. Bấm <strong>Sao chép prompt</strong> hoặc <strong>Mở ChatGPT & Dán</strong> bên dưới.
+                </p>
+                <p className="text-[11px] leading-relaxed">
+                  2. ChatGPT sẽ lập tức trả lời bài viết hoàn chỉnh theo từng tiêu chí chấm điểm.
                 </p>
                 <p className="text-[11px] leading-relaxed font-semibold text-blue-800 dark:text-blue-300">
-                  ➔ Bước tiếp theo: Bấm "Tạo prompt chuẩn", sao chép prompt sang ChatGPT để nhận câu trả lời bản nháp đầu tiên.
+                  3. Sao chép kết quả từ ChatGPT dán vào ô bên phải (Bước 2) để kiểm tra điểm rubric.
                 </p>
               </div>
             )}
 
-            {loadingIntake ? (
-              <div className="py-8 text-center text-xs text-[var(--muted)] flex items-center justify-center gap-2">
-                <Loader2 className="size-4 animate-spin text-[var(--accent)]" /> Đang tải câu hỏi...
-              </div>
-            ) : intakeQuestions.length === 0 ? (
-              <p className="text-xs text-[var(--muted)] italic">
-                Phần này không yêu cầu câu hỏi phụ. Bạn có thể tạo prompt ngay.
-              </p>
-            ) : (
-              <div className="space-y-4 pt-2">
-                {intakeQuestions.map((q, qIndex) => {
-                  const currentVal = intakeAnswers[q.id];
-                  const isUnknown =
-                    currentVal === "Chưa hỏi ai" ||
-                    currentVal === "Chưa biết" ||
-                    currentVal === "Chưa có";
-
-                  return (
-                    <div
-                      key={q.id}
-                      className="rounded-lg border border-[var(--line-2)] bg-[var(--surface-2)] p-3.5 space-y-2.5 text-xs"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <label className="font-semibold text-[var(--ink)] leading-snug">
-                          {qIndex + 1}. {q.question}
-                        </label>
-                        {isUnknown && (
-                          <span className="rounded bg-amber-500/10 text-amber-600 text-[10px] font-bold px-1.5 py-0.5 shrink-0">
-                            Chưa có dữ liệu
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <input
-                          type={q.type === "number" ? "number" : "text"}
-                          disabled={isUnknown}
-                          value={isUnknown ? "" : currentVal || ""}
-                          placeholder={isUnknown ? "AI sẽ ghi chú [CẦN DỮ LIỆU]" : "Nhập câu trả lời..."}
-                          onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                          className="flex-1 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] disabled:opacity-40"
-                        />
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleAnswerChange(q.id, isUnknown ? "" : q.unknown_label || "Chưa biết")
-                          }
-                          className={`px-2.5 py-1.5 rounded-lg border text-[11px] whitespace-nowrap transition-colors ${
-                            isUnknown
-                              ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 font-bold"
-                              : "bg-[var(--surface)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
-                          }`}
-                        >
-                          {q.unknown_label || "Chưa biết"}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Prompt Builder Action */}
-            <div className="pt-2 border-t border-[var(--line-2)] flex flex-wrap items-center justify-between gap-3">
-              <button
-                type="button"
-                onClick={handleBuildPrompt}
-                disabled={generatingPrompt}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[var(--accent)] text-white font-medium text-xs hover:opacity-90 transition-opacity shadow-sm"
-              >
-                {generatingPrompt ? (
-                  <>
-                    <Loader2 className="size-3.5 animate-spin" />
-                    Đang dựng prompt...
-                  </>
-                ) : (
-                  <>
-                    <Wand2 className="size-3.5" />
-                    Tạo prompt chuẩn
-                  </>
-                )}
-              </button>
-
-              {generatedPrompt && (
+            {/* Quick Actions */}
+            <div className="flex items-center justify-between gap-2 flex-wrap pt-1">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
-                  onClick={() => setShowPromptPreview(!showPromptPreview)}
-                  className="text-xs text-[var(--muted)] hover:text-[var(--ink)] font-medium"
-                >
-                  {showPromptPreview ? "Ẩn prompt" : "Xem prompt sẽ chèn"}
-                </button>
-              )}
-            </div>
-
-            {/* Prompt Preview & Copy Banner */}
-            {generatedPrompt && showPromptPreview && (
-              <div className="space-y-3 pt-3 border-t border-[var(--line-2)] animate-in fade-in duration-200">
-                <div className="rounded-xl border border-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/40 p-3.5 space-y-2">
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300">
-                      <CheckCircle2 className="size-4 text-emerald-600" />
-                      {promptCopied ? "Đã sao chép prompt vào bộ nhớ tạm!" : "Prompt chuẩn đã sẵn sàng!"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={handleCopyAndOpenChatGPT}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--ink)] text-white text-xs font-bold hover:bg-black transition-colors shadow-xs"
-                    >
-                      <ExternalLink className="size-3.5" />
-                      Mở ChatGPT & Dán
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-emerald-900/80 dark:text-emerald-200/80 leading-relaxed">
-                    👉 <strong>Bước tiếp theo:</strong> Gửi prompt này vào ChatGPT, copy câu trả lời của AI và dán vào ô bên phải <strong>(Bước 2 · Dán & Chấm theo mục tiêu)</strong> để đối chiếu rubric.
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-[2xs] font-bold text-[var(--muted)] uppercase">
-                    Nội dung prompt chuẩn:
-                  </span>
-                  <button
-                    onClick={() => {
+                  onClick={() => {
+                    if (generatedPrompt) {
                       navigator.clipboard.writeText(generatedPrompt);
                       setPromptCopied(true);
                       setTimeout(() => setPromptCopied(false), 2500);
-                    }}
-                    className="inline-flex items-center gap-1 text-xs text-[var(--accent)] font-semibold hover:underline"
-                  >
-                    <Copy className="size-3" />
-                    {promptCopied ? "Đã chép lại!" : "Sao chép prompt"}
-                  </button>
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--accent)] text-white text-xs font-semibold hover:opacity-90 transition-opacity shadow-xs"
+                >
+                  {promptCopied ? <CheckCircle2 className="size-3.5" /> : <Copy className="size-3.5" />}
+                  {promptCopied ? "Đã sao chép prompt!" : "Sao chép prompt"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopyAndOpenChatGPT}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--ink)] text-white text-xs font-semibold hover:bg-black transition-colors shadow-xs"
+                >
+                  <ExternalLink className="size-3.5" />
+                  Mở ChatGPT & Dán
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleBuildPrompt()}
+                disabled={generatingPrompt}
+                className="inline-flex items-center gap-1 text-xs text-[var(--muted)] hover:text-[var(--ink)] font-medium"
+                title="Tạo lại prompt mới nhất"
+              >
+                {generatingPrompt ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-3.5" />
+                )}
+                Làm mới prompt
+              </button>
+            </div>
+
+            {/* Prompt Box */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">
+                  Nội dung prompt có sẵn:
+                </span>
+                <span className="text-[11px] text-emerald-600 font-semibold">
+                  ✓ Sẵn sàng dán vào AI
+                </span>
+              </div>
+
+              {generatingPrompt ? (
+                <div className="py-12 text-center text-xs text-[var(--muted)] flex items-center justify-center gap-2 border border-[var(--line-2)] rounded-xl bg-[var(--surface-2)]">
+                  <Loader2 className="size-4 animate-spin text-[var(--accent)]" /> Đang tối ưu prompt...
+                </div>
+              ) : (
+                <pre className="rounded-xl border border-[var(--line-2)] bg-[var(--surface-2)] p-4 text-xs font-sans text-[var(--ink)] leading-relaxed whitespace-pre-wrap max-h-72 overflow-y-auto select-all">
+                  {generatedPrompt || "Đang tải prompt..."}
+                </pre>
+              )}
+            </div>
+
+            <p className="text-[11px] text-[var(--muted)] leading-relaxed pt-1 border-t border-[var(--line-2)]">
+              👉 <strong>Tiếp theo:</strong> Gửi prompt này vào ChatGPT/Claude → Copy câu trả lời của AI → Dán vào ô bên phải <strong>(Bước 2 · Dán & Chấm)</strong> để chấm điểm theo rubric.
+            </p>
+          </section>
+
+          {/* Optional Step 1 Card: Intake Questions */}
+          {intakeQuestions.length > 0 && (
+            <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                      Tùy chọn · Không bắt buộc
+                    </span>
+                  </div>
+                  <h3 className="font-serif font-bold text-sm text-[var(--ink)] mt-1">
+                    Bổ sung số liệu thực tế của nhóm (Nếu có)
+                  </h3>
+                  <p className="text-xs text-[var(--muted)] leading-relaxed">
+                    Nếu nhóm đã làm khảo sát hoặc phỏng vấn, điền tại đây để prompt có số liệu thật. Nếu chưa có, bạn có thể bỏ qua — AI sẽ tự tạo ví dụ hợp lý.
+                  </p>
                 </div>
 
-                <pre className="rounded-xl border border-[var(--line-2)] bg-[var(--surface-2)] p-4 text-xs font-mono text-[var(--ink)] leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto">
-                  {generatedPrompt}
-                </pre>
+                <button
+                  type="button"
+                  onClick={() => setShowOptionalIntake(!showOptionalIntake)}
+                  className="px-3 py-1.5 rounded-lg border border-[var(--line)] text-xs text-[var(--ink)] font-semibold hover:bg-[var(--surface-2)] shrink-0 flex items-center gap-1"
+                >
+                  {showOptionalIntake ? (
+                    <>
+                      <ChevronUp className="size-3.5" /> Thu gọn
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="size-3.5" /> Thêm số liệu ({intakeQuestions.length} câu)
+                    </>
+                  )}
+                </button>
               </div>
-            )}
-          </section>
+
+              {showOptionalIntake && (
+                <div className="space-y-3 pt-3 border-t border-[var(--line-2)] animate-in fade-in duration-150">
+                  {loadingIntake ? (
+                    <div className="py-4 text-center text-xs text-[var(--muted)] flex items-center justify-center gap-2">
+                      <Loader2 className="size-4 animate-spin text-[var(--accent)]" /> Đang tải câu hỏi...
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {intakeQuestions.map((q, qIndex) => {
+                        const currentVal = intakeAnswers[q.id];
+                        const isUnknown =
+                          currentVal === "Chưa hỏi ai" ||
+                          currentVal === "Chưa biết" ||
+                          currentVal === "Chưa có";
+
+                        return (
+                          <div
+                            key={q.id}
+                            className="rounded-lg border border-[var(--line-2)] bg-[var(--surface-2)] p-3 space-y-2 text-xs"
+                          >
+                            <label className="font-semibold text-[var(--ink)] block leading-snug">
+                              {qIndex + 1}. {q.question}
+                            </label>
+
+                            <div className="flex items-center gap-2">
+                              <input
+                                type={q.type === "number" ? "number" : "text"}
+                                disabled={isUnknown}
+                                value={isUnknown ? "" : currentVal || ""}
+                                placeholder={isUnknown ? "Chưa có số liệu" : "Nhập câu trả lời thực tế..."}
+                                onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                                className="flex-1 rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3 py-1.5 text-xs text-[var(--ink)] focus:outline-none focus:border-[var(--accent)] disabled:opacity-40"
+                              />
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  handleAnswerChange(q.id, isUnknown ? "" : q.unknown_label || "Chưa biết")
+                                }
+                                className={`px-2.5 py-1.5 rounded-lg border text-[11px] whitespace-nowrap transition-colors ${
+                                  isUnknown
+                                    ? "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 font-bold"
+                                    : "bg-[var(--surface)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+                                }`}
+                              >
+                                {q.unknown_label || "Chưa biết"}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      <div className="pt-2 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => handleBuildPrompt()}
+                          disabled={generatingPrompt}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[var(--accent)] text-white text-xs font-semibold hover:opacity-90 shadow-xs"
+                        >
+                          <Wand2 className="size-3.5" />
+                          Cập nhật prompt với số liệu này
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Lecturer / Mentor Feedback Section */}
           <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm space-y-4">
@@ -1380,7 +1428,7 @@ export function WebWriteWorkspace({
                       ))}
                     </ul>
                     <p className="text-[11px] text-red-700 dark:text-red-300">
-                      Hội đồng sẽ hỏi nguồn các số liệu này. Hãy thay bằng số liệu phỏng vấn thật hoặc ghi [CẦN DỮ LIỆU].
+                      Hội đồng sẽ hỏi nguồn các số liệu này. Hãy thay bằng số liệu phỏng vấn thật hoặc điều chỉnh số liệu cho phù hợp.
                     </p>
                   </div>
                 )}
@@ -1533,12 +1581,12 @@ export function WebWriteWorkspace({
                                   onClick={() => {
                                     setInCardAnswers((prev) => ({
                                       ...prev,
-                                      [gap.id]: "[CẦN DỮ LIỆU]",
+                                      [gap.id]: "",
                                     }));
                                   }}
                                   className="text-[11px] text-[var(--muted)] hover:text-amber-600 font-medium underline"
                                 >
-                                  Chưa có số liệu (Ghi [CẦN DỮ LIỆU])
+                                  Chưa có số liệu (Dùng ví dụ mẫu)
                                 </button>
 
                                 <div className="flex items-center gap-2">
@@ -1710,7 +1758,7 @@ export function WebWriteWorkspace({
             </div>
 
             <p className="text-[11px] text-[var(--muted)] italic">
-              * Nếu nhóm chưa có số liệu, bấm nút bên dưới. RootAccess sẽ ghi [CẦN DỮ LIỆU] và thêm vào danh sách to-do của bạn, tuyệt đối không để AI tự bịa số.
+              * Nếu nhóm chưa có số liệu, bấm nút bên dưới để AI tự đề xuất số liệu và phương án mẫu hợp lý.
             </p>
 
             <div className="pt-2 border-t border-[var(--line-2)] flex items-center justify-between gap-3">
@@ -1720,7 +1768,7 @@ export function WebWriteWorkspace({
                 disabled={questionModalState.submitting}
                 className="text-xs text-[var(--muted)] hover:text-amber-600 font-semibold"
               >
-                Chưa có dữ liệu (Ghi [CẦN DỮ LIỆU])
+                Chưa có dữ liệu (Dùng số liệu mẫu)
               </button>
 
               <button
