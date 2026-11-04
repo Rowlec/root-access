@@ -3,6 +3,15 @@ export type ProposalExportSection = {
   heading: string;
 };
 
+export type ProposalExportEvidence = {
+  intervieweeName: string;
+  intervieweeRole?: string | null;
+  context?: string | null;
+  directQuote: string;
+  keyInsight?: string | null;
+  evidenceLink?: string | null;
+};
+
 export type ProposalExportDocument = {
   contextLines: string[];
   sections: ProposalExportSection[];
@@ -14,6 +23,7 @@ type BuildProposalExportInput = {
   contextLines: string[];
   sections: ProposalExportSection[];
   title: string;
+  evidence?: ProposalExportEvidence[];
 };
 
 const aiPhrasePatterns = [
@@ -99,6 +109,7 @@ export function buildProposalExport({
   contextLines,
   sections,
   title,
+  evidence,
 }: BuildProposalExportInput): ProposalExportDocument {
   const cleanedSections = sections
     .map((section) => ({
@@ -106,6 +117,27 @@ export function buildProposalExport({
       content: cleanProposalContent(section.content),
     }))
     .filter((section) => section.content.length > 0);
+
+  if (evidence && evidence.length > 0) {
+    const evidenceLines = evidence
+      .map((e, idx) => {
+        const parts = [
+          `[Phỏng vấn #${idx + 1}] Đối tượng: ${e.intervieweeName}${e.intervieweeRole ? ` (${e.intervieweeRole})` : ""}`,
+          e.context ? `  • Bối cảnh: ${e.context}` : null,
+          `  • Trích dẫn nguyên văn: "${e.directQuote}"`,
+          e.keyInsight ? `  • Bài học / Insight rút ra: ${e.keyInsight}` : null,
+          e.evidenceLink ? `  • Bằng chứng / Link đính kèm: ${e.evidenceLink}` : null,
+        ].filter(Boolean);
+        return parts.join("\n");
+      })
+      .join("\n\n");
+
+    cleanedSections.push({
+      heading: "PHỤ LỤC: NHẬT KÝ PHỎNG VẤN & MINH CHỨNG THỰC ĐỊA (CUSTOMER DISCOVERY LOG)",
+      content: evidenceLines,
+    });
+  }
+
   const cleanedContextLines = contextLines
     .map((line) => cleanProposalContent(line).replace(/\n+/g, " "))
     .filter(Boolean);

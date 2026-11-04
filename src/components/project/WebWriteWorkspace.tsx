@@ -15,20 +15,27 @@ import {
   Clock,
   Copy,
   ExternalLink,
+  FileText,
   HelpCircle,
   History,
   Info,
+  Lightbulb,
   Loader2,
   Lock,
   MessageSquare,
+  PenTool,
   RefreshCw,
   Save,
   Send,
+  ShieldCheck,
   Sparkles,
   Target,
+  Users,
   Wand2,
   X,
 } from "lucide-react";
+import { FieldEvidenceVault, FieldEvidenceItem } from "./FieldEvidenceVault";
+import { ScaffoldedWritingStudio } from "./ScaffoldedWritingStudio";
 
 interface IntakeQuestion {
   id: string;
@@ -129,6 +136,9 @@ interface WebWriteWorkspaceProps {
   initialGradeResult?: any;
   initialTargetLevel?: "pass" | "good" | "excellent" | null;
   initialPrompt?: string;
+  initialWorkspaceMode?: "human" | "ai";
+  initialFieldEvidence?: FieldEvidenceItem[];
+  initialScaffoldAnswers?: Record<string, string>;
 }
 
 export function WebWriteWorkspace({
@@ -145,8 +155,17 @@ export function WebWriteWorkspace({
   initialGradeResult = null,
   initialTargetLevel = null,
   initialPrompt = "",
+  initialWorkspaceMode = "human",
+  initialFieldEvidence = [],
+  initialScaffoldAnswers = {},
 }: WebWriteWorkspaceProps) {
   const currentSection = sections.find((s) => s.id === sectionId) || sections[0];
+
+  // Workspace Mode (human vs ai)
+  const [workspaceMode, setWorkspaceMode] = useState<"human" | "ai">(initialWorkspaceMode);
+  const [fieldEvidence, setFieldEvidence] = useState<FieldEvidenceItem[]>(initialFieldEvidence);
+  const [scaffoldAnswers, setScaffoldAnswers] = useState<Record<string, string>>(initialScaffoldAnswers);
+  const [humanTab, setHumanTab] = useState<"scaffold" | "evidence">("scaffold");
 
   // Target Level State (Qua môn, Khá 7-8, Xuất sắc 9-10)
   const [targetLevel, setTargetLevel] = useState<"pass" | "good" | "excellent">(
@@ -416,6 +435,20 @@ export function WebWriteWorkspace({
     }
   };
 
+  // Switch between Human-First and AI mode
+  const handleSwitchMode = async (newMode: "human" | "ai") => {
+    setWorkspaceMode(newMode);
+    try {
+      await fetch(`/api/projects/${projectId}/mode`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: newMode }),
+      });
+    } catch (e) {
+      console.error("Failed to update mode:", e);
+    }
+  };
+
   // Save current version
   const handleSaveSection = async () => {
     if (!answerText.trim()) return;
@@ -433,6 +466,7 @@ export function WebWriteWorkspace({
           status,
           lecturerFeedback: lecturerFeedbackText.trim() || undefined,
           actualScore: lecturerActualScore.trim() || undefined,
+          scaffoldAnswers: scaffoldAnswers,
         }),
       });
       if (res.ok) {
@@ -833,12 +867,139 @@ export function WebWriteWorkspace({
         </div>
       </div>
 
+      {/* Mode Switcher Banner */}
+      <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-start sm:items-center gap-3">
+          <div
+            className={`p-2.5 rounded-xl shrink-0 ${
+              workspaceMode === "human"
+                ? "bg-emerald-500/15 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400 border border-emerald-500/30"
+                : "bg-blue-500/15 text-blue-600 dark:bg-blue-950 dark:text-blue-400 border border-blue-500/30"
+            }`}
+          >
+            {workspaceMode === "human" ? (
+              <ShieldCheck className="size-5" />
+            ) : (
+              <Sparkles className="size-5" />
+            )}
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-[var(--ink)]">
+                {workspaceMode === "human"
+                  ? "Chế độ Thực Chiến / Tự Lực (Field-Discovery Mode)"
+                  : "Chế độ Trợ lý AI (AI Copilot Mode)"}
+              </span>
+              {workspaceMode === "human" ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                  ★ Khuyên dùng cho Giảng viên & Hội đồng
+                </span>
+              ) : (
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                  Dành cho Brainstorm
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-[var(--muted)] mt-0.5 leading-relaxed">
+              {workspaceMode === "human"
+                ? "Tự viết theo giàn giáo tư duy, nạp bằng chứng phỏng vấn khách hàng thật. AI chỉ làm Giám khảo phản biện, không sinh bài thay bạn."
+                : "Tạo prompt dựng sẵn để tham khảo ý tưởng hoặc viết nháp nhanh qua ChatGPT/Gemini."}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 bg-[var(--surface)] p-1 rounded-xl border border-[var(--line)] shrink-0 self-start sm:self-auto shadow-2xs">
+          <button
+            type="button"
+            onClick={() => handleSwitchMode("human")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              workspaceMode === "human"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--ink)]"
+            }`}
+          >
+            <ShieldCheck className="size-3.5" />
+            Tự Lực thực chiến
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSwitchMode("ai")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              workspaceMode === "ai"
+                ? "bg-[var(--ink)] text-white shadow-xs"
+                : "text-[var(--muted)] hover:text-[var(--ink)]"
+            }`}
+          >
+            <Sparkles className="size-3.5" />
+            Trợ lý AI
+          </button>
+        </div>
+      </div>
+
       {/* Main Workspace Grid */}
       <div className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
         {/* Left Column: Prompt Ready & Optional Intake & Lecturer Feedback */}
         <div className="space-y-6">
-          {/* Main Card: Ready-to-use Prompt */}
-          <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-6 shadow-sm space-y-4">
+          {workspaceMode === "human" ? (
+            /* Human-First Mode: Scaffolded Studio & Field Evidence Vault */
+            <div className="space-y-4">
+              {/* Human Sub-tabs */}
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[var(--surface-2)] border border-[var(--line)]">
+                <button
+                  type="button"
+                  onClick={() => setHumanTab("scaffold")}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    humanTab === "scaffold"
+                      ? "bg-[var(--surface)] text-[var(--ink)] shadow-2xs border border-[var(--line-2)]"
+                      : "text-[var(--muted)] hover:text-[var(--ink)]"
+                  }`}
+                >
+                  <PenTool className="size-3.5 text-blue-600" />
+                  1. Giàn giáo Soạn thảo Tư duy
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHumanTab("evidence")}
+                  className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    humanTab === "evidence"
+                      ? "bg-[var(--surface)] text-[var(--ink)] shadow-2xs border border-[var(--line-2)]"
+                      : "text-[var(--muted)] hover:text-[var(--ink)]"
+                  }`}
+                >
+                  <ShieldCheck className="size-3.5 text-emerald-600" />
+                  2. Sổ tay Bằng chứng ({fieldEvidence.length})
+                </button>
+              </div>
+
+              {humanTab === "scaffold" ? (
+                <ScaffoldedWritingStudio
+                  sectionId={sectionId}
+                  initialAnswers={scaffoldAnswers}
+                  onApplyDraft={(draft, answers) => {
+                    setAnswerText(draft);
+                    setScaffoldAnswers(answers);
+                  }}
+                />
+              ) : (
+                <FieldEvidenceVault
+                  projectId={projectId}
+                  sectionId={sectionId}
+                  evidence={fieldEvidence}
+                  onEvidenceChange={setFieldEvidence}
+                  onInsertQuote={(quoteText, author) => {
+                    setAnswerText((prev) =>
+                      prev
+                        ? `${prev}\n\n"${quoteText}" — Theo ${author}`
+                        : `"${quoteText}" — Theo ${author}`
+                    );
+                  }}
+                />
+              )}
+            </div>
+          ) : (
+            <>
+              {/* Main Card: Ready-to-use Prompt */}
+              <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 sm:p-6 shadow-sm space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2">
@@ -1056,6 +1217,8 @@ export function WebWriteWorkspace({
               )}
             </section>
           )}
+            </>
+          )}
 
           {/* Lecturer / Mentor Feedback Section */}
           <section className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-5 shadow-sm space-y-4">
@@ -1226,13 +1389,29 @@ export function WebWriteWorkspace({
             {/* Visual Copy Guidance */}
             <div className="flex items-center justify-between gap-3 text-xs text-[var(--muted)] bg-[var(--surface-2)] p-3 rounded-xl border border-[var(--line-2)]">
               <div className="flex items-center gap-2">
-                <Copy className="size-4 text-[var(--accent)] shrink-0" />
+                {workspaceMode === "human" ? (
+                  <ShieldCheck className="size-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <Copy className="size-4 text-[var(--accent)] shrink-0" />
+                )}
                 <span>
-                  <strong>Chỉ dẫn:</strong> Sau khi ChatGPT sinh câu trả lời ở tab bên cạnh, hãy sao chép văn bản và dán vào ô bên dưới.
+                  {workspaceMode === "human" ? (
+                    <>
+                      <strong>Chỉ dẫn Chế độ Thực chiến:</strong> Soạn thảo tư duy ở cột bên trái hoặc gắn trích dẫn từ Sổ tay Bằng chứng. Hệ thống đối chiếu rubric không sinh hộ văn bản nhằm bảo vệ liêm chính học thuật.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Chỉ dẫn:</strong> Sau khi ChatGPT sinh câu trả lời ở tab bên cạnh, hãy sao chép văn bản và dán vào ô bên dưới.
+                    </>
+                  )}
                 </span>
               </div>
-              <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 whitespace-nowrap">
-                Tip: Extension tự nhận diện
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border whitespace-nowrap ${
+                workspaceMode === "human"
+                  ? "text-emerald-700 bg-emerald-500/10 border-emerald-500/30 dark:text-emerald-300"
+                  : "text-blue-600 bg-blue-500/10 border-blue-500/20"
+              }`}>
+                {workspaceMode === "human" ? "Phương pháp Lean Discovery" : "Tip: Extension tự nhận diện"}
               </span>
             </div>
 
@@ -1245,7 +1424,11 @@ export function WebWriteWorkspace({
                   value={answerText}
                   onChange={(e) => setAnswerText(e.target.value)}
                   rows={10}
-                  placeholder="Dán câu trả lời bạn nhận được từ ChatGPT vào đây để đối chiếu rubric..."
+                  placeholder={
+                    workspaceMode === "human"
+                      ? "Tự soạn thảo luận điểm của nhóm bạn vào đây (hoặc bấm 'Áp dụng vào bản nháp' từ Giàn giáo Tư duy bên trái)..."
+                      : "Dán câu trả lời bạn nhận được từ ChatGPT vào đây để đối chiếu rubric..."
+                  }
                   className="w-full rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-4 text-xs font-mono text-[var(--ink)] leading-relaxed focus:outline-none focus:border-[var(--accent)]"
                 />
                 {gradeResult && (
@@ -1265,9 +1448,13 @@ export function WebWriteWorkspace({
             {/* Empty State when no draft pasted yet */}
             {!answerText.trim() && !gradeResult && (
               <div className="rounded-xl border border-dashed border-[var(--line)] p-6 text-center space-y-2 bg-[var(--surface-2)]/50">
-                <p className="text-xs font-semibold text-[var(--ink)]">Chưa có bài để chấm</p>
+                <p className="text-xs font-semibold text-[var(--ink)]">
+                  {workspaceMode === "human" ? "Chưa có bài để thẩm định" : "Chưa có bài để chấm"}
+                </p>
                 <p className="text-[11px] text-[var(--muted)] max-w-sm mx-auto leading-relaxed">
-                  Hãy hoàn thành Bước 1 ở bên trái, sao chép prompt sang ChatGPT, sau đó dán nội dung câu trả lời nhận được vào ô trên và bấm "Chấm theo mục tiêu này".
+                  {workspaceMode === "human"
+                    ? "Hãy soạn thảo nội dung theo Giàn giáo Tư duy ở bên trái, gắn trích dẫn từ Sổ tay Bằng chứng, sau đó bấm 'Thẩm định Phản biện Socratic' để rà soát rubric."
+                    : "Hãy hoàn thành Bước 1 ở bên trái, sao chép prompt sang ChatGPT, sau đó dán nội dung câu trả lời nhận được vào ô trên và bấm 'Chấm theo mục tiêu này'."}
                 </p>
               </div>
             )}
@@ -1290,12 +1477,14 @@ export function WebWriteWorkspace({
                 {isGrading ? (
                   <>
                     <Loader2 className="size-3.5 animate-spin" />
-                    Đang đối chiếu rubric...
+                    {workspaceMode === "human" ? "Đang thẩm định phản biện..." : "Đang đối chiếu rubric..."}
                   </>
                 ) : (
                   <>
                     <CheckCircle2 className="size-3.5 text-emerald-400" />
-                    Chấm theo mục tiêu này · 1 credit
+                    {workspaceMode === "human"
+                      ? "Thẩm định Phản biện Socratic · 1 credit"
+                      : "Chấm theo mục tiêu này · 1 credit"}
                   </>
                 )}
               </button>
@@ -1600,29 +1789,59 @@ export function WebWriteWorkspace({
                                     Tự sửa {isSelfFixOpen ? "▲" : "▼"}
                                   </button>
 
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleGeneratePromptFromAnswer(gap.id, gap.name || gap.id)
-                                    }
-                                    disabled={
-                                      submittingGapPromptId === gap.id ||
-                                      !(inCardAnswers[gap.id] || "").trim()
-                                    }
-                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--accent)] text-white text-xs font-bold hover:opacity-90 disabled:opacity-40 transition-opacity shadow-xs"
-                                    title={
-                                      !(inCardAnswers[gap.id] || "").trim()
-                                        ? "Chỉ bật khi sinh viên đã điền câu trả lời gợi mở (Không làm thay)"
-                                        : "Tạo prompt chuẩn mang dữ liệu thật của bạn sang ChatGPT"
-                                    }
-                                  >
-                                    {submittingGapPromptId === gap.id ? (
-                                      <Loader2 className="size-3 animate-spin" />
-                                    ) : (
-                                      <Wand2 className="size-3" />
-                                    )}
-                                    Tạo prompt từ câu trả lời của tôi
-                                  </button>
+                                  {workspaceMode === "human" ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const ans = (inCardAnswers[gap.id] || "").trim();
+                                        if (ans) {
+                                          setAnswerText((prev) =>
+                                            prev
+                                              ? `${prev}\n\n[Bổ sung cho ${gap.name || gap.id}]: ${ans}`
+                                              : ans
+                                          );
+                                          setInCardAnswers((prev) => ({
+                                            ...prev,
+                                            [gap.id]: "",
+                                          }));
+                                        }
+                                      }}
+                                      disabled={!(inCardAnswers[gap.id] || "").trim()}
+                                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 disabled:opacity-40 transition-opacity shadow-xs"
+                                      title={
+                                        !(inCardAnswers[gap.id] || "").trim()
+                                          ? "Hãy điền câu trả lời thực tế của nhóm"
+                                          : "Chèn câu trả lời thực tế này trực tiếp vào văn bản bài viết"
+                                      }
+                                    >
+                                      <PenTool className="size-3" />
+                                      Chèn câu trả lời vào bài viết
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleGeneratePromptFromAnswer(gap.id, gap.name || gap.id)
+                                      }
+                                      disabled={
+                                        submittingGapPromptId === gap.id ||
+                                        !(inCardAnswers[gap.id] || "").trim()
+                                      }
+                                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[var(--accent)] text-white text-xs font-bold hover:opacity-90 disabled:opacity-40 transition-opacity shadow-xs"
+                                      title={
+                                        !(inCardAnswers[gap.id] || "").trim()
+                                          ? "Chỉ bật khi sinh viên đã điền câu trả lời gợi mở (Không làm thay)"
+                                          : "Tạo prompt chuẩn mang dữ liệu thật của bạn sang ChatGPT"
+                                      }
+                                    >
+                                      {submittingGapPromptId === gap.id ? (
+                                        <Loader2 className="size-3 animate-spin" />
+                                      ) : (
+                                        <Wand2 className="size-3" />
+                                      )}
+                                      Tạo prompt từ câu trả lời của tôi
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>

@@ -153,6 +153,7 @@ export const projects = pgTable(
     constraints: jsonb("constraints").$type<string[]>().default([]).notNull(),
     createdVia: text("created_via").default("studio").notNull(),
     targetLevel: text("target_level").$type<"pass" | "good" | "excellent">(),
+    workspaceMode: text("workspace_mode").$type<"human" | "ai">().default("human").notNull(),
     // Backward compatibility fields
     title: text("title").default("").notNull(),
     startupIdea: text("startup_idea").default("").notNull(),
@@ -535,10 +536,33 @@ export const projectSections = pgTable(
     chatUrl: text("chat_url"),
     lecturerFeedback: text("lecturer_feedback"),
     actualScore: text("actual_score"),
+    scaffoldAnswers: jsonb("scaffold_answers").$type<Record<string, string>>().default({}).notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.projectId, table.sectionId] }),
+  ],
+);
+
+export const fieldEvidence = pgTable(
+  "field_evidence",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    sectionId: text("section_id").notNull(),
+    intervieweeName: text("interviewee_name").notNull(),
+    intervieweeRole: text("interviewee_role").notNull(),
+    context: text("context").notNull(),
+    directQuote: text("direct_quote").notNull(),
+    keyInsight: text("key_insight").notNull(),
+    evidenceLink: text("evidence_link"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("field_evidence_project_id_idx").on(table.projectId),
+    index("field_evidence_section_id_idx").on(table.sectionId),
   ],
 );
 

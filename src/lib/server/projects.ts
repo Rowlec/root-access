@@ -7,6 +7,7 @@ import {
   conversations,
   creditLedger,
   creditTransactions,
+  fieldEvidence,
   projectMembers,
   projects,
   usageEvents,
@@ -206,11 +207,18 @@ export async function fetchProjectHubData(projectId: string) {
     .leftJoin(usersTable, eq(projectMembers.userId, usersTable.id))
     .where(eq(projectMembers.projectId, projectId));
 
-  const [teamPass] = await db
-    .select()
-    .from(teamPasses)
-    .where(and(eq(teamPasses.projectId, projectId), gt(teamPasses.endsAt, new Date())))
-    .limit(1);
+  const [teamPass, evidenceRows] = await Promise.all([
+    db
+      .select()
+      .from(teamPasses)
+      .where(and(eq(teamPasses.projectId, projectId), gt(teamPasses.endsAt, new Date())))
+      .limit(1)
+      .then((rows) => rows[0] ?? null),
+    db
+      .select()
+      .from(fieldEvidence)
+      .where(eq(fieldEvidence.projectId, projectId)),
+  ]);
 
   const nextSection = sectionsOverview.find((s: any) => s.status !== "passed") || sectionsOverview[0];
   const passedCount = sectionsOverview.filter((s: any) => s.status === "passed" || Boolean(s.saved_text)).length;
@@ -236,7 +244,19 @@ export async function fetchProjectHubData(projectId: string) {
       pack_id: project.packId,
       created_via: project.createdVia,
       is_owner: project.userId === user.id,
+      workspace_mode: (project.workspaceMode as "human" | "ai") ?? "human",
+      evidence_count: evidenceRows.length,
     },
+    evidence_count: evidenceRows.length,
+    evidence_items: evidenceRows.map((e) => ({
+      id: e.id,
+      intervieweeName: e.intervieweeName,
+      intervieweeRole: e.intervieweeRole,
+      context: e.context,
+      directQuote: e.directQuote,
+      keyInsight: e.keyInsight,
+      evidenceLink: e.evidenceLink,
+    })),
     pack: {
       id: packRow?.id ?? "exe101-cp2",
       checkpoint: packRow?.checkpoint ?? "Checkpoint 2",

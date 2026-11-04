@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { WebWriteWorkspace } from "@/components/project/WebWriteWorkspace";
 import { getOwnedProject } from "@/lib/server/projects";
 import { getDb } from "@/db";
-import { grades, packs, projectSections, sectionIntakes } from "@/db/schema";
+import { grades, packs, projectSections, sectionIntakes, fieldEvidence } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { Pack } from "@/lib/packs-schema";
 import { buildInitialPrompt } from "@/lib/prompts/builder";
@@ -18,7 +18,7 @@ export default async function WriteSectionPage({
   const db = getDb();
   const effectivePackId = project.packId || "exe101-cp2";
 
-  const [packRow, intakeRow, savedSectionRow, latestGradeRow] = await Promise.all([
+  const [packRow, intakeRow, savedSectionRow, latestGradeRow, evidenceRows] = await Promise.all([
     db
       .select()
       .from(packs)
@@ -45,6 +45,11 @@ export default async function WriteSectionPage({
       .orderBy(desc(grades.createdAt))
       .limit(1)
       .then((r) => r[0]),
+    db
+      .select()
+      .from(fieldEvidence)
+      .where(eq(fieldEvidence.projectId, project.id))
+      .orderBy(desc(fieldEvidence.createdAt)),
   ]);
 
   let resolvedPackRow = packRow;
@@ -104,9 +109,17 @@ export default async function WriteSectionPage({
         initialIntakeQuestions={currentSection.intake || []}
         initialIntakeAnswers={intakeRow?.answers || {}}
         initialSavedText={savedSectionRow?.savedText || ""}
+        initialScaffoldAnswers={(savedSectionRow?.scaffoldAnswers as Record<string, string>) || {}}
         initialGradeResult={latestGradeRow?.result || null}
         initialTargetLevel={project.targetLevel || null}
         initialPrompt={initialPrompt}
+        initialWorkspaceMode={(project.workspaceMode as "human" | "ai") || "human"}
+        initialFieldEvidence={
+          evidenceRows.map((e) => ({
+            ...e,
+            createdAt: e.createdAt instanceof Date ? e.createdAt.toISOString() : String(e.createdAt || ""),
+          })) || []
+        }
       />
     </main>
   );

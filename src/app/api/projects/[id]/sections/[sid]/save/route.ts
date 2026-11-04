@@ -23,6 +23,7 @@ export async function POST(
     const status = body.status ?? "passed"; // 'todo' | 'drafting' | 'passed'
     const lecturerFeedback = body.lecturer_feedback ?? body.lecturerFeedback ?? null;
     const actualScore = body.actual_score ?? body.actualScore ?? null;
+    const scaffoldAnswers = body.scaffold_answers ?? body.scaffoldAnswers ?? null;
 
     if (!savedText) {
       return jsonResponse(
@@ -50,6 +51,7 @@ export async function POST(
           chatUrl: chatUrl || existing.chatUrl,
           lecturerFeedback: lecturerFeedback || existing.lecturerFeedback,
           actualScore: actualScore || existing.actualScore,
+          scaffoldAnswers: scaffoldAnswers !== null ? scaffoldAnswers : existing.scaffoldAnswers,
           updatedAt: new Date(),
         })
         .where(and(eq(projectSections.projectId, projectId), eq(projectSections.sectionId, sectionId)))
@@ -66,6 +68,7 @@ export async function POST(
           chatUrl,
           lecturerFeedback,
           actualScore,
+          scaffoldAnswers: scaffoldAnswers || {},
         })
         .returning();
     }

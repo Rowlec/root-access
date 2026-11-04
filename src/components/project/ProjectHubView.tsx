@@ -21,6 +21,7 @@ import {
   Plus,
   Send,
   ShieldAlert,
+  ShieldCheck,
   Sparkles,
   Users,
   X,
@@ -87,6 +88,8 @@ interface HubData {
     pack_id: string;
     created_via?: string;
     is_owner: boolean;
+    workspace_mode?: "human" | "ai";
+    evidence_count?: number;
   };
   pack: {
     id: string;
@@ -103,6 +106,16 @@ interface HubData {
   can_full_check: boolean;
   saved_count: number;
   total_sections: number;
+  evidence_count?: number;
+  evidence_items?: Array<{
+    id: string;
+    intervieweeName: string;
+    intervieweeRole?: string | null;
+    context?: string | null;
+    directQuote: string;
+    keyInsight?: string | null;
+    evidenceLink?: string | null;
+  }>;
 }
 
 export function ProjectHubView({ initialData }: { initialData: HubData }) {
@@ -250,6 +263,7 @@ export function ProjectHubView({ initialData }: { initialData: HubData }) {
 
     const doc = buildProposalExport({
       title: data.project.name || "Startup Proposal",
+      evidence: data.evidence_items || [],
       contextLines: [
         `Môn học: ${data.pack.course} - ${data.pack.checkpoint.toUpperCase()}`,
         `Ý tưởng: ${data.project.one_liner || ""}`,
@@ -285,6 +299,7 @@ export function ProjectHubView({ initialData }: { initialData: HubData }) {
 
     const doc = buildProposalExport({
       title: data.project.name || "Startup Proposal",
+      evidence: data.evidence_items || [],
       contextLines: [
         `Môn học: ${data.pack.course} - ${data.pack.checkpoint.toUpperCase()}`,
         `Ý tưởng: ${data.project.one_liner || ""}`,
@@ -372,6 +387,49 @@ export function ProjectHubView({ initialData }: { initialData: HubData }) {
               <span className="px-2.5 py-1 rounded-md bg-[var(--mark)] text-[var(--ink)] font-semibold border border-amber-300">
                 {data.project.niche || "Chưa chọn ngách"}
               </span>
+            </div>
+
+            {/* Mode & Field Evidence Badges */}
+            <div className="flex items-center gap-2.5 flex-wrap pt-2">
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                  (data.project.workspace_mode ?? "human") === "human"
+                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+                    : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+                }`}
+              >
+                {(data.project.workspace_mode ?? "human") === "human" ? (
+                  <>
+                    <ShieldCheck className="size-3.5" />
+                    Đề án Thực nghiệm (Human-First Discovery)
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="size-3.5" />
+                    Trợ lý AI (AI Copilot)
+                  </>
+                )}
+              </span>
+
+              <Link
+                href={`/app/projects/${data.project.id}/write/problem`}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                  (data.evidence_count ?? 0) >= 3
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 hover:bg-emerald-100"
+                    : "bg-amber-50 text-amber-800 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 hover:bg-amber-100"
+                }`}
+                title="Bằng chứng phỏng vấn khách hàng thực tế"
+              >
+                <FileCheck className="size-3.5" />
+                <span>
+                  {data.evidence_count ?? 0} Phỏng vấn thực địa đã lưu
+                </span>
+                {(data.evidence_count ?? 0) < 3 && (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-200/60 px-1.5 py-0.2 rounded">
+                    Cần thêm
+                  </span>
+                )}
+              </Link>
             </div>
           </div>
 
